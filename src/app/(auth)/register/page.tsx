@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { useAuth } from "@/contexts/AuthContext";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -53,6 +54,13 @@ export default function RegisterPage() {
       return;
     }
 
+    if (!isSupabaseConfigured()) {
+      setErrorMessage(
+        "Base de données Supabase non connectée. Veuillez ajouter les variables NEXT_PUBLIC_SUPABASE_URL et NEXT_PUBLIC_SUPABASE_ANON_KEY dans les paramètres Vercel."
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { error, session } = await signUp(
@@ -65,6 +73,13 @@ export default function RegisterPage() {
       if (error) {
         if (error.message?.toLowerCase().includes("user already registered")) {
           setErrorMessage("Un compte existe déjà avec cette adresse email. Veuillez vous connecter.");
+        } else if (
+          error.message?.toLowerCase().includes("fetch") ||
+          error.message?.toLowerCase().includes("network")
+        ) {
+          setErrorMessage(
+            "Connexion réseau à Supabase impossible. Vérifiez que les variables d'environnement Vercel sont bien configurées."
+          );
         } else {
           setErrorMessage(error.message || "Erreur lors de l'inscription.");
         }
