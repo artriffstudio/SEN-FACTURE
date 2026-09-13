@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+mcp_config.json
+.agents/mcp_config.json
+*.webp
 
 # vercel
 .vercel
