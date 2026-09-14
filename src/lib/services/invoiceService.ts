@@ -7,17 +7,18 @@ import {
   MonthlyRevenue,
   Client,
 } from "@/lib/types";
-
-const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
+import { getEffectiveCompanyId } from "@/lib/services/companyService";
 
 export async function getInvoices(
   statusFilter?: string,
   searchQuery?: string
 ): Promise<Invoice[]> {
+  const companyId = await getEffectiveCompanyId();
+
   let query = supabase
     .from("invoices")
     .select("*, clients(*), invoice_items(*)")
-    .eq("company_id", DEFAULT_COMPANY_ID)
+    .eq("company_id", companyId)
     .order("issue_date", { ascending: false });
 
   if (statusFilter && statusFilter !== "all") {
@@ -147,6 +148,8 @@ export async function getInvoiceById(id: string): Promise<Invoice | null> {
 }
 
 export async function createInvoice(data: InvoiceFormData): Promise<Invoice> {
+  const companyId = await getEffectiveCompanyId();
+
   // 1. Calculer les montants
   const subtotal = data.items.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
@@ -160,7 +163,7 @@ export async function createInvoice(data: InvoiceFormData): Promise<Invoice> {
   const { data: comp } = await supabase
     .from("companies")
     .select("invoice_prefix, next_invoice_number")
-    .eq("id", DEFAULT_COMPANY_ID)
+    .eq("id", companyId)
     .single();
 
   const prefix = comp?.invoice_prefix || "FAC-2025-";
@@ -171,14 +174,14 @@ export async function createInvoice(data: InvoiceFormData): Promise<Invoice> {
   await supabase
     .from("companies")
     .update({ next_invoice_number: num + 1 })
-    .eq("id", DEFAULT_COMPANY_ID);
+    .eq("id", companyId);
 
   // 3. Insérer la facture
   const { data: createdInv, error: invError } = await supabase
     .from("invoices")
     .insert([
       {
-        company_id: DEFAULT_COMPANY_ID,
+        company_id: companyId,
         client_id: data.clientId,
         invoice_number: invoiceNumber,
         status: data.status,
@@ -252,15 +255,17 @@ export async function deleteInvoice(id: string): Promise<boolean> {
 }
 
 export async function getDashboardStats(): Promise<DashboardStats> {
+  const companyId = await getEffectiveCompanyId();
+
   const { data: invoices } = await supabase
     .from("invoices")
     .select("status, total")
-    .eq("company_id", DEFAULT_COMPANY_ID);
+    .eq("company_id", companyId);
 
   const { count: clientCount } = await supabase
     .from("clients")
     .select("*", { count: "exact", head: true })
-    .eq("company_id", DEFAULT_COMPANY_ID);
+    .eq("company_id", companyId);
 
   let totalRevenue = 0;
   let pendingAmount = 0;
@@ -299,10 +304,12 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 }
 
 export async function getMonthlyRevenue(): Promise<MonthlyRevenue[]> {
+  const companyId = await getEffectiveCompanyId();
+
   const { data: invoices } = await supabase
     .from("invoices")
     .select("issue_date, total, status")
-    .eq("company_id", DEFAULT_COMPANY_ID);
+    .eq("company_id", companyId);
 
   const monthsMap: Record<string, { revenue: number; count: number }> = {
     Jan: { revenue: 0, count: 0 },

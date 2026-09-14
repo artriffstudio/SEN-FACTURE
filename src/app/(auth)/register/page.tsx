@@ -94,7 +94,7 @@ export default function RegisterPage() {
         await signIn(email, password);
       }
 
-      router.push("/");
+      router.push("/dashboard");
       router.refresh();
     } catch (err: any) {
       setErrorMessage(err?.message || "Une erreur inattendue est survenue.");

@@ -1,20 +1,46 @@
 import { supabase } from "@/lib/supabase";
 import { Company } from "@/lib/types";
 
-const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
+export const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
+
+/**
+ * Récupère l'ID de l'entreprise associée à l'utilisateur actuellement authentifié,
+ * ou l'ID par défaut si non authentifié.
+ */
+export async function getEffectiveCompanyId(): Promise<string> {
+  try {
+    const { data: authData } = await supabase.auth.getUser();
+    if (authData?.user?.id) {
+      const { data: comp } = await supabase
+        .from("companies")
+        .select("id")
+        .eq("user_id", authData.user.id)
+        .maybeSingle();
+
+      if (comp?.id) {
+        return comp.id;
+      }
+    }
+  } catch (err) {
+    console.warn("getEffectiveCompanyId fallback:", err);
+  }
+  return DEFAULT_COMPANY_ID;
+}
 
 export async function getCompany(): Promise<Company> {
+  const companyId = await getEffectiveCompanyId();
+
   const { data, error } = await supabase
     .from("companies")
     .select("*")
-    .eq("id", DEFAULT_COMPANY_ID)
+    .eq("id", companyId)
     .single();
 
   if (error || !data) {
     console.warn("Erreur chargement entreprise depuis Supabase:", error?.message);
     // Valeurs par défaut si indisponible
     return {
-      id: DEFAULT_COMPANY_ID,
+      id: companyId,
       userId: "",
       name: "ARTRIFF STUDIO",
       email: "contact@artriffstudio.com",
@@ -58,6 +84,8 @@ export async function getCompany(): Promise<Company> {
 export async function updateCompany(
   updates: Partial<Company>
 ): Promise<Company> {
+  const companyId = await getEffectiveCompanyId();
+
   const payload: Record<string, any> = {
     updated_at: new Date().toISOString(),
   };
@@ -79,7 +107,7 @@ export async function updateCompany(
   const { data, error } = await supabase
     .from("companies")
     .update(payload)
-    .eq("id", DEFAULT_COMPANY_ID)
+    .eq("id", companyId)
     .select()
     .single();
 

@@ -1,13 +1,14 @@
 import { supabase } from "@/lib/supabase";
 import { Client, ClientFormData, Invoice } from "@/lib/types";
-
-const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
+import { getEffectiveCompanyId } from "./companyService";
 
 export async function getClients(): Promise<Client[]> {
+  const companyId = await getEffectiveCompanyId();
+
   const { data: clientsData, error: clientError } = await supabase
     .from("clients")
     .select("*")
-    .eq("company_id", DEFAULT_COMPANY_ID)
+    .eq("company_id", companyId)
     .order("created_at", { ascending: false });
 
   if (clientError || !clientsData) {
@@ -19,7 +20,7 @@ export async function getClients(): Promise<Client[]> {
   const { data: invoicesData } = await supabase
     .from("invoices")
     .select("client_id, total, status")
-    .eq("company_id", DEFAULT_COMPANY_ID);
+    .eq("company_id", companyId);
 
   const statsByClient: Record<string, { count: number; revenue: number }> = {};
   if (invoicesData) {
@@ -124,11 +125,13 @@ export async function getClientById(
 }
 
 export async function createClient(data: ClientFormData): Promise<Client> {
+  const companyId = await getEffectiveCompanyId();
+
   const { data: created, error } = await supabase
     .from("clients")
     .insert([
       {
-        company_id: DEFAULT_COMPANY_ID,
+        company_id: companyId,
         name: data.name,
         email: data.email,
         phone: data.phone || null,

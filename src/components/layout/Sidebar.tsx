@@ -33,7 +33,7 @@ const mainNavItems: NavItem[] = [
     id: "dashboard",
     label: "Tableau de bord",
     description: "Vue d'ensemble de l'activité, indicateurs clés et registre des factures",
-    href: "/",
+    href: "/dashboard",
     icon: LayoutGrid,
   },
   {
@@ -120,7 +120,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   // Détection stricte et univoque de l'élément actif : UNE SEULE ICÔNE ACTIVE À LA FOIS
   const isItemActive = (item: NavItem) => {
     if (item.id === "dashboard") {
-      return pathname === "/";
+      return pathname === "/dashboard";
     }
     if (item.id === "invoices") {
       return pathname === "/invoices" || (pathname.startsWith("/invoices/") && pathname !== "/invoices/new");
@@ -168,7 +168,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             {/* Logo Link with Rich Tooltip */}
             <div className="relative group flex justify-center">
               <Link
-                href="/"
+                href="/dashboard"
                 onClick={onClose}
                 className="flex items-center gap-3 shrink-0"
               >

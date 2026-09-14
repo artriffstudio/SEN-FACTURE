@@ -90,7 +90,7 @@ export default function LoginPage() {
       }
 
       toast.success("Connexion réussie !");
-      router.push("/");
+      router.push("/dashboard");
       router.refresh();
     } catch (err: any) {
       setErrorMessage(err?.message || "Une erreur inattendue est survenue.");

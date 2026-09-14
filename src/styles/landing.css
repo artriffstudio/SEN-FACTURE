@@ -1,0 +1,287 @@
+/* ========================================================================= */
+/* SEN FACTURE — STYLES & ANIMATIONS DE LA LANDING PAGE                     */
+/* Aucun style inline — Structure CSS modulaire et optimisée                 */
+/* ========================================================================= */
+
+/* --- Keyframes Animations --- */
+@keyframes floatLeft {
+  0%, 100% {
+    transform: translate(0, 0) rotate(-4deg);
+  }
+  50% {
+    transform: translate(-10px, -18px) rotate(4deg);
+  }
+}
+
+@keyframes floatRight {
+  0%, 100% {
+    transform: translate(0, 0) rotate(5deg);
+  }
+  50% {
+    transform: translate(12px, -20px) rotate(-3deg);
+  }
+}
+
+@keyframes floatJackBack {
+  0%, 100% {
+    transform: translate(0, 0) scale(1) rotate(0deg);
+  }
+  50% {
+    transform: translate(6px, -14px) scale(1.04) rotate(12deg);
+  }
+}
+
+@keyframes marqueeScroll {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes pulseGlow {
+  0%, 100% {
+    opacity: 0.4;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: scale(1.05);
+  }
+}
+
+/* Défilement fluide horizontal pour mobile (Haut : Gauche vers Droite, Bas : Droite vers Gauche) */
+@keyframes driftLeftToRight {
+  0%, 100% {
+    transform: translateX(0px) translateY(0px) rotate(-2deg);
+  }
+  50% {
+    transform: translateX(35px) translateY(-6px) rotate(4deg);
+  }
+}
+
+@keyframes driftRightToLeft {
+  0%, 100% {
+    transform: translateX(0px) translateY(0px) rotate(2deg);
+  }
+  50% {
+    transform: translateX(-35px) translateY(6px) rotate(-4deg);
+  }
+}
+
+@keyframes arrowNudge {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(4px);
+  }
+}
+
+/* --- Classes d'Animation --- */
+.animate-float-left {
+  animation: floatLeft 7s ease-in-out infinite;
+}
+
+.animate-float-left-delayed {
+  animation: floatLeft 7s ease-in-out infinite -3s;
+}
+
+.animate-float-right {
+  animation: floatRight 8s ease-in-out infinite 1s;
+}
+
+.animate-float-right-delayed {
+  animation: floatRight 8s ease-in-out infinite -2s;
+}
+
+.animate-float-back {
+  animation: floatJackBack 9s ease-in-out infinite 0.5s;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
+}
+
+.animate-drift-left-to-right {
+  animation: driftLeftToRight 6s ease-in-out infinite;
+}
+
+.animate-drift-right-to-left {
+  animation: driftRightToLeft 6s ease-in-out infinite;
+}
+
+/* --- Marquee Défilant Infini --- */
+.animate-marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marqueeScroll 28s linear infinite;
+  will-change: transform;
+}
+
+.animate-marquee-track:hover {
+  animation-play-state: paused;
+}
+
+/* Masque dégradé sur les côtés pour un effet de fondu transparent élégant */
+.mask-fade-edges {
+  mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+  -webkit-mask-image: linear-gradient(to right, transparent, black 10%, black 90%, transparent);
+}
+
+/* --- 3D Jacks Organiques / Soft Crosses --- */
+.jack-shape {
+  position: relative;
+  filter: drop-shadow(0 25px 35px rgba(0, 0, 0, 0.12)) drop-shadow(0 10px 15px rgba(0, 0, 0, 0.06));
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.jack-shape:hover {
+  filter: drop-shadow(0 30px 45px rgba(0, 0, 0, 0.16)) drop-shadow(0 15px 20px rgba(0, 0, 0, 0.08));
+}
+
+.jack-arm {
+  position: absolute;
+  border-radius: 9999px;
+}
+
+/* Pilule 3D Clay Blanche / Porcelaine */
+.clay-white {
+  background: linear-gradient(135deg, #ffffff 0%, #f8fafc 40%, #e2e8f0 100%);
+  box-shadow:
+    inset 6px 6px 14px rgba(255, 255, 255, 0.95),
+    inset -6px -6px 14px rgba(148, 163, 184, 0.4),
+    0 20px 30px -10px rgba(100, 116, 139, 0.25);
+}
+
+/* Pilule 3D Clay Corail / Orange chaleureux */
+.clay-coral {
+  background: linear-gradient(135deg, #ff9f76 0%, #fa7543 50%, #d85222 100%);
+  box-shadow:
+    inset 6px 6px 14px rgba(255, 255, 255, 0.6),
+    inset -6px -6px 14px rgba(154, 38, 5, 0.5),
+    0 20px 35px -8px rgba(234, 88, 12, 0.35);
+}
+
+/* Pilule 3D Clay Bleu Ciel / Profond */
+.clay-blue {
+  background: linear-gradient(135deg, #93c5fd 0%, #3b82f6 60%, #1d4ed8 100%);
+  box-shadow:
+    inset 5px 5px 12px rgba(255, 255, 255, 0.5),
+    inset -5px -5px 12px rgba(30, 64, 175, 0.45);
+}
+
+/* Pilule 3D Clay Émeraude / Succès */
+.clay-emerald {
+  background: linear-gradient(135deg, #6ee7b7 0%, #10b981 50%, #047857 100%);
+  box-shadow:
+    inset 5px 5px 12px rgba(255, 255, 255, 0.5),
+    inset -5px -5px 12px rgba(4, 120, 87, 0.45);
+}
+
+/* --- Bouton CTA Principal Hero avec Micro-Animations Hover & Click --- */
+.hero-cta-btn {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 50%, #0c4a6e 100%);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 14px 0 rgba(2, 132, 199, 0.35);
+}
+
+.hero-cta-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 8px 25px 0 rgba(2, 132, 199, 0.45);
+  background: linear-gradient(135deg, #0369a1 0%, #0284c7 50%, #38bdf8 100%);
+}
+
+.hero-cta-btn:active {
+  transform: translateY(1px) scale(0.96);
+  box-shadow: 0 2px 8px 0 rgba(2, 132, 199, 0.3);
+  transition-duration: 0.1s;
+}
+
+.hero-cta-btn:hover .hero-cta-arrow {
+  transform: translateX(4px);
+}
+
+.hero-cta-arrow {
+  transition: transform 0.2s ease-in-out;
+}
+
+/* Lueur d'arrière-plan atmosphérique */
+.hero-atmospheric-glow {
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.18) 0%, rgba(249, 115, 22, 0.12) 40%, rgba(240, 249, 255, 0) 70%);
+}
+
+/* Navigation Pill Item */
+.nav-pill-item {
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-pill-item:hover {
+  transform: translateY(-1px);
+  background-color: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.nav-pill-item:active {
+  transform: scale(0.96);
+}
+
+/* Responsive Jack rotations via CSS classes (No inline styles) */
+.jack-rot-45 {
+  transform: rotate(45deg);
+}
+
+.jack-rot-neg-45 {
+  transform: rotate(-45deg);
+}
+
+.jack-rot-35 {
+  transform: rotate(35deg);
+}
+
+.jack-rot-neg-55 {
+  transform: rotate(-55deg);
+}
+
+.jack-rot-8 {
+  transform: rotate(8deg);
+}
+
+.jack-rot-42 {
+  transform: rotate(42deg);
+}
+
+.jack-rot-neg-48 {
+  transform: rotate(-48deg);
+}
+
+.jack-rot-6 {
+  transform: rotate(6deg);
+}
+
+.jack-rot-40 {
+  transform: rotate(40deg);
+}
+
+.jack-rot-neg-50 {
+  transform: rotate(-50deg);
+}
+
+.jack-rot-48 {
+  transform: rotate(48deg);
+}
+
+.jack-rot-neg-42 {
+  transform: rotate(-42deg);
+}
+
+.jack-rot-neg-10 {
+  transform: rotate(-10deg);
+}
+
+.jack-rot-2 {
+  transform: rotate(2deg);
+}
