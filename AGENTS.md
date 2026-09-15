@@ -8,7 +8,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# SEN FACTURE — RÈGLE DU DESIGN SYSTEM OBLIGATOIRE
+# FACTURIM — RÈGLE DU DESIGN SYSTEM OBLIGATOIRE (MAURITANIE)
 
 Toute création ou modification de composant, page, formulaire, tableau ou modale dans ce projet **DOIT OBLIGATOIREMENT** respecter ce Design System inspiré du Dashboard de référence.
 
@@ -29,8 +29,8 @@ Toute création ou modification de composant, page, formulaire, tableau ou modal
   * Icônes & textes interactifs : `text-sky-600` (`#0284c7`).
   * Gradients CTA primaires : `bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700`.
   * Fonds d'activation subtils : `bg-sky-50` (`#f0f9ff`) ou `bg-sky-100/90`.
-* **Statuts (SYSCOHADA / Sénégal)** :
-  * **Payée / Succès / Wave & Orange Money** : Fond `bg-emerald-50` ou `bg-emerald-100/80`, texte `text-emerald-700`, bordure `border-emerald-200/60`.
+* **Statuts & Moyens de paiement (Mauritanie)** :
+  * **Payée / Succès / Bankily, Seddap, Masrvi** : Fond `bg-emerald-50` ou `bg-emerald-100/80`, texte `text-emerald-700`, bordure `border-emerald-200/60`.
   * **En attente / Émission** : Fond `bg-amber-50` ou `bg-amber-100`, texte `text-amber-800`, bordure `border-amber-200/60`.
   * **En retard / Danger / Fichiers PDF** : Fond `bg-rose-50` ou `bg-rose-100`, texte `text-rose-700`.
 
@@ -89,11 +89,11 @@ Toute création ou modification de composant, page, formulaire, tableau ou modal
 ### 4.5 Standard Document Facture A4 & Téléchargement PDF
 * Tout document ou export PDF doit reproduire 100% fidèlement la facture A4 de l'aperçu :
   * Dimensions : 794px x 1123px (A4 à 96 DPI).
-  * En-tête : Carré noir `SF`, titre *SEN FACTURE*, *Teranga Digital SARL*, NINEA *SN-009876543-2B*, RC et téléphone.
+  * En-tête : Carré noir `FI`, titre *FACTURIM*, *Facturim Mauritanie SARL*, NIF *00987654-MR*, RC et téléphone.
   * Cartouche Destinataire : Fond `bg-slate-50`, bordure `border-slate-200`, pastille de statut.
-  * Tableau : Entête avec bordure `border-b-2 border-slate-900`, quantités, prix unitaires et sous-totaux FCFA.
-  * Totaux : Sous-total HT, TVA 18%, et Total Net TTC en grand bleu ciel bold (`#0284c7`).
-  * Modalités : Wave Mobile Money, Orange Money, virement bancaire BICIS, et mention légale SYSCOHADA / Sénégal.
+  * Tableau : Entête avec bordure `border-b-2 border-slate-900`, quantités, prix unitaires et sous-totaux MRU.
+  * Totaux : Sous-total HT, TVA 16%, et Total Net TTC en grand bleu ciel bold (`#0284c7`).
+  * Modalités : Bankily (BPM), Seddap, Masrvi, virement bancaire BPM, et mention légale DGI / Mauritanie.
 
 ---
 
@@ -105,9 +105,9 @@ Toute création ou modification de composant, page, formulaire, tableau ou modal
 
 ---
 
-## 6. Localisation & Données Métier
-* **Langue** : **100% Français**.
-* **Devise** : Franc CFA (`FCFA` ou `F`), formatage `toLocaleString("fr-FR")` (ex: `2 500 000 FCFA`).
-* **Fiscalité** : TVA légale 18% (SYSCOHADA / UEMOA / Sénégal).
+## 6. Localisation & Données Métier (Mauritanie)
+* **Langues** : **Arabe (العربية - RTL)**, **Français (FR)**, **Anglais (EN)**, **Chinois (中文 - ZH)**.
+* **Devise** : Ouguiya mauritanienne (**MRU**), formatage `toLocaleString("fr-FR")` (ex: `250 000 MRU` ou `250 000 أوقية`).
+* **Fiscalité** : TVA légale **16%** (Direction Générale des Impôts - DGI Mauritanie).
+* **Identifiant Fiscal** : Numéro d'Identification Fiscale (**NIF**).
 * **Navigation** : Détection stricte d'URL, **une seule icône active à la fois**.
-

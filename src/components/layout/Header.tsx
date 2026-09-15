@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import toast from "react-hot-toast";
 import Tooltip from "@/components/ui/Tooltip";
+import LanguageSelector from "@/components/ui/LanguageSelector";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface HeaderProps {
   onMenuClick: () => void;
@@ -21,14 +23,22 @@ interface HeaderProps {
 
 export default function Header({
   onMenuClick,
-  title = "SEN FACTURE",
-  breadcrumbs = ["Ventes", "Clients", "SEN FACTURE"],
+  title,
+  breadcrumbs,
 }: HeaderProps) {
+  const { t } = useTranslation();
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [headerSearchQuery, setHeaderSearchQuery] = useState("");
 
+  const effectiveTitle = title || t.brandName;
+  const effectiveBreadcrumbs = breadcrumbs || [
+    t.nav.invoices,
+    t.nav.clients,
+    t.brandName,
+  ];
+
   const handleQuickWhatsAppShare = () => {
-    const text = "Bonjour, bienvenue sur SEN FACTURE. Comment pouvons-nous vous aider aujourd'hui ?";
+    const text = `Bonjour, bienvenue sur ${t.brandName} Mauritanie. Comment pouvons-nous vous aider aujourd'hui ?`;
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank");
     toast.success("Lien WhatsApp ouvert !");
   };
@@ -73,21 +83,21 @@ export default function Header({
           </button>
         </Tooltip>
 
-        {/* Title and Breadcrumbs in French */}
+        {/* Title and Breadcrumbs */}
         <div className="flex flex-col justify-center min-w-0">
           <div className="flex items-center gap-2">
             <h1 className="text-base sm:text-lg font-bold text-slate-900 truncate leading-tight tracking-tight">
-              {title}
+              {effectiveTitle}
             </h1>
             <span className="hidden sm:inline-block bg-sky-100 text-sky-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              SaaS Pro
+              {t.countryName} Pro
             </span>
           </div>
           <div className="flex items-center gap-1.5 text-xs text-slate-500 truncate mt-0.5">
-            {breadcrumbs.map((crumb, idx) => (
+            {effectiveBreadcrumbs.map((crumb, idx) => (
               <span key={idx} className="flex items-center gap-1.5">
                 {idx > 0 && <span className="text-slate-300">›</span>}
-                <span className={idx === breadcrumbs.length - 1 ? "text-slate-600 font-medium" : ""}>
+                <span className={idx === effectiveBreadcrumbs.length - 1 ? "text-slate-600 font-medium" : ""}>
                   {crumb}
                 </span>
               </span>
@@ -96,7 +106,7 @@ export default function Header({
         </div>
       </div>
 
-      {/* Right side: Action icons, search bar and Primary CTA */}
+      {/* Right side: Action icons, search bar, language selector and Primary CTA */}
       <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
         {/* Barre de recherche directe dans le Header (Desktop) */}
         <div className="hidden md:flex items-center gap-2 bg-slate-50 border border-slate-200/90 rounded-xl px-2.5 py-1.5 focus-within:border-sky-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-sky-100 hover:border-slate-300 transition-all shadow-2xs hover:shadow-xs">
@@ -107,8 +117,8 @@ export default function Header({
             type="text"
             value={headerSearchQuery}
             onChange={(e) => handleHeaderSearch(e.target.value)}
-            placeholder="Rechercher une facture..."
-            className="bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none w-32 lg:w-44"
+            placeholder={t.invoices.searchPlaceholder}
+            className="bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none w-28 lg:w-40"
           />
           {headerSearchQuery && (
             <button
@@ -142,7 +152,7 @@ export default function Header({
           </button>
         </Tooltip>
 
-        {/* Partage rapide WhatsApp avec hover indicatif */}
+        {/* Partage rapide WhatsApp */}
         <Tooltip content="WhatsApp Business" icon={Share2} position="bottom">
           <button
             onClick={handleQuickWhatsAppShare}
@@ -152,8 +162,11 @@ export default function Header({
           </button>
         </Tooltip>
 
-        {/* LE SEUL BOUTON CTA PRIMAIRE : + Nouvelle Facture (adapté et responsive) */}
-        <Tooltip content="Nouvelle facture" icon={Plus} position="bottom">
+        {/* Sélecteur de Langue Multilingue (FR / AR / EN / ZH) */}
+        <LanguageSelector variant="pill" />
+
+        {/* LE SEUL BOUTON CTA PRIMAIRE : + Nouvelle Facture */}
+        <Tooltip content={t.invoices.newInvoice} icon={Plus} position="bottom">
           <button
             onClick={() => {
               if (typeof window !== "undefined") {
@@ -163,8 +176,8 @@ export default function Header({
             className="flex items-center gap-1 sm:gap-1.5 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 active:from-sky-700 active:to-sky-800 text-white font-bold text-xs px-2.5 sm:px-4 py-1.5 sm:py-2 rounded-xl shadow-md shadow-sky-500/20 hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 shrink-0 cursor-pointer"
           >
             <Plus size={15} className="stroke-[2.5]" />
-            <span className="hidden sm:inline">Nouvelle facture</span>
-            <span className="sm:hidden">Facture</span>
+            <span className="hidden sm:inline">{t.invoices.newInvoice}</span>
+            <span className="sm:hidden">{t.nav.quickInvoice}</span>
           </button>
         </Tooltip>
       </div>
@@ -179,7 +192,7 @@ export default function Header({
               autoFocus
               value={headerSearchQuery}
               onChange={(e) => handleHeaderSearch(e.target.value)}
-              placeholder="Rechercher par client, référence..."
+              placeholder={t.invoices.searchPlaceholder}
               className="bg-transparent text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none w-full"
             />
           </div>

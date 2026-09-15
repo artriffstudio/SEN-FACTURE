@@ -18,6 +18,7 @@ import {
 import toast from "react-hot-toast";
 import Tooltip from "@/components/ui/Tooltip";
 import { createSupportTicket } from "@/lib/services/supportService";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface FAQItem {
   question: string;
@@ -25,46 +26,47 @@ interface FAQItem {
   category: string;
 }
 
-const faqData: FAQItem[] = [
-  {
-    category: "Fiscalité & TVA",
-    question: "Comment fonctionne la TVA à 18% selon le code général des impôts sénégalais ?",
-    answer:
-      "SEN FACTURE calcule automatiquement la TVA standard de 18% en vigueur au Sénégal et dans la zone UEMOA. Vous pouvez également émettre des factures exonérées à 0% pour les exportations ou les régimes dérogatoires agréés (Code des Investissements).",
-  },
-  {
-    category: "Règlements & Mobile Money",
-    question: "Comment mes clients peuvent-ils régler leurs factures par Wave et Orange Money ?",
-    answer:
-      "Chaque facture générée intègre automatiquement vos coordonnées Wave Mobile Money et Orange Money dans son cartouche de modalités, ainsi que vos identifiants bancaires (RIB / BICIS). Vos clients peuvent ainsi procéder au paiement immédiatement dès réception de la facture.",
-  },
-  {
-    category: "Conformité Légale",
-    question: "Les factures PDF générées sont-elles certifiées et opposables fiscalement ?",
-    answer:
-      "Oui. Tous les documents PDF A4 émis comportent votre numéro NINEA officiel, votre Registre de Commerce (RC), la numérotation séquentielle inviolable et les mentions légales obligatoires selon le référentiel SYSCOHADA Révisé.",
-  },
-  {
-    category: "Comptabilité",
-    question: "Puis-je exporter le grand livre de mes factures vers mon logiciel comptable ?",
-    answer:
-      "Absolument. Depuis l'onglet Rapports ou depuis le registre des factures, vous pouvez exporter en un clic un fichier CSV/Excel conforme aux comptes du plan comptable SYSCOHADA (Comptes 701, 411 et 443).",
-  },
-  {
-    category: "Sécurité des Données",
-    question: "Où sont hébergées et conservées mes factures professionnelles ?",
-    answer:
-      "Vos factures sont conservées et archivées avec redondance et chiffrement de bout en bout conformément à l'obligation légale de conservation des pièces justificatives comptables pendant 10 ans au Sénégal.",
-  },
-];
-
 export default function SupportPage() {
+  const { t } = useTranslation();
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
   const [ticketSubject, setTicketSubject] = useState("");
   const [ticketCategory, setTicketCategory] = useState("billing");
   const [ticketPriority, setTicketPriority] = useState("normal");
   const [ticketMessage, setTicketMessage] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const faqData: FAQItem[] = [
+    {
+      category: `${t.vatRateLabel} & DGI`,
+      question: "Comment fonctionne la TVA à 16% selon le code général des impôts mauritanien ?",
+      answer:
+        "Facturim calcule automatiquement la TVA standard de 16% en vigueur en République Islamique de Mauritanie (DGI). Vous pouvez également émettre des factures exonérées à 0% pour les exportations ou régimes dérogatoires.",
+    },
+    {
+      category: "Bankily & Masrvi (Moosyl)",
+      question: "Comment mes clients peuvent-ils régler leurs factures par Bankily et Masrvi ?",
+      answer:
+        "Chaque facture générée intègre automatiquement vos coordonnées Bankily (BPM) et Masrvi / Seddap dans son cartouche de modalités avec QR Code Moosyl, ainsi que vos identifiants bancaires RIB.",
+    },
+    {
+      category: "Conformité NIF & DGI",
+      question: "Les factures PDF générées sont-elles certifiées et opposables fiscalement en Mauritanie ?",
+      answer:
+        "Oui. Tous les documents PDF A4 émis comportent votre numéro NIF officiel, votre Registre de Commerce (RC), la numérotation séquentielle inviolable et les mentions légales conformes à la Direction Générale des Impôts.",
+    },
+    {
+      category: "Comptabilité & Grand Livre",
+      question: "Puis-je exporter le grand livre de mes factures vers mon logiciel comptable ?",
+      answer:
+        "Absolument. Depuis l'onglet Rapports, vous pouvez exporter en un clic un fichier CSV/Excel conforme aux écritures comptables en Ouguiya (MRU).",
+    },
+    {
+      category: "Sécurité & Archivage",
+      question: "Où sont hébergées et conservées mes factures professionnelles ?",
+      answer:
+        "Vos factures sont conservées et archivées avec chiffrement et redondance conformément aux obligations légales de conservation des pièces comptables en Mauritanie.",
+    },
+  ];
 
   const handleSendTicket = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -84,7 +86,7 @@ export default function SupportPage() {
         message: ticketMessage.trim(),
       });
       toast.success(
-        "Votre ticket a été enregistré avec succès dans Supabase ! Un conseiller SEN FACTURE vous répondra sous 2 heures.",
+        "Votre ticket a été enregistré avec succès ! Notre équipe à Nouakchott vous répondra sous 2 heures.",
         { id: "ticket", duration: 5000 }
       );
       setTicketSubject("");
@@ -98,9 +100,9 @@ export default function SupportPage() {
 
   const handleOpenWhatsApp = () => {
     const text =
-      "Bonjour le support SEN FACTURE, je vous contacte concernant une assistance sur mon compte de facturation.";
-    window.open(`https://wa.me/221778901234?text=${encodeURIComponent(text)}`, "_blank");
-    toast.success("Redirection vers WhatsApp Business");
+      "Bonjour le support Facturim Mauritanie, je vous contacte concernant une assistance sur mon compte.";
+    window.open(`https://wa.me/22245250000?text=${encodeURIComponent(text)}`, "_blank");
+    toast.success("Redirection vers WhatsApp Business Mauritanie");
   };
 
   return (
@@ -112,15 +114,15 @@ export default function SupportPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Assistance & Support Client
+              {t.support.title}
             </h1>
             <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-              Équipe en direct
+              Nouakchott Support
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Une équipe dédiée basée à Dakar pour vous accompagner dans votre facturation et votre fiscalité SYSCOHADA.
+            {t.support.subtitle}
           </p>
         </div>
 
@@ -143,17 +145,17 @@ export default function SupportPage() {
                 <MessageCircle size={20} />
               </div>
               <span className="bg-emerald-50 text-emerald-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                Le plus rapide
+                WhatsApp Direct
               </span>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">WhatsApp Business Direct</h3>
+              <h3 className="text-sm font-bold text-slate-900">{t.support.whatsappTitle}</h3>
               <p className="text-xs text-slate-500 mt-1">
-                Échangez en direct avec un chargé d&apos;assistance pour toute question urgente sur une facture ou un encaissement.
+                Échangez en direct avec un conseiller à Nouakchott pour toute question urgente sur une facture ou un encaissement.
               </p>
             </div>
             <p className="font-mono text-sm font-bold text-slate-800">
-              +221 77 890 12 34
+              +222 45 25 00 00
             </p>
           </div>
 
@@ -168,7 +170,7 @@ export default function SupportPage() {
           </Tooltip>
         </div>
 
-        {/* Canal 2 : Hotline Téléphonique Dakar */}
+        {/* Canal 2 : Hotline Téléphonique Nouakchott */}
         <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm flex flex-col justify-between space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -176,28 +178,28 @@ export default function SupportPage() {
                 <Phone size={20} />
               </div>
               <span className="bg-sky-50 text-sky-700 text-[10px] font-extrabold px-2 py-0.5 rounded-full">
-                Dakar Plateau
+                Tevragh Zeina
               </span>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Hotline Téléphonique</h3>
+              <h3 className="text-sm font-bold text-slate-900">{t.support.hotlineTitle}</h3>
               <p className="text-xs text-slate-500 mt-1">
                 Ligne d&apos;assistance réservée aux entreprises abonnées du lundi au samedi.
               </p>
             </div>
             <p className="font-mono text-sm font-bold text-slate-800">
-              +221 33 820 45 67
+              {t.support.hotlineNumber}
             </p>
             <div className="text-[11px] text-slate-400 flex items-center gap-1.5">
               <Clock size={12} />
-              <span>08h30 – 18h30 (Heure de Dakar)</span>
+              <span>08h30 – 18h30 (Heure de Nouakchott)</span>
             </div>
           </div>
 
           <Tooltip content="Copier le numéro" icon={Phone}>
             <button
               onClick={() => {
-                navigator.clipboard.writeText("+221 33 820 45 67");
+                navigator.clipboard.writeText("+222 45 25 00 00");
                 toast.success("Numéro de téléphone copié dans le presse-papier !");
               }}
               className="w-full flex items-center justify-center gap-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 font-bold text-xs py-2.5 px-4 rounded-xl shadow-2xs transition-all hover:scale-102 active:scale-98 cursor-pointer"
@@ -220,20 +222,20 @@ export default function SupportPage() {
               </span>
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Assistance Email & Fiscale</h3>
+              <h3 className="text-sm font-bold text-slate-900">{t.support.emailTitle}</h3>
               <p className="text-xs text-slate-500 mt-1">
-                Pour l&apos;envoi de pièces justificatives, questions relatives aux régularisations TVA ou contrats.
+                Pour l&apos;envoi de pièces justificatives, questions relatives aux déclarations TVA 16% ou contrats.
               </p>
             </div>
             <p className="font-mono text-sm font-bold text-slate-800">
-              support@senfacture.sn
+              support@facturim.mr
             </p>
           </div>
 
           <Tooltip content="Envoyer un email" icon={Mail}>
             <button
               onClick={() => {
-                window.location.href = "mailto:support@senfacture.sn?subject=Demande d'assistance SEN FACTURE";
+                window.location.href = "mailto:support@facturim.mr?subject=Demande d'assistance Facturim";
               }}
               className="w-full flex items-center justify-center gap-2 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/80 font-bold text-xs py-2.5 px-4 rounded-xl shadow-2xs transition-all hover:scale-102 active:scale-98 cursor-pointer"
             >
@@ -253,10 +255,10 @@ export default function SupportPage() {
           <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900">
-                Ouvrir un ticket d&apos;assistance
+                {t.support.ticketFormTitle}
               </h2>
               <p className="text-xs text-slate-500">
-                Renseignez votre demande pour une prise en charge rapide par nos techniciens
+                Renseignez votre demande pour une prise en charge rapide par nos techniciens à Nouakchott.
               </p>
             </div>
             <span className="text-[10px] font-extrabold uppercase px-2 py-0.5 bg-slate-100 text-slate-600 rounded-md">
@@ -268,25 +270,25 @@ export default function SupportPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Catégorie de la demande
+                  Catégorie
                 </label>
                 <select
                   value={ticketCategory}
                   onChange={(e) => setTicketCategory(e.target.value)}
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
                 >
-                  <option value="billing">Factures & Numérotation séquentielle</option>
-                  <option value="tax">Fiscalité & Déclaration TVA 18% (DGID)</option>
-                  <option value="payment">Paiements Mobile Money (Wave / OM)</option>
-                  <option value="pdf">Génération et export PDF A4</option>
-                  <option value="account">Paramètres de l&apos;entreprise & NINEA</option>
+                  <option value="billing">Factures &amp; Numérotation DGI</option>
+                  <option value="tax">Fiscalité &amp; TVA 16% (Mauritanie)</option>
+                  <option value="payment">Paiements Moosyl (Bankily / Masrvi)</option>
+                  <option value="pdf">Génération &amp; Export PDF A4</option>
+                  <option value="account">Paramètres d&apos;entreprise &amp; NIF</option>
                   <option value="other">Autre demande générale</option>
                 </select>
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Niveau de priorité
+                  {t.support.priority}
                 </label>
                 <select
                   value={ticketPriority}
@@ -302,21 +304,21 @@ export default function SupportPage() {
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                Objet du ticket *
+                {t.support.subject} *
               </label>
               <input
                 type="text"
                 required
                 value={ticketSubject}
                 onChange={(e) => setTicketSubject(e.target.value)}
-                placeholder="Ex: Question sur la conformité de l'exonération TVA"
+                placeholder="Ex: Configuration du compte Bankily ou déclaration TVA"
                 className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
               />
             </div>
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                Description détaillée *
+                {t.support.message} *
               </label>
               <textarea
                 required
@@ -331,17 +333,17 @@ export default function SupportPage() {
             <div className="pt-3 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2.5 sm:gap-4">
               <div className="text-[11px] text-slate-500 flex items-center gap-1.5 min-w-0">
                 <ShieldCheck size={14} className="text-sky-600 shrink-0" />
-                <span className="truncate">Ticket horodaté et certifié Teranga Digital</span>
+                <span className="truncate">Ticket sécurisé Facturim Mauritanie</span>
               </div>
 
-              {/* Bouton CTA Primaire du Design System (redimensionné pour mobile) */}
+              {/* Bouton CTA Primaire du Design System */}
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 active:from-sky-700 active:to-sky-800 text-white font-bold text-xs px-3.5 py-2 sm:px-4 sm:py-2.5 rounded-xl shadow-md shadow-sky-500/20 hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer disabled:opacity-50 shrink-0 self-end sm:self-auto"
               >
                 <Send size={14} className="shrink-0" />
-                <span>{isSubmitting ? "Envoi..." : "Envoyer le ticket"}</span>
+                <span>{isSubmitting ? "..." : t.support.sendTicket}</span>
               </button>
             </div>
           </form>
@@ -353,7 +355,7 @@ export default function SupportPage() {
             <div className="flex items-center gap-2">
               <HelpCircle size={18} className="text-sky-600" />
               <h2 className="text-sm sm:text-base font-bold text-slate-900">
-                Questions Fréquentes (FAQ)
+                {t.support.faqTitle}
               </h2>
             </div>
             <span className="text-xs text-slate-400">5 réponses</span>
@@ -406,10 +408,10 @@ export default function SupportPage() {
           <div className="pt-3 border-t border-slate-100 text-xs text-slate-500 space-y-1">
             <div className="flex items-center gap-1.5 font-bold text-slate-800">
               <MapPin size={14} className="text-sky-600" />
-              <span>Bureaux & Centre d&apos;accueil :</span>
+              <span>Bureaux &amp; Centre de support :</span>
             </div>
             <p className="text-[11px] pl-5">
-              46 Boulevard de la République, Dakar Plateau, Sénégal
+              Avenue du Roi Fayçal, Tevragh Zeina, Nouakchott, Mauritanie
             </p>
           </div>
         </div>

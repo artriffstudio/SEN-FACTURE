@@ -4,9 +4,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowRight } from "lucide-react";
 import JackShape from "./JackShape";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function LandingHero() {
   const router = useRouter();
+  const { currentLanguage } = useLanguage();
+  const isAr = currentLanguage === "ar";
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -40,9 +43,9 @@ export default function LandingHero() {
       <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 text-center w-full my-auto">
         {/* Titre Principal percutant avec grand gradient */}
         <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-slate-950 tracking-tight leading-[1.08] mb-10 sm:mb-12">
-          Bienvenue dans votre <br className="hidden sm:block" />
+          {isAr ? "مرحباً بكم في" : "Bienvenue dans votre"} <br className="hidden sm:block" />
           <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-950 via-sky-800 to-sky-600">
-            solution de facturation
+            {isAr ? "منصة الفوترة والتحصيل" : "solution de facturation"}
           </span>
         </h1>
 
@@ -56,7 +59,7 @@ export default function LandingHero() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Entrez votre email professionnel"
+              placeholder={isAr ? "أدخل بريدك الإلكتروني المهني" : "Entrez votre email professionnel"}
               required
               className="w-full px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-base bg-transparent border-none focus:ring-0 text-slate-900 placeholder-slate-400 outline-none"
             />
@@ -65,7 +68,7 @@ export default function LandingHero() {
               disabled={isSubmitting}
               className="hero-cta-btn shrink-0 px-5 sm:px-7 py-3 text-white font-bold text-xs sm:text-base rounded-full flex items-center space-x-2 cursor-pointer select-none"
             >
-              <span>{isSubmitting ? "Chargement..." : "Commencer gratuitement"}</span>
+              <span>{isSubmitting ? (isAr ? "جاري التحميل..." : "Chargement...") : (isAr ? "ابدأ مجاناً" : "Commencer gratuitement")}</span>
               <ArrowRight size={16} className="hero-cta-arrow stroke-[2.5]" />
             </button>
           </form>

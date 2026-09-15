@@ -18,6 +18,8 @@ import {
   Printer,
   Sparkles,
   ChevronRight,
+  Globe,
+  QrCode,
 } from "lucide-react";
 import toast from "react-hot-toast";
 import { downloadInvoicePDF } from "@/lib/pdfGenerator";
@@ -25,6 +27,7 @@ import { getClients, createClient } from "@/lib/services/clientService";
 import { createInvoice } from "@/lib/services/invoiceService";
 import { getCompany } from "@/lib/services/companyService";
 import { Client } from "@/lib/types";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface InvoiceItem {
   id: string;
@@ -44,6 +47,8 @@ export default function LiveInvoiceModal({
   onClose,
   onInvoiceCreated,
 }: LiveInvoiceModalProps) {
+  const { t, formatMoney } = useTranslation();
+
   // Mode mobile : bascule entre "formulaire" et "aperçu"
   const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
 
@@ -61,16 +66,17 @@ export default function LiveInvoiceModal({
   const [dueDate, setDueDate] = useState(
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
   );
-  const [paymentTerms, setPaymentTerms] = useState("Paiement sous 30 jours");
-  const [taxRate, setTaxRate] = useState<number>(18); // TVA standard Sénégal : 18%
+  const [paymentTerms, setPaymentTerms] = useState("Paiement à 30 jours nets");
+  const [taxRate, setTaxRate] = useState<number>(16); // TVA standard Mauritanie : 16%
+  const [docLang, setDocLang] = useState<"bilingual" | "fr" | "ar">("bilingual");
   const [notes, setNotes] = useState(
-    "Merci pour votre confiance. Règlements acceptés par virement bancaire, chèque ou Mobile Money (Wave / Orange Money)."
+    "Merci pour votre confiance. Règlements acceptés par virement bancaire BPM ou Mobile Money (Bankily : +222 45 12 34 56 / Masrvi / Seddap)."
   );
 
   const [items, setItems] = useState<InvoiceItem[]>([
     {
       id: "1",
-      description: "Prestation de service",
+      description: "Prestation de service & ingénierie",
       quantity: 1,
       unitPrice: 0,
     },
@@ -101,132 +107,158 @@ export default function LiveInvoiceModal({
         }
       }
     });
+
+    if (typeof window !== "undefined") {
+      const stored =
+        localStorage.getItem("facturim_company_logo") ||
+        localStorage.getItem("sen_facture_company_logo");
+      if (stored) setCompanyLogo(stored);
+    }
   }, [isOpen]);
 
-  useEffect(() => {
-    const updateLogo = () => {
-      if (typeof window !== "undefined") {
-        const saved = localStorage.getItem("sen_facture_company_logo");
-        setCompanyLogo(saved || null);
-      }
-    };
-    updateLogo();
-    window.addEventListener("company-logo-updated", updateLogo);
-    return () => window.removeEventListener("company-logo-updated", updateLogo);
-  }, []);
-
-  // Client sélectionné
+  // Client actuellement sélectionné
   const currentClient = useMemo(() => {
     if (selectedClientId === "custom") {
       return {
-        name: customClientName || "Nouveau Client Entreprise",
-        email: "client@entreprise.sn",
-        phone: "+221 77 000 00 00",
-        address: "Dakar, Sénégal",
-        taxId: "NINEA-EN-COURS",
+        name: customClientName || "Client Professionnel",
+        address: "Nouakchott, Mauritanie",
+        email: "contact@client.mr",
+        phone: "+222 45 00 00 00",
+        taxId: "00123456-MR",
       };
     }
-    return (
-      clientsList.find((c) => c.id === selectedClientId) || {
-        name: "Client Inconnu",
-        email: "contact@client.sn",
-        phone: "+221 33 000 00 00",
-        address: "Dakar, Sénégal",
-        taxId: "NINEA-0000000",
-      }
-    );
+    const found = clientsList.find((c) => c.id === selectedClientId);
+    if (found) {
+      return {
+        name: found.name,
+        address: found.address || `${found.city || "Nouakchott"}, Mauritanie`,
+        email: found.email,
+        phone: found.phone || "+222 45 00 00 00",
+        taxId: found.taxId || "NIF non renseigné",
+      };
+    }
+    return {
+      name: customClientName || "Client Professionnel",
+      address: "Nouakchott, Mauritanie",
+      email: "contact@client.mr",
+      phone: "+222 45 00 00 00",
+      taxId: "00123456-MR",
+    };
   }, [selectedClientId, customClientName, clientsList]);
 
-  // Calculs en temps réel
+  // Calculs financiers automatiques
   const subtotal = useMemo(() => {
-    return items.reduce((acc, item) => acc + item.quantity * item.unitPrice, 0);
+    return items.reduce((acc, it) => acc + (it.quantity || 0) * (it.unitPrice || 0), 0);
   }, [items]);
 
   const taxAmount = useMemo(() => {
-    return Math.round((subtotal * taxRate) / 100);
+    return Math.round(subtotal * (taxRate / 100));
   }, [subtotal, taxRate]);
 
   const total = useMemo(() => {
     return subtotal + taxAmount;
   }, [subtotal, taxAmount]);
 
-  // Gestion des articles
+  // Gestion des lignes de prestations
   const handleAddItem = () => {
     setItems((prev) => [
       ...prev,
       {
-        id: Date.now().toString(),
-        description: "Nouvelle prestation ou article",
+        id: String(Date.now()),
+        description: "Nouvelle prestation",
         quantity: 1,
-        unitPrice: 100000,
+        unitPrice: 0,
       },
     ]);
   };
 
   const handleRemoveItem = (id: string) => {
     if (items.length <= 1) {
-      toast.error("Une facture doit comporter au moins un article");
+      toast.error("La facture doit comporter au moins une ligne");
       return;
     }
     setItems((prev) => prev.filter((it) => it.id !== id));
   };
 
-  const handleUpdateItem = (
+  const handleItemChange = (
     id: string,
     field: keyof InvoiceItem,
-    value: any
+    value: string | number
   ) => {
     setItems((prev) =>
-      prev.map((it) => (it.id === id ? { ...it, [field]: value } : it))
+      prev.map((it) => {
+        if (it.id === id) {
+          return { ...it, [field]: value };
+        }
+        return it;
+      })
     );
   };
 
   // Enregistrer la facture dans Supabase
-  const handleSaveInvoice = async () => {
-    if (isSaving) return;
-    try {
-      setIsSaving(true);
-      toast.loading("Enregistrement dans Supabase...", { id: "save-inv" });
+  const handleSaveInvoice = async (markAsSent: boolean = false) => {
+    if (items.some((it) => !it.description.trim() || it.unitPrice <= 0)) {
+      toast.error("Veuillez renseigner un intitulé et un tarif unitaire pour chaque ligne.");
+      return;
+    }
 
+    setIsSaving(true);
+    toast.loading("Enregistrement de la facture...", { id: "save-inv" });
+
+    try {
       let finalClientId = selectedClientId;
-      if (selectedClientId === "custom" || !selectedClientId) {
-        const createdClient = await createClient({
-          name: customClientName.trim() || "Nouveau Client Entreprise",
-          email: "contact@entreprise.sn",
-          phone: "+221 77 000 00 00",
-          address: "Dakar, Sénégal",
-          country: "Sénégal",
+
+      // Si le client est nouveau / personnalisé, le créer d'abord
+      if (selectedClientId === "custom") {
+        if (!customClientName.trim()) {
+          toast.error("Veuillez renseigner le nom du client.", { id: "save-inv" });
+          setIsSaving(false);
+          return;
+        }
+        const newC = await createClient({
+          name: customClientName,
+          email: `${customClientName.toLowerCase().replace(/\s+/g, "")}@client.mr`,
+          city: "Nouakchott",
+          country: "Mauritanie",
+          address: "Avenue Moktar Ould Daddah",
         });
-        finalClientId = createdClient.id;
+        if (newC) {
+          finalClientId = newC.id;
+        }
       }
 
-      const created = await createInvoice({
+      const invoicePayload = {
         clientId: finalClientId,
+        invoiceNumber,
+        status: markAsSent ? ("sent" as const) : ("draft" as const),
         issueDate,
         dueDate,
-        status: "sent",
-        notes,
+        taxRate,
+        notes: notes || undefined,
         items: items.map((it) => ({
           description: it.description,
-          quantity: it.quantity,
-          unitPrice: it.unitPrice,
-          total: it.quantity * it.unitPrice,
+          quantity: Number(it.quantity) || 1,
+          unitPrice: Number(it.unitPrice) || 0,
         })),
-      });
+      };
 
-      toast.success(`Facture ${created.invoiceNumber} enregistrée dans Supabase !`, {
-        id: "save-inv",
-      });
+      const created = await createInvoice(invoicePayload as any);
 
-      if (onInvoiceCreated) {
-        onInvoiceCreated(created);
-      }
-      if (typeof window !== "undefined") {
-        window.dispatchEvent(
-          new CustomEvent("invoice-created", { detail: created })
+      if (created) {
+        toast.success(
+          `Facture ${invoiceNumber} enregistrée avec succès !`,
+          { id: "save-inv" }
         );
+        if (onInvoiceCreated) {
+          onInvoiceCreated(created);
+        }
+        if (typeof window !== "undefined") {
+          window.dispatchEvent(new CustomEvent("invoice-created", { detail: created }));
+        }
+        onClose();
+      } else {
+        throw new Error("Échec de création");
       }
-      onClose();
     } catch (err: any) {
       console.error(err);
       toast.error(
@@ -240,10 +272,11 @@ export default function LiveInvoiceModal({
 
   // Partager sur WhatsApp
   const handleWhatsAppShare = () => {
-    const message = `Bonjour ${currentClient.name},\nVoici votre facture *${invoiceNumber}* d'un montant de *${total.toLocaleString("fr-FR")} FCFA* émise par SEN FACTURE.\nDate d'échéance : ${dueDate}.\nMerci de votre confiance !`;
+    const payLink = `https://facturim.mr/pay/${invoiceNumber}`;
+    const message = `Bonjour ${currentClient.name},\nVoici votre facture *${invoiceNumber}* d'un montant de *${total.toLocaleString("fr-FR")} MRU* émise par Facturim.\nDate d'échéance : ${dueDate}.\n\n💳 Régler en 1 clic via Bankily ou Masrvi : ${payLink}\n\nMerci de votre confiance !`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
-    toast.success("Lien WhatsApp généré !");
+    toast.success("Lien WhatsApp généré avec accès paiement Moosyl !");
   };
 
   // Télécharger le PDF officiel de la facture
@@ -259,6 +292,7 @@ export default function LiveInvoiceModal({
       total: total,
       taxRate: taxRate,
       paymentTerms: paymentTerms,
+      documentLanguage: docLang,
       items: items.map((it) => ({
         id: it.id,
         description: it.description,
@@ -270,11 +304,15 @@ export default function LiveInvoiceModal({
       logoUrl: companyLogo || undefined,
     };
 
-    toast.loading("Génération du document A4...", { id: "pdf-gen" });
-    const ok = await downloadInvoicePDF(invoiceData);
-    if (ok) {
-      toast.success(`Facture ${invoiceNumber} téléchargée en PDF !`, { id: "pdf-gen" });
-    } else {
+    toast.loading("Génération du document A4 certifié...", { id: "pdf-gen" });
+    try {
+      const ok = await downloadInvoicePDF(invoiceData);
+      if (ok) {
+        toast.success(`Facture ${invoiceNumber} téléchargée en PDF !`, { id: "pdf-gen" });
+      } else {
+        toast.error("Erreur lors de la création du fichier PDF", { id: "pdf-gen" });
+      }
+    } catch {
       toast.error("Erreur lors de la création du fichier PDF", { id: "pdf-gen" });
     }
   };
@@ -285,241 +323,266 @@ export default function LiveInvoiceModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 lg:p-6 overflow-y-auto">
       <div className="relative w-full max-w-7xl bg-slate-50 rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[96vh] overflow-hidden">
         {/* ======================================================== */}
-        {/* EN-TÊTE DE LA MODAL / ATELIER DE CRÉATION */}
+        {/* EN-TÊTE DE LA MODAL */}
         {/* ======================================================== */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 bg-white border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-sky-500 text-white flex items-center justify-center font-bold text-sm shadow-sm">
-              <Edit3 size={18} />
+            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-xs">
+              FI
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm sm:text-base font-bold text-slate-900 leading-tight">
-                  Création de facture avec aperçu A4 en direct
-                </h2>
-                <span className="hidden sm:inline-flex items-center gap-1 bg-emerald-100 text-emerald-700 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
-                  Direct
-                </span>
-              </div>
-              <p className="text-xs text-slate-500">
-                Toutes vos modifications sont rendues en temps réel sur le document officiel
+              <h2 className="text-sm sm:text-base font-extrabold text-slate-900">
+                {t.invoices.createModalTitle}
+              </h2>
+              <p className="text-[11px] text-slate-500 hidden sm:block">
+                Éditez vos prestations et visualisez instantanément le document A4 officiel (TVA 16% &amp; Moosyl).
               </p>
             </div>
           </div>
 
-          {/* Boutons d'actions et fermeture */}
           <div className="flex items-center gap-2">
-            {/* Bascule Mobile Formulaire / Aperçu */}
-            <div className="flex lg:hidden bg-slate-100 p-0.5 rounded-lg text-xs">
+            {/* Commutateur de langue du document A4 */}
+            <div className="hidden sm:flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
               <button
-                onClick={() => setMobileTab("form")}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-all ${
-                  mobileTab === "form"
-                    ? "bg-white text-slate-900 shadow-2xs"
-                    : "text-slate-500"
+                type="button"
+                onClick={() => setDocLang("bilingual")}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                  docLang === "bilingual" ? "bg-white text-sky-600 shadow-2xs" : "text-slate-600"
                 }`}
               >
-                Formulaire
+                Bilingue FR/AR
+              </button>
+              <button
+                type="button"
+                onClick={() => setDocLang("fr")}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                  docLang === "fr" ? "bg-white text-sky-600 shadow-2xs" : "text-slate-600"
+                }`}
+              >
+                Français
+              </button>
+              <button
+                type="button"
+                onClick={() => setDocLang("ar")}
+                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                  docLang === "ar" ? "bg-white text-sky-600 shadow-2xs" : "text-slate-600"
+                }`}
+              >
+                العربية
+              </button>
+            </div>
+
+            {/* Onglets Mobile : Formulaire / Aperçu */}
+            <div className="flex lg:hidden bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
+              <button
+                onClick={() => setMobileTab("form")}
+                className={`px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
+                  mobileTab === "form"
+                    ? "bg-white text-slate-900 shadow-2xs"
+                    : "text-slate-600"
+                }`}
+              >
+                <span className="flex items-center gap-1">
+                  <Edit3 size={13} />
+                  Formulaire
+                </span>
               </button>
               <button
                 onClick={() => setMobileTab("preview")}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 ${
+                className={`px-3 py-1.5 rounded-md font-semibold transition-all cursor-pointer ${
                   mobileTab === "preview"
-                    ? "bg-white text-sky-600 shadow-2xs"
-                    : "text-slate-500"
+                    ? "bg-white text-slate-900 shadow-2xs"
+                    : "text-slate-600"
                 }`}
               >
-                <Eye size={13} />
-                Aperçu A4
+                <span className="flex items-center gap-1">
+                  <Eye size={13} />
+                  Aperçu A4
+                </span>
               </button>
             </div>
 
             <button
               onClick={onClose}
-              className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors"
-              title="Fermer"
+              className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
             >
-              <X size={20} />
+              <X size={18} />
             </button>
           </div>
         </div>
 
         {/* ======================================================== */}
-        {/* CORPS SPLIT 50/50 : FORMULAIRE À GAUCHE, APERÇU À DROITE */}
+        {/* CORPS DE LA MODAL : DOUBLE VOLET SPLIT-SCREEN */}
         {/* ======================================================== */}
-        <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-12 overflow-hidden">
-          {/* PANNEAU GAUCHE : FORMULAIRE DE SAISIE */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden">
+          {/* PANNEAU GAUCHE : FORMULAIRE D'ÉDITION */}
           <div
-            className={`lg:col-span-6 p-4 sm:p-6 overflow-y-auto space-y-5 bg-white border-r border-slate-200 ${
+            className={`lg:col-span-6 p-4 sm:p-6 overflow-y-auto space-y-5 border-r border-slate-200 bg-white ${
               mobileTab === "form" ? "block" : "hidden lg:block"
             }`}
           >
-            {/* Section 1 : Client & Identifiants */}
-            <div className="bg-slate-50/70 p-4 rounded-xl border border-slate-200/80 space-y-3">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                <Building2 size={14} className="text-sky-600" />
-                <span>Destinataire de la facture</span>
-              </h3>
+            {/* Section Client */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-xs uppercase tracking-wider text-slate-700">
+                  {t.invoices.client}
+                </label>
+                <span className="text-[11px] text-sky-600 font-semibold cursor-pointer hover:underline" onClick={() => setSelectedClientId("custom")}>
+                  + Nouveau client libre
+                </span>
+              </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Sélectionner un client
-                  </label>
                   <select
                     value={selectedClientId}
                     onChange={(e) => setSelectedClientId(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
+                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 focus:outline-none focus:border-sky-500"
                   >
                     {clientsList.map((c) => (
                       <option key={c.id} value={c.id}>
-                        {c.name}
+                        {c.name} ({c.city || "Nouakchott"})
                       </option>
                     ))}
-                    <option value="custom">+ Autre client (personnalisé)</option>
+                    <option value="custom">✍️ Saisie libre (Nouveau client)</option>
                   </select>
                 </div>
 
                 {selectedClientId === "custom" && (
                   <div>
-                    <label className="block font-semibold text-slate-700 mb-1">
-                      Nom de l&apos;entreprise cliente
-                    </label>
                     <input
                       type="text"
+                      placeholder="Nom de l'entreprise cliente *"
                       value={customClientName}
                       onChange={(e) => setCustomClientName(e.target.value)}
-                      placeholder="Ex: GIE Teranga Sénégal"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-sky-500"
                     />
                   </div>
                 )}
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Numéro de référence
-                  </label>
-                  <input
-                    type="text"
-                    value={invoiceNumber}
-                    onChange={(e) => setInvoiceNumber(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-bold focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Date d&apos;émission
-                  </label>
-                  <input
-                    type="date"
-                    value={issueDate}
-                    onChange={(e) => setIssueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-semibold text-slate-700 mb-1">
-                    Date d&apos;échéance
-                  </label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
-                  />
-                </div>
               </div>
             </div>
 
-            {/* Section 2 : Lignes d'articles et prestations */}
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
-                  <FileText size={14} className="text-sky-600" />
-                  <span>Articles & Prestations</span>
-                </h3>
+            {/* Section Numéro & Dates */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  N° Facture
+                </label>
+                <input
+                  type="text"
+                  value={invoiceNumber}
+                  onChange={(e) => setInvoiceNumber(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-bold focus:outline-none focus:border-sky-500"
+                />
+              </div>
 
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  {t.invoices.issueDate}
+                </label>
+                <input
+                  type="date"
+                  value={issueDate}
+                  onChange={(e) => setIssueDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
+                />
+              </div>
+
+              <div>
+                <label className="block font-semibold text-slate-700 mb-1">
+                  {t.invoices.dueDate}
+                </label>
+                <input
+                  type="date"
+                  value={dueDate}
+                  onChange={(e) => setDueDate(e.target.value)}
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
+                />
+              </div>
+            </div>
+
+            {/* Section Lignes de Prestations */}
+            <div className="space-y-3 pt-2">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-xs uppercase tracking-wider text-slate-700">
+                  {t.invoices.itemsTitle}
+                </label>
                 <button
                   type="button"
                   onClick={handleAddItem}
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-semibold text-sky-600 bg-sky-50 hover:bg-sky-100 rounded-lg transition-colors"
+                  className="inline-flex items-center gap-1 text-xs font-bold text-sky-600 hover:text-sky-700 hover:bg-sky-50 px-2 py-1 rounded-md transition-colors cursor-pointer"
                 >
                   <Plus size={14} />
-                  <span>Ajouter une ligne</span>
+                  <span>{t.invoices.addItem}</span>
                 </button>
               </div>
 
-              {/* Liste dynamique des articles */}
               <div className="space-y-2.5">
-                {items.map((item, index) => (
+                {items.map((it, idx) => (
                   <div
-                    key={item.id}
-                    className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 grid grid-cols-12 gap-2.5 items-center text-xs"
+                    key={it.id}
+                    className="grid grid-cols-12 gap-2 p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 items-center text-xs"
                   >
                     <div className="col-span-12 sm:col-span-6">
-                      <label className="block font-medium text-slate-500 text-[10px] mb-0.5">
-                        Désignation prestation / article #{index + 1}
-                      </label>
                       <input
                         type="text"
-                        value={item.description}
+                        placeholder="Description de la prestation..."
+                        value={it.description}
                         onChange={(e) =>
-                          handleUpdateItem(item.id, "description", e.target.value)
+                          handleItemChange(it.id, "description", e.target.value)
                         }
-                        placeholder="Description..."
                         className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
                       />
                     </div>
 
                     <div className="col-span-4 sm:col-span-2">
-                      <label className="block font-medium text-slate-500 text-[10px] mb-0.5">
-                        Qté
-                      </label>
                       <input
                         type="number"
                         min="1"
-                        value={item.quantity}
+                        placeholder="Qté"
+                        value={it.quantity}
                         onChange={(e) =>
-                          handleUpdateItem(
-                            item.id,
+                          handleItemChange(
+                            it.id,
                             "quantity",
-                            Math.max(1, parseInt(e.target.value) || 1)
+                            parseFloat(e.target.value) || 0
                           )
                         }
-                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 font-semibold text-center focus:outline-none focus:border-sky-500"
+                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-center font-bold focus:outline-none focus:border-sky-500"
                       />
                     </div>
 
                     <div className="col-span-6 sm:col-span-3">
-                      <label className="block font-medium text-slate-500 text-[10px] mb-0.5">
-                        Prix unit. (FCFA)
-                      </label>
-                      <input
-                        type="number"
-                        step="500"
-                        value={item.unitPrice}
-                        onChange={(e) =>
-                          handleUpdateItem(
-                            item.id,
-                            "unitPrice",
-                            Math.max(0, parseInt(e.target.value) || 0)
-                          )
-                        }
-                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 font-semibold focus:outline-none focus:border-sky-500"
-                      />
+                      <div className="relative">
+                        <input
+                          type="number"
+                          min="0"
+                          step="100"
+                          placeholder="Prix HT"
+                          value={it.unitPrice || ""}
+                          onChange={(e) =>
+                            handleItemChange(
+                              it.id,
+                              "unitPrice",
+                              parseFloat(e.target.value) || 0
+                            )
+                          }
+                          className="w-full pl-2.5 pr-10 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-right font-bold focus:outline-none focus:border-sky-500"
+                        />
+                        <span className="absolute right-2 top-1.5 text-[10px] text-slate-400 font-bold pointer-events-none">
+                          MRU
+                        </span>
+                      </div>
                     </div>
 
-                    <div className="col-span-2 sm:col-span-1 flex justify-center pt-3">
+                    <div className="col-span-2 sm:col-span-1 flex justify-end">
                       <button
                         type="button"
-                        onClick={() => handleRemoveItem(item.id)}
-                        className="text-slate-400 hover:text-rose-500 p-1 rounded-md transition-colors"
-                        title="Supprimer la ligne"
+                        onClick={() => handleRemoveItem(it.id)}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition-colors cursor-pointer"
+                        title={t.invoices.removeItem}
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={15} />
                       </button>
                     </div>
                   </div>
@@ -527,26 +590,25 @@ export default function LiveInvoiceModal({
               </div>
             </div>
 
-            {/* Section 3 : TVA et modalités */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1 border-t border-slate-100">
+            {/* Section TVA et Conditions */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Taux de TVA
+                  Régime Fiscal TVA (DGI)
                 </label>
                 <select
                   value={taxRate}
                   onChange={(e) => setTaxRate(parseFloat(e.target.value))}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
                 >
-                  <option value={18}>18% (Taux légal standard Sénégal / UEMOA)</option>
-                  <option value={0}>0% (Exonéré de TVA / Export)</option>
-                  <option value={16}>16% (Taux Mauritanie pour plus tard)</option>
+                  <option value={16}>TVA Standard Mauritanie (16%)</option>
+                  <option value={0}>Exonéré de TVA (0% Export / Spécial)</option>
                 </select>
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Conditions de règlement
+                  {t.invoices.paymentTerms}
                 </label>
                 <input
                   type="text"
@@ -560,7 +622,7 @@ export default function LiveInvoiceModal({
             {/* Notes en bas de facture */}
             <div className="text-xs">
               <label className="block font-semibold text-slate-700 mb-1">
-                Mentions & Coordonnées de paiement
+                Mentions &amp; Coordonnées de paiement
               </label>
               <textarea
                 rows={2}
@@ -571,27 +633,24 @@ export default function LiveInvoiceModal({
             </div>
           </div>
 
-          {/* ======================================================== */}
           {/* PANNEAU DROIT : VRAIE FEUILLE A4 RENDUE EN TEMPS RÉEL */}
-          {/* ======================================================== */}
           <div
             className={`lg:col-span-6 p-4 sm:p-6 overflow-y-auto bg-slate-200/60 flex flex-col items-center justify-start ${
               mobileTab === "preview" ? "block" : "hidden lg:block"
             }`}
           >
-            {/* Barre de contrôle de l'aperçu */}
             <div className="w-full max-w-[560px] flex items-center justify-between pb-3 text-xs text-slate-600">
               <span className="font-bold flex items-center gap-1.5 text-slate-700">
                 <Sparkles size={14} className="text-sky-600" />
-                Aperçu officiel (Format A4)
+                {t.invoices.previewA4} ({docLang === "bilingual" ? "Bilingue FR/AR" : docLang === "ar" ? "العربية" : "Français"})
               </span>
               <span className="text-[11px] text-slate-500">Mise à jour instantanée</span>
             </div>
 
-            {/* La feuille A4 virtuelle */}
-            <div id="live-invoice-preview-sheet" className="w-full max-w-[560px] bg-white rounded-xl shadow-xl border border-slate-300/80 p-6 sm:p-8 space-y-6 text-slate-800 text-xs transition-all">
+            {/* La feuille A4 virtuelle Facturim */}
+            <div id="live-invoice-preview-sheet" className="w-full max-w-[560px] bg-white rounded-xl shadow-xl border border-slate-300/80 p-6 sm:p-8 space-y-5 text-slate-800 text-xs transition-all">
               {/* En-tête de la facture A4 */}
-              <div className="flex justify-between items-start border-b border-slate-200 pb-5">
+              <div className="flex justify-between items-start border-b border-slate-200 pb-4">
                 <div>
                   <div className="flex items-center gap-2.5">
                     {companyLogo ? (
@@ -602,30 +661,33 @@ export default function LiveInvoiceModal({
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-lg bg-slate-900 text-white font-black text-sm flex items-center justify-center tracking-tighter shrink-0">
-                        SF
+                        FI
                       </div>
                     )}
-                    <span className="text-base font-black text-slate-900 tracking-tight">
-                      SEN FACTURE
-                    </span>
+                    <div>
+                      <span className="text-base font-black text-slate-900 tracking-tight">
+                        FACTURIM
+                      </span>
+                      <span className="text-xs font-bold text-sky-600 ml-1.5">موريتانيا</span>
+                    </div>
                   </div>
                   <div className="mt-2 text-[11px] text-slate-500 space-y-0.5">
-                    <p className="font-medium text-slate-700">Teranga Digital SARL</p>
-                    <p>46 Boulevard de la République, Dakar Plateau</p>
-                    <p>NINEA : SN-009876543-2B</p>
-                    <p>Tél : +221 77 123 45 67 | contact@senfacture.sn</p>
+                    <p className="font-medium text-slate-700">Facturim Mauritanie SARL</p>
+                    <p>Avenue du Roi Fayçal, Tevragh Zeina, Nouakchott</p>
+                    <p>NIF : 00987654-MR | RC : MR.NKTT.2025.B.1234</p>
+                    <p>Tél : +222 45 25 00 00 | contact@facturim.mr</p>
                   </div>
                 </div>
 
                 <div className="text-right">
-                  <span className="inline-block bg-sky-50 text-sky-700 font-extrabold text-sm px-3 py-1 rounded-md tracking-wider uppercase border border-sky-200">
-                    FACTURE
+                  <span className="inline-block bg-sky-50 text-sky-700 font-extrabold text-xs px-2.5 py-1 rounded-md tracking-wider uppercase border border-sky-200">
+                    {docLang === "bilingual" ? "FACTURE / فاتورة" : docLang === "ar" ? "فاتورة" : "FACTURE"}
                   </span>
-                  <p className="text-sm font-black text-slate-900 mt-2">
+                  <p className="text-sm font-black text-slate-900 mt-1.5">
                     {invoiceNumber}
                   </p>
                   <p className="text-[11px] text-slate-500 mt-1">
-                    Émise le : <span className="font-semibold text-slate-700">{issueDate}</span>
+                    Date : <span className="font-semibold text-slate-700">{issueDate}</span>
                   </p>
                   <p className="text-[11px] text-slate-500">
                     Échéance : <span className="font-semibold text-slate-700">{dueDate}</span>
@@ -634,22 +696,21 @@ export default function LiveInvoiceModal({
               </div>
 
               {/* Bloc Client Facturé à */}
-              <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 flex justify-between items-start">
+              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 flex justify-between items-start">
                 <div>
                   <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                    Facturé à
+                    {docLang === "bilingual" ? "FACTURÉ À / الفاتورة إلى" : docLang === "ar" ? "العميل" : "FACTURÉ À"}
                   </p>
                   <h4 className="text-sm font-bold text-slate-900 mt-0.5">
                     {currentClient.name}
                   </h4>
                   <p className="text-slate-600 text-[11px] mt-0.5">{currentClient.address}</p>
-                  <p className="text-slate-600 text-[11px]">{currentClient.email}</p>
-                  <p className="text-slate-600 text-[11px]">{currentClient.phone}</p>
+                  <p className="text-slate-600 text-[11px]">{currentClient.email} | {currentClient.phone}</p>
                 </div>
 
                 <div className="text-right text-[11px]">
                   <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                    Statut
+                    Statut / الحالة
                   </p>
                   <span className="inline-block mt-1 bg-amber-100 text-amber-800 font-bold px-2.5 py-0.5 rounded-full text-[10px]">
                     En cours d&apos;émission
@@ -662,7 +723,9 @@ export default function LiveInvoiceModal({
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="border-b-2 border-slate-900 text-slate-900 text-[11px] font-bold">
-                      <th className="py-2">Description</th>
+                      <th className="py-2">
+                        {docLang === "bilingual" ? "Désignation / البيان" : docLang === "ar" ? "البيان" : "Description"}
+                      </th>
                       <th className="py-2 text-center">Qté</th>
                       <th className="py-2 text-right">Prix unit.</th>
                       <th className="py-2 text-right">Total HT</th>
@@ -671,17 +734,17 @@ export default function LiveInvoiceModal({
                   <tbody className="divide-y divide-slate-100">
                     {items.map((it) => (
                       <tr key={it.id} className="text-[11px]">
-                        <td className="py-2.5 pr-2 font-medium text-slate-800">
+                        <td className="py-2 pr-2 font-medium text-slate-800">
                           {it.description}
                         </td>
-                        <td className="py-2.5 text-center text-slate-600 font-semibold">
+                        <td className="py-2 text-center text-slate-600 font-semibold">
                           {it.quantity}
                         </td>
-                        <td className="py-2.5 text-right text-slate-600">
-                          {it.unitPrice.toLocaleString("fr-FR")} F
+                        <td className="py-2 text-right text-slate-600">
+                          {it.unitPrice.toLocaleString("fr-FR")} MRU
                         </td>
-                        <td className="py-2.5 text-right font-bold text-slate-900">
-                          {(it.quantity * it.unitPrice).toLocaleString("fr-FR")} FCFA
+                        <td className="py-2 text-right font-bold text-slate-900">
+                          {(it.quantity * it.unitPrice).toLocaleString("fr-FR")} MRU
                         </td>
                       </tr>
                     ))}
@@ -689,13 +752,24 @@ export default function LiveInvoiceModal({
                 </table>
               </div>
 
-              {/* Bloc Récapitulatif et Totaux */}
-              <div className="pt-2 border-t border-slate-200 flex justify-end">
-                <div className="w-64 space-y-1.5 text-[11px]">
+              {/* Bloc Récapitulatif et Totaux + Cartouche Moosyl */}
+              <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
+                {/* Badge Moosyl Pay */}
+                <div className="flex items-center gap-2.5 bg-slate-50 p-2 rounded-lg border border-slate-200/80">
+                  <div className="w-10 h-10 bg-white rounded border border-slate-200 flex items-center justify-center text-slate-700">
+                    <QrCode size={22} />
+                  </div>
+                  <div className="text-[10px] text-slate-600 leading-tight">
+                    <p className="font-bold text-slate-800">Moosyl Gateway</p>
+                    <p className="text-emerald-700 font-semibold">🟢 Bankily • 🔵 Masrvi</p>
+                  </div>
+                </div>
+
+                <div className="w-56 space-y-1 text-[11px]">
                   <div className="flex justify-between text-slate-600">
                     <span>Sous-total HT :</span>
                     <span className="font-semibold text-slate-800">
-                      {subtotal.toLocaleString("fr-FR")} FCFA
+                      {subtotal.toLocaleString("fr-FR")} MRU
                     </span>
                   </div>
 
@@ -703,88 +777,80 @@ export default function LiveInvoiceModal({
                     <div className="flex justify-between text-slate-600">
                       <span>TVA ({taxRate}%) :</span>
                       <span className="font-semibold text-slate-800">
-                        {taxAmount.toLocaleString("fr-FR")} FCFA
+                        {taxAmount.toLocaleString("fr-FR")} MRU
                       </span>
                     </div>
                   )}
 
-                  <div className="flex justify-between items-baseline pt-2 border-t-2 border-slate-900 text-slate-900">
+                  <div className="flex justify-between items-baseline pt-1.5 border-t-2 border-slate-900 text-slate-900">
                     <span className="text-xs font-bold uppercase">Total TTC :</span>
                     <span className="text-sm sm:text-base font-black text-sky-600">
-                      {total.toLocaleString("fr-FR")} FCFA
+                      {total.toLocaleString("fr-FR")} MRU
                     </span>
                   </div>
                 </div>
               </div>
 
               {/* Notes et Pied de page A4 */}
-              <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 space-y-1.5">
+              <div className="pt-3 border-t border-slate-200 text-[10px] text-slate-500 space-y-1">
                 <p>
                   <strong className="text-slate-700">Modalités :</strong> {paymentTerms}
                 </p>
                 <p className="leading-snug">{notes}</p>
-                <div className="pt-2 text-center text-[9px] text-slate-400 font-medium">
-                  SEN FACTURE — Document généré conformément à la réglementation fiscale OHADA / Sénégal
+                <div className="pt-1 text-center text-[9px] text-slate-400 font-medium">
+                  Facturim Mauritanie — Document officiel conforme DGI (TVA 16%)
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ======================================================== */}
-        {/* PIED DE LA MODAL : ACTIONS GLOBALES (WHATSAPP, PDF, ENREGISTRER) */}
-        {/* ======================================================== */}
+        {/* PIED DE LA MODAL : ACTIONS GLOBALES */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-3.5 bg-white border-t border-slate-200 shrink-0">
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <span className="font-semibold text-slate-700">Montant total net :</span>
             <span className="font-extrabold text-sm text-sky-600">
-              {total.toLocaleString("fr-FR")} FCFA
+              {formatMoney(total)}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
-            {/* Partage WhatsApp direct */}
             <button
               type="button"
               onClick={handleWhatsAppShare}
               className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer"
             >
-              <Share2 size={15} />
-              <span>Partager sur WhatsApp</span>
+              <Share2 size={14} />
+              <span>WhatsApp + Moosyl</span>
             </button>
 
-            {/* Télécharger le PDF A4 officiel */}
             <button
               type="button"
               onClick={handleDownloadPDF}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer"
             >
-              <Download size={15} />
-              <span>Télécharger le PDF</span>
+              <Download size={14} />
+              <span>PDF A4 ({docLang === "bilingual" ? "FR/AR" : docLang.toUpperCase()})</span>
             </button>
 
-            {/* Imprimer */}
             <button
               type="button"
-              onClick={() => {
-                window.print();
-                toast.success("Impression lancée");
-              }}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 rounded-lg text-xs font-semibold transition-colors shadow-2xs cursor-pointer"
-            >
-              <Printer size={15} />
-              <span>Imprimer</span>
-            </button>
-
-            {/* Enregistrer et valider la facture */}
-            <button
-              type="button"
-              onClick={handleSaveInvoice}
               disabled={isSaving}
-              className="w-full sm:w-auto flex items-center justify-center gap-1.5 px-4 py-2 bg-sky-500 hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg text-xs sm:text-sm font-bold shadow-xs transition-colors cursor-pointer"
+              onClick={() => handleSaveInvoice(false)}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer disabled:opacity-60"
             >
-              <CheckCircle2 size={16} />
-              <span>{isSaving ? "Enregistrement..." : "Valider & Enregistrer"}</span>
+              <FileText size={14} />
+              <span>Enregistrer Brouillon</span>
+            </button>
+
+            <button
+              type="button"
+              disabled={isSaving}
+              onClick={() => handleSaveInvoice(true)}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white rounded-lg text-xs font-bold shadow-md shadow-sky-500/20 transition-all cursor-pointer disabled:opacity-60"
+            >
+              <Send size={14} />
+              <span>Émettre Facture</span>
             </button>
           </div>
         </div>

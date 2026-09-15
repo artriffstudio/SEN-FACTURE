@@ -21,8 +21,10 @@ import { CatalogItem } from "@/lib/types";
 import Tooltip from "@/components/ui/Tooltip";
 import toast from "react-hot-toast";
 import { getCatalogItems, createCatalogItem } from "@/lib/services/catalogService";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function InventoryPage() {
+  const { t, formatMoney } = useTranslation();
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Tous");
@@ -37,7 +39,7 @@ export default function InventoryPage() {
   const [newItemUnit, setNewItemUnit] = useState("Forfait");
   const [newItemDesc, setNewItemDesc] = useState("");
 
-  const categories = ["Tous", "Developpement", "Cloud & Reseau", "Conseil & Audit", "Maintenance", "Formation"];
+  const categories = [t.inventory.allCategories, "Developpement", "Cloud & Reseau", "Conseil & Audit", "Maintenance", "Formation"];
 
   useEffect(() => {
     async function loadCatalog() {
@@ -59,13 +61,9 @@ export default function InventoryPage() {
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.code.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCat = selectedCategory === "Tous" || item.category === selectedCategory;
+    const matchesCat = selectedCategory === t.inventory.allCategories || selectedCategory === "Tous" || item.category === selectedCategory;
     return matchesSearch && matchesCat;
   });
-
-  const formatMoney = (amount: number) => {
-    return `${amount.toLocaleString("fr-FR")} FCFA`;
-  };
 
   const handleCreatePrestation = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,7 +80,7 @@ export default function InventoryPage() {
         unitPrice: Number(newItemPrice) || 0,
         unit: newItemUnit || "Unité",
         description: newItemDesc.trim() || "Prestation informatique et services numériques",
-        taxRate: 18,
+        taxRate: 16,
         active: true,
       });
 
@@ -94,7 +92,7 @@ export default function InventoryPage() {
       setNewItemDesc("");
       setNewItemPrice(500000);
 
-      toast.success(`Prestation « ${created.name} » enregistrée dans Supabase !`);
+      toast.success(`« ${created.name} » enregistré !`);
     } catch (err: any) {
       toast.error(err.message || "Erreur lors de la création de l'article");
     }
@@ -114,14 +112,14 @@ export default function InventoryPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Articles & Prestations
+              {t.inventory.title}
             </h1>
             <span className="inline-flex items-center gap-1 bg-sky-100 text-sky-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              {items.length} Prestations
+              {items.length} {t.nav.inventory}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Gérez votre catalogue officiel de services, tarifs horaires et forfaits de facturation (SYSCOHADA).
+            {t.inventory.subtitle}
           </p>
         </div>
 
@@ -131,7 +129,7 @@ export default function InventoryPage() {
           className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-md shadow-sky-500/20 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer self-start sm:self-auto shrink-0"
         >
           <Plus size={16} className="stroke-[2.5]" />
-          <span>Nouvelle prestation</span>
+          <span>{t.inventory.newItem}</span>
         </button>
       </div>
 
@@ -164,10 +162,10 @@ export default function InventoryPage() {
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm card-interactive">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">TVA appliquée</span>
-            <span className="text-[10px] font-bold bg-sky-50 text-sky-700 px-1.5 py-0.5 rounded">UEMOA</span>
+            <span className="text-[10px] font-bold bg-sky-50 text-sky-700 px-1.5 py-0.5 rounded">DGI</span>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-1">18 %</div>
-          <p className="text-[11px] text-slate-400 font-medium mt-0.5">Taux légal République du Sénégal</p>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-1">16 %</div>
+          <p className="text-[11px] text-slate-400 font-medium mt-0.5">Taux légal République Islamique de Mauritanie</p>
         </div>
 
         <div className="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-sm card-interactive">
@@ -387,7 +385,7 @@ export default function InventoryPage() {
                   required
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
-                  placeholder="Ex: Développement API Passerelle Wave / Orange Money"
+                  placeholder="Ex: Développement API Passerelle Bankily / Seddap"
                   className="w-full bg-white border border-slate-200 rounded-lg text-slate-800 text-xs font-medium px-3 py-2 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
                 />
               </div>
@@ -395,7 +393,7 @@ export default function InventoryPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-semibold text-slate-700 text-xs mb-1">
-                    Tarif Unitaire HT (FCFA) <span className="text-rose-500">*</span>
+                    Tarif Unitaire HT (MRU) <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -441,10 +439,10 @@ export default function InventoryPage() {
                 />
               </div>
 
-              {/* Mention SYSCOHADA */}
+              {/* Mention DGI Mauritanie */}
               <div className="p-3 bg-sky-50/80 border border-sky-200/60 rounded-xl flex items-center gap-2.5 text-[11px] text-sky-800">
                 <Sparkles size={14} className="shrink-0 text-sky-600" />
-                <span>Cette prestation sera soumise au taux standard de TVA sénégalais de 18%.</span>
+                <span>Cette prestation sera soumise au taux standard de TVA mauritanien de 16%.</span>
               </div>
 
               {/* Boutons Footer */}

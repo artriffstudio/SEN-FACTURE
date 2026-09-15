@@ -10,26 +10,27 @@ import LandingFooter from "@/components/landing/LandingFooter";
 import "@/styles/landing.css";
 
 export const metadata: Metadata = {
-  title: "SEN FACTURE — La solution de facturation de nouvelle génération en Afrique de l'Ouest",
+  title: "Facturim — La solution de facturation électronique de référence en Mauritanie",
   description:
-    "Facturation électronique normalisée OHADA, devis en 1 clic, encaissements Wave & Orange Money direct, conformité fiscale DGID et SYSCOHADA pour entreprises au Sénégal et dans l'UEMOA.",
+    "Facturation électronique conforme DGI Mauritanie (TVA 16%, NIF), devis en 1 clic, encaissements Bankily & Seddap direct, devises MRU et multilingue Arabe, Anglais, Chinois et Français.",
   keywords: [
-    "SEN FACTURE",
-    "facturation Sénégal",
-    "facture normalisée OHADA",
-    "Wave Mobile Money facturation",
-    "Orange Money Sénégal",
-    "SYSCOHADA révisé",
-    "NINEA Sénégal",
-    "SaaS facturation Afrique",
-    "devis et factures Dakar",
+    "Facturim",
+    "facturation Mauritanie",
+    "facture électronique Nouakchott",
+    "Bankily facturation",
+    "Seddap paiement",
+    "NIF Mauritanie",
+    "TVA 16% Mauritanie",
+    "MRU Ouguiya",
+    "logiciel comptable Mauritanie",
+    "devis et factures Nouakchott",
   ],
   openGraph: {
-    title: "SEN FACTURE — Solution de facturation de référence au Sénégal",
+    title: "Facturim — Solution de facturation de référence en Mauritanie",
     description:
-      "Générez des factures certifiées, encaissez par Wave & Orange Money et pilotez votre trésorerie en temps réel.",
+      "Générez des factures certifiées, encaissez par Bankily & Seddap et pilotez votre trésorerie en MRU en temps réel.",
     type: "website",
-    locale: "fr_SN",
+    locale: "fr_MR",
   },
 };
 

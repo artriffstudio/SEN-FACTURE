@@ -4,24 +4,23 @@ import { CURRENCIES } from "@/lib/constants";
 import { CurrencyCode } from "@/lib/types";
 
 // ============================================================
-// Currency Formatting
+// Currency Formatting (Facturim / MRU Mauritanie)
 // ============================================================
 
 export function formatCurrency(
   amount: number,
-  currencyCode: CurrencyCode = "XOF"
+  currencyCode: CurrencyCode = "MRU"
 ): string {
-  const config = CURRENCIES[currencyCode];
-  if (!config) return `${amount}`;
+  const config = CURRENCIES[currencyCode] || CURRENCIES.MRU;
 
-  const formatted = new Intl.NumberFormat(config.locale, {
+  const formatted = new Intl.NumberFormat(config.locale || "fr-MR", {
     minimumFractionDigits: config.decimals,
     maximumFractionDigits: config.decimals,
     useGrouping: true,
-  }).format(amount);
+  }).format(amount || 0);
 
-  // For CFA, put symbol after the number
-  if (currencyCode === "XOF" || currencyCode === "XAF") {
+  // Pour MRU et FCFA, placer le symbole après le nombre
+  if (currencyCode === "MRU" || currencyCode === "XOF" || currencyCode === "XAF") {
     return `${formatted} ${config.symbol}`;
   }
 
@@ -68,11 +67,11 @@ export function isDueSoon(dueDateString: string, daysThreshold: number = 3): boo
 // ============================================================
 
 export function formatNumber(value: number): string {
-  return new Intl.NumberFormat("fr-FR").format(value);
+  return new Intl.NumberFormat("fr-FR").format(value || 0);
 }
 
 export function formatPercentage(value: number): string {
-  return `${value.toFixed(1)}%`;
+  return `${(value || 0).toFixed(1)}%`;
 }
 
 // ============================================================
@@ -80,8 +79,8 @@ export function formatPercentage(value: number): string {
 // ============================================================
 
 export function generateInvoiceNumber(
-  prefix: string,
-  nextNumber: number
+  prefix: string = "FAC",
+  nextNumber: number = 1
 ): string {
   const year = new Date().getFullYear();
   const paddedNumber = String(nextNumber).padStart(4, "0");
@@ -89,7 +88,7 @@ export function generateInvoiceNumber(
 }
 
 // ============================================================
-// Tax Calculations
+// Tax Calculations (TVA Mauritanie 16% par défaut)
 // ============================================================
 
 export function calculateSubtotal(
@@ -98,7 +97,7 @@ export function calculateSubtotal(
   return items.reduce((sum, item) => sum + item.quantity * item.unitPrice, 0);
 }
 
-export function calculateTaxAmount(subtotal: number, taxRate: number): number {
+export function calculateTaxAmount(subtotal: number, taxRate: number = 16): number {
   return Math.round(subtotal * (taxRate / 100));
 }
 
@@ -111,8 +110,10 @@ export function calculateTotal(subtotal: number, taxAmount: number): number {
 // ============================================================
 
 export function getInitials(name: string): string {
+  if (!name) return "FI";
   return name
     .split(" ")
+    .filter(Boolean)
     .map((word) => word[0])
     .join("")
     .toUpperCase()
@@ -120,6 +121,7 @@ export function getInitials(name: string): string {
 }
 
 export function truncate(str: string, maxLength: number): string {
+  if (!str) return "";
   if (str.length <= maxLength) return str;
   return str.slice(0, maxLength) + "…";
 }

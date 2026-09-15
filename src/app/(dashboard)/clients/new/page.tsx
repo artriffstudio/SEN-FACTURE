@@ -18,8 +18,10 @@ import {
 import toast from "react-hot-toast";
 import Tooltip from "@/components/ui/Tooltip";
 import { createClient, uploadClientLogo } from "@/lib/services/clientService";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function NewClientPage() {
+  const { t } = useTranslation();
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -31,8 +33,8 @@ export default function NewClientPage() {
     email: "",
     phone: "",
     address: "",
-    city: "Dakar",
-    country: "Sénégal",
+    city: "Nouakchott",
+    country: "Mauritanie",
     taxId: "",
     notes: "",
   });
@@ -101,8 +103,8 @@ export default function NewClientPage() {
         email: formData.email.trim(),
         phone: formData.phone.trim() || undefined,
         address: formData.address.trim() || undefined,
-        city: formData.city || "Dakar",
-        country: formData.country || "Sénégal",
+        city: formData.city || "Nouakchott",
+        country: formData.country || "Mauritanie",
         taxId: formData.taxId.trim() || undefined,
         notes: formData.notes.trim() || undefined,
         logoUrl: finalLogoUrl,
@@ -140,16 +142,16 @@ export default function NewClientPage() {
           <Link
             href="/clients"
             className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-white border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-50 shadow-2xs hover:scale-105 active:scale-95 transition-all shrink-0"
-            title="Retour à la liste des clients"
+            title={t.nav.clients}
           >
             <ArrowLeft size={16} />
           </Link>
           <div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Nouveau client
+              {t.clients.newClient}
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              Ajoutez une nouvelle entreprise ou un particulier à votre répertoire client.
+              {t.clients.subtitle}
             </p>
           </div>
         </div>
@@ -157,11 +159,12 @@ export default function NewClientPage() {
         {/* Bouton Enregistrer (responsive) */}
         <button
           onClick={handleSave}
+          disabled={isSaving}
           className="inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs sm:text-sm px-3.5 sm:px-5 py-2 sm:py-2.5 rounded-xl shadow-md shadow-sky-500/20 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer shrink-0 self-start sm:self-auto"
         >
           <Save size={15} />
-          <span className="hidden sm:inline">Enregistrer le client</span>
-          <span className="sm:hidden">Enregistrer</span>
+          <span className="hidden sm:inline">{isSaving ? "..." : t.clients.saveClient}</span>
+          <span className="sm:hidden">{isSaving ? "..." : t.clients.saveClient}</span>
         </button>
       </div>
 
@@ -174,14 +177,14 @@ export default function NewClientPage() {
           {/* Logo du client */}
           <div className="space-y-2 pb-4 border-b border-slate-100">
             <label className="block font-semibold text-slate-700 text-xs">
-              Logo de l&apos;entreprise ou du client
+              {t.clients.uploadLogo}
             </label>
             <div className="flex items-center gap-4">
               {/* Cadre pointillé de téléversement interactif */}
               <div
                 onClick={() => fileInputRef.current?.click()}
                 className="w-18 h-18 sm:w-20 sm:h-20 rounded-2xl border-2 border-dashed border-slate-300 hover:border-sky-400 bg-slate-50/80 hover:bg-sky-50/40 flex flex-col items-center justify-center cursor-pointer transition-all overflow-hidden group shrink-0 relative"
-                title="Cliquez pour sélectionner le logo du client"
+                title={t.clients.uploadLogo}
               >
                 {logoUrl ? (
                   <img
@@ -203,10 +206,10 @@ export default function NewClientPage() {
                   onClick={() => fileInputRef.current?.click()}
                   className="text-xs sm:text-sm font-bold text-sky-600 hover:text-sky-700 hover:underline cursor-pointer block text-left"
                 >
-                  {logoUrl ? "Changer le logo" : "Télécharger un logo"}
+                  {logoUrl ? t.settings.logoUpload : t.clients.uploadLogo}
                 </button>
                 <p className="text-[11px] text-slate-400">
-                  PNG, JPG ou SVG. Max 2 Mo.
+                  {t.settings.uploadHint}
                 </p>
                 {logoUrl && (
                   <button
@@ -215,7 +218,7 @@ export default function NewClientPage() {
                     className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline cursor-pointer pt-0.5"
                   >
                     <X size={12} />
-                    <span>Supprimer le logo</span>
+                    <span>{t.invoices.removeItem}</span>
                   </button>
                 )}
               </div>
@@ -226,47 +229,47 @@ export default function NewClientPage() {
           <div className="space-y-3">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
               <Building2 size={15} className="text-sky-600" />
-              <span>Identité de l&apos;entreprise ou du contact</span>
+              <span>{t.clients.clientName}</span>
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div className="sm:col-span-2">
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Nom ou Raison sociale *
+                  {t.clients.clientName} *
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => updateField("name", e.target.value)}
-                  placeholder="Ex: Teranga Distribution SARL"
+                  placeholder="Ex: Société Mauritanienne d'Ingénierie SARL"
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
                 />
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Adresse Email officielle *
+                  {t.clients.email} *
                 </label>
                 <input
                   type="email"
                   required
                   value={formData.email}
                   onChange={(e) => updateField("email", e.target.value)}
-                  placeholder="contact@entreprise.sn"
+                  placeholder="contact@client.mr"
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
                 />
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Téléphone de contact (Sénégal)
+                  {t.clients.phone} ({t.countryName})
                 </label>
                 <input
                   type="tel"
                   value={formData.phone}
                   onChange={(e) => updateField("phone", e.target.value)}
-                  placeholder="+221 77 000 00 00"
+                  placeholder="+222 45 00 00 00"
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
                 />
               </div>
@@ -277,58 +280,58 @@ export default function NewClientPage() {
           <div className="pt-4 border-t border-slate-100 space-y-3">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
               <MapPin size={15} className="text-sky-600" />
-              <span>Adresse & Localisation</span>
+              <span>{t.clients.address}</span>
             </h2>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Adresse / Rue
+                  {t.clients.address}
                 </label>
                 <input
                   type="text"
                   value={formData.address}
                   onChange={(e) => updateField("address", e.target.value)}
-                  placeholder="Ex: 12 Rue Wagane Diouf, Plateau"
+                  placeholder="Ex: Tevragh Zeina, Nouakchott"
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
                 />
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Ville / Région
+                  {t.clients.city}
                 </label>
                 <input
                   type="text"
                   value={formData.city}
                   onChange={(e) => updateField("city", e.target.value)}
-                  placeholder="Dakar"
+                  placeholder="Nouakchott"
                   className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
                 />
               </div>
             </div>
           </div>
 
-          {/* Fiscalité SYSCOHADA */}
+          {/* Fiscalité Mauritanie */}
           <div className="pt-4 border-t border-slate-100 space-y-3">
             <h2 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
               <ShieldCheck size={15} className="text-sky-600" />
-              <span>Identifiants Fiscaux (Sénégal)</span>
+              <span>{t.taxIdLabel} ({t.countryName})</span>
             </h2>
 
             <div className="text-xs">
               <label className="block font-semibold text-slate-700 mb-1">
-                Numéro NINEA / Registre du Commerce (RC)
+                {t.settings.nifNumber} / {t.settings.rcNumber}
               </label>
               <input
                 type="text"
                 value={formData.taxId}
                 onChange={(e) => updateField("taxId", e.target.value)}
-                placeholder="Ex: SN-001234567-2B"
+                placeholder="Ex: 00123456-MR"
                 className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-mono font-medium focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 max-w-md"
               />
               <p className="text-[11px] text-slate-400 mt-1">
-                Ce numéro sera imprimé sur les factures et les déclarations fiscales SYSCOHADA.
+                Ce numéro sera imprimé sur les factures certifiées DGI ({t.countryName}).
               </p>
             </div>
           </div>
@@ -336,13 +339,13 @@ export default function NewClientPage() {
           {/* Notes */}
           <div className="pt-4 border-t border-slate-100 text-xs">
             <label className="block font-semibold text-slate-700 mb-1">
-              Notes internes & Observations
+              {t.invoices.notes}
             </label>
             <textarea
               rows={3}
               value={formData.notes}
               onChange={(e) => updateField("notes", e.target.value)}
-              placeholder="Conditions particulières de règlement, remises négociées..."
+              placeholder="Conditions particulières de règlement, remises..."
               className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-normal focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 resize-none"
             />
           </div>

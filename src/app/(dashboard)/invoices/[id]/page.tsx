@@ -22,12 +22,14 @@ import {
 import { getCompany } from "@/lib/services/companyService";
 import { Invoice } from "@/lib/types";
 import Tooltip from "@/components/ui/Tooltip";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function InvoiceDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { t, formatMoney } = useTranslation();
   const resolvedParams = use(params);
   const [invoice, setInvoice] = useState<Invoice | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -55,14 +57,12 @@ export default function InvoiceDetailPage({
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("sen_facture_company_logo");
+      const saved =
+        localStorage.getItem("facturim_company_logo") ||
+        localStorage.getItem("sen_facture_company_logo");
       if (saved) setCompanyLogo(saved);
     }
   }, []);
-
-  const formatMoney = (amount: number) => {
-    return `${amount.toLocaleString("fr-FR")} FCFA`;
-  };
 
   const handleMarkAsPaid = async () => {
     if (!invoice) return;
@@ -81,12 +81,13 @@ export default function InvoiceDetailPage({
     const ok = await downloadInvoicePDF({
       reference: invoice.invoiceNumber,
       clientName: invoice.client?.name || "Client Entreprise",
-      clientAddress: invoice.client?.address || "Dakar, Sénégal",
-      clientEmail: invoice.client?.email || "contact@client.sn",
-      clientPhone: invoice.client?.phone || "+221 33 800 00 00",
+      clientAddress: invoice.client?.address || "Nouakchott, Mauritanie",
+      clientEmail: invoice.client?.email || "contact@client.mr",
+      clientPhone: invoice.client?.phone || "+222 45 00 00 00",
       date: invoice.issueDate || "12/03/2025",
       dueDate: invoice.dueDate || "12/04/2025",
       total: invoice.total,
+      taxRate: invoice.taxRate || 16,
       status: invoice.status,
       logoUrl: companyLogo || undefined,
     });
@@ -99,7 +100,7 @@ export default function InvoiceDetailPage({
 
   const handleWhatsAppShare = () => {
     if (!invoice) return;
-    const message = `Bonjour ${invoice.client?.name || "Client"},\nVoici votre facture *${invoice.invoiceNumber}* d'un montant de *${formatMoney(invoice.total)}* émise par SEN FACTURE.\nMerci de votre confiance !`;
+    const message = `Bonjour ${invoice.client?.name || "Client"},\nVoici votre facture *${invoice.invoiceNumber}* d'un montant de *${formatMoney(invoice.total)}* émise par Facturim.\nMerci de votre confiance !`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
     toast.success("Lien WhatsApp généré !");
   };
@@ -140,7 +141,7 @@ export default function InvoiceDetailPage({
           <Link
             href="/invoices"
             className="w-9 h-9 rounded-xl bg-white border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-50 shadow-2xs hover:scale-105 active:scale-95 transition-all"
-            title="Retour aux factures"
+            title={t.nav.invoices}
           >
             <ArrowLeft size={16} />
           </Link>
@@ -159,14 +160,14 @@ export default function InvoiceDetailPage({
                 }`}
               >
                 {invoice.status === "paid"
-                  ? "Payée"
+                  ? t.status.paid
                   : invoice.status === "overdue"
-                  ? "En retard"
-                  : "En cours"}
+                  ? t.status.overdue
+                  : t.status.sent}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Émise le {invoice.issueDate || "12/03/2025"} — Échéance : {invoice.dueDate || "12/04/2025"}
+              {t.invoices.issueDate} : {invoice.issueDate || "12/03/2025"} — {t.invoices.dueDate} : {invoice.dueDate || "12/04/2025"}
             </p>
           </div>
         </div>
@@ -174,7 +175,7 @@ export default function InvoiceDetailPage({
         {/* Boutons d'actions */}
         <div className="flex flex-wrap items-center gap-2">
           {/* Partager WhatsApp */}
-          <Tooltip content="Partager sur WhatsApp" icon={Share2}>
+          <Tooltip content={t.invoices.shareWhatsApp} icon={Share2}>
             <button
               onClick={handleWhatsAppShare}
               className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/90 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
@@ -205,19 +206,19 @@ export default function InvoiceDetailPage({
                 className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <Check size={14} className="stroke-[2.5]" />
-                <span>Marquer payée</span>
+                <span>{t.status.paid}</span>
               </button>
             </Tooltip>
           )}
 
           {/* Télécharger le PDF officiel */}
-          <Tooltip content="Télécharger le PDF" icon={Download}>
+          <Tooltip content={t.invoices.downloadPDF} icon={Download}>
             <button
               onClick={handleDownload}
               className="flex items-center gap-1.5 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs sm:text-sm px-4 py-2 rounded-xl shadow-md shadow-sky-500/20 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
             >
               <Download size={15} />
-              <span>Télécharger le PDF</span>
+              <span>{t.invoices.downloadPDF}</span>
             </button>
           </Tooltip>
         </div>
@@ -240,33 +241,33 @@ export default function InvoiceDetailPage({
                 />
               ) : (
                 <div className="w-11 h-11 rounded-xl bg-slate-900 text-white font-black text-base flex items-center justify-center tracking-tighter shrink-0">
-                  SF
+                  FI
                 </div>
               )}
               <span className="text-xl font-black text-slate-900 tracking-tight">
-                SEN FACTURE
+                FACTURIM
               </span>
             </div>
             <div className="mt-3 text-[11px] text-slate-500 space-y-0.5">
-              <p className="font-bold text-slate-700">Teranga Digital SARL</p>
-              <p>46 Boulevard de la République, Dakar Plateau, Sénégal</p>
-              <p>NINEA : SN-009876543-2B | RC : SN.DKR.2024.B.1234</p>
-              <p>Tél : +221 77 123 45 67 | contact@senfacture.sn</p>
+              <p className="font-bold text-slate-700">Facturim Mauritanie SARL</p>
+              <p>Avenue du Roi Fayçal, Tevragh Zeina, Nouakchott, Mauritanie</p>
+              <p>NIF : 00987654-MR | RC : MR.NKTT.2025.B.1234</p>
+              <p>Tél : +222 45 25 00 00 | contact@facturim.mr</p>
             </div>
           </div>
 
           <div className="text-right">
             <span className="inline-block bg-sky-50 text-sky-700 font-extrabold text-xs px-3.5 py-1 rounded-md tracking-wider uppercase border border-sky-200">
-              FACTURE
+              FACTURE / فاتورة
             </span>
             <p className="text-base font-black text-slate-900 mt-2">
               {invoice.invoiceNumber}
             </p>
             <p className="text-[11px] text-slate-500 mt-1">
-              Émise le : <span className="font-bold text-slate-700">{invoice.issueDate || "12/03/2025"}</span>
+              {t.invoices.issueDate} : <span className="font-bold text-slate-700">{invoice.issueDate || "12/03/2025"}</span>
             </p>
             <p className="text-[11px] text-slate-500">
-              Échéance : <span className="font-bold text-slate-700">{invoice.dueDate || "12/04/2025"}</span>
+              {t.invoices.dueDate} : <span className="font-bold text-slate-700">{invoice.dueDate || "12/04/2025"}</span>
             </p>
           </div>
         </div>
@@ -275,22 +276,22 @@ export default function InvoiceDetailPage({
         <div className="bg-slate-50 p-4 rounded-xl border border-slate-200/80 flex justify-between items-start">
           <div>
             <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-              FACTURÉ À
+              {t.invoices.client}
             </p>
             <h3 className="text-sm font-bold text-slate-900 mt-0.5">
               {invoice.client?.name || "Client Entreprise"}
             </h3>
-            <p className="text-slate-600 text-[11px] mt-0.5">{invoice.client?.address || "Dakar, Sénégal"}</p>
-            <p className="text-slate-600 text-[11px]">{invoice.client?.email || "contact@client.sn"}</p>
-            <p className="text-slate-600 text-[11px]">{invoice.client?.phone || "+221 33 800 00 00"}</p>
+            <p className="text-slate-600 text-[11px] mt-0.5">{invoice.client?.address || "Nouakchott, Mauritanie"}</p>
+            <p className="text-slate-600 text-[11px]">{invoice.client?.email || "contact@client.mr"}</p>
+            <p className="text-slate-600 text-[11px]">{invoice.client?.phone || "+222 45 00 00 00"}</p>
           </div>
 
           <div className="text-right text-[11px]">
             <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-              Statut
+              {t.invoices.status}
             </p>
             <span className="inline-block mt-1 bg-emerald-50 text-emerald-700 font-bold px-3 py-0.5 rounded-full text-[10px] border border-emerald-200/60">
-              Règlement en règle
+              {invoice.status === "paid" ? t.status.paid : t.status.sent}
             </span>
           </div>
         </div>
@@ -300,10 +301,10 @@ export default function InvoiceDetailPage({
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="border-b-2 border-slate-900 text-slate-900 text-[11px] font-bold">
-                <th className="py-2.5">Désignation des prestations</th>
-                <th className="py-2.5 text-center">Qté</th>
-                <th className="py-2.5 text-right">Prix unit.</th>
-                <th className="py-2.5 text-right">Total HT</th>
+                <th className="py-2.5">{t.invoices.description}</th>
+                <th className="py-2.5 text-center">{t.invoices.quantity}</th>
+                <th className="py-2.5 text-right">{t.invoices.unitPrice}</th>
+                <th className="py-2.5 text-right">{t.invoices.subtotal}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -327,14 +328,14 @@ export default function InvoiceDetailPage({
               ) : (
                 <tr className="text-[11px]">
                   <td className="py-3 pr-2 font-medium text-slate-800">
-                    Prestation contractuelle et intégration numérique — {invoice.client?.name || "Client"}
+                    Prestation de services &amp; ingénierie — {invoice.client?.name || "Client"}
                   </td>
                   <td className="py-3 text-center text-slate-600 font-bold">1</td>
                   <td className="py-3 text-right text-slate-600">
-                    {formatMoney(Math.round(invoice.total / 1.18))}
+                    {formatMoney(Math.round(invoice.total / 1.16))}
                   </td>
                   <td className="py-3 text-right font-bold text-slate-900">
-                    {formatMoney(Math.round(invoice.total / 1.18))}
+                    {formatMoney(Math.round(invoice.total / 1.16))}
                   </td>
                 </tr>
               )}
@@ -346,19 +347,19 @@ export default function InvoiceDetailPage({
         <div className="pt-2 border-t border-slate-200 flex justify-end">
           <div className="w-72 space-y-2 text-[11px]">
             <div className="flex justify-between text-slate-600">
-              <span>Sous-total Hors Taxes (HT) :</span>
+              <span>{t.invoices.amountHT} :</span>
               <span className="font-bold text-slate-800">
-                {formatMoney(Math.round(invoice.total / 1.18))}
+                {formatMoney(Math.round(invoice.total / 1.16))}
               </span>
             </div>
             <div className="flex justify-between text-slate-600">
-              <span>TVA légale (18% SYSCOHADA) :</span>
+              <span>{t.invoices.taxAmount} ({t.vatRateLabel}) :</span>
               <span className="font-bold text-slate-800">
-                {formatMoney(Math.round(invoice.total - invoice.total / 1.18))}
+                {formatMoney(Math.round(invoice.total - invoice.total / 1.16))}
               </span>
             </div>
             <div className="flex justify-between items-baseline pt-2.5 border-t-2 border-slate-900 text-slate-900">
-              <span className="text-xs font-bold uppercase">TOTAL NET TTC :</span>
+              <span className="text-xs font-bold uppercase">{t.invoices.totalTTC} :</span>
               <span className="text-lg font-black text-sky-600">
                 {formatMoney(invoice.total)}
               </span>
@@ -369,10 +370,10 @@ export default function InvoiceDetailPage({
         {/* Pied de page et modalités */}
         <div className="pt-5 border-t border-slate-200 text-[10px] text-slate-500 space-y-1.5">
           <p>
-            <strong className="text-slate-700">Modalités de règlement :</strong> Règlements acceptés sous 30 jours par Wave Mobile Money, Orange Money ou virement bancaire BICIS.
+            <strong className="text-slate-700">{t.invoices.paymentTerms} :</strong> Règlements acceptés sous 30 jours par Bankily (BPM), Seddap, Masrvi ou virement bancaire BPM.
           </p>
           <div className="pt-2 text-center text-[9px] text-slate-400 font-medium">
-            SEN FACTURE — Document certifié conforme aux normes fiscales SYSCOHADA et République du Sénégal
+            FACTURIM — {t.invoices.certifiedNotice}
           </div>
         </div>
       </div>

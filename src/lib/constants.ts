@@ -40,6 +40,13 @@ export const INVOICE_STATUSES: Record<
 // ============================================================
 
 export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
+  MRU: {
+    code: "MRU",
+    name: "Ouguiya mauritanienne",
+    symbol: "MRU",
+    locale: "fr-MR",
+    decimals: 0,
+  },
   XOF: {
     code: "XOF",
     name: "Franc CFA (BCEAO)",
@@ -106,30 +113,20 @@ export const CURRENCIES: Record<CurrencyCode, CurrencyConfig> = {
 };
 
 // ============================================================
-// African Countries
+// Countries (Mauritanie en tête & pays partenaires)
 // ============================================================
 
 export const COUNTRIES = [
+  { code: "MR", name: "Mauritanie", currency: "MRU" as CurrencyCode, taxRate: 16 },
   { code: "SN", name: "Sénégal", currency: "XOF" as CurrencyCode, taxRate: 18 },
   { code: "CI", name: "Côte d'Ivoire", currency: "XOF" as CurrencyCode, taxRate: 18 },
   { code: "ML", name: "Mali", currency: "XOF" as CurrencyCode, taxRate: 18 },
+  { code: "MA", name: "Maroc", currency: "MAD" as CurrencyCode, taxRate: 20 },
+  { code: "GN", name: "Guinée", currency: "XOF" as CurrencyCode, taxRate: 18 },
   { code: "BF", name: "Burkina Faso", currency: "XOF" as CurrencyCode, taxRate: 18 },
   { code: "NE", name: "Niger", currency: "XOF" as CurrencyCode, taxRate: 19 },
   { code: "TG", name: "Togo", currency: "XOF" as CurrencyCode, taxRate: 18 },
   { code: "BJ", name: "Bénin", currency: "XOF" as CurrencyCode, taxRate: 18 },
-  { code: "GW", name: "Guinée-Bissau", currency: "XOF" as CurrencyCode, taxRate: 15 },
-  { code: "CM", name: "Cameroun", currency: "XAF" as CurrencyCode, taxRate: 19.25 },
-  { code: "GA", name: "Gabon", currency: "XAF" as CurrencyCode, taxRate: 18 },
-  { code: "CG", name: "Congo", currency: "XAF" as CurrencyCode, taxRate: 18.9 },
-  { code: "TD", name: "Tchad", currency: "XAF" as CurrencyCode, taxRate: 18 },
-  { code: "CF", name: "Centrafrique", currency: "XAF" as CurrencyCode, taxRate: 19 },
-  { code: "GQ", name: "Guinée équatoriale", currency: "XAF" as CurrencyCode, taxRate: 15 },
-  { code: "NG", name: "Nigeria", currency: "NGN" as CurrencyCode, taxRate: 7.5 },
-  { code: "KE", name: "Kenya", currency: "KES" as CurrencyCode, taxRate: 16 },
-  { code: "GH", name: "Ghana", currency: "GHS" as CurrencyCode, taxRate: 15 },
-  { code: "MA", name: "Maroc", currency: "MAD" as CurrencyCode, taxRate: 20 },
-  { code: "ZA", name: "Afrique du Sud", currency: "ZAR" as CurrencyCode, taxRate: 15 },
-  { code: "GN", name: "Guinée", currency: "XOF" as CurrencyCode, taxRate: 18 },
 ] as const;
 
 // ============================================================
@@ -144,12 +141,25 @@ export const NAV_ITEMS = [
 ] as const;
 
 // ============================================================
-// Default Company Settings
+// Default Company Settings (Mauritanie / Facturim)
 // ============================================================
 
 export const DEFAULT_COMPANY = {
-  currency: "XOF" as CurrencyCode,
-  taxRate: 18,
-  invoicePrefix: "FAC",
-  country: "SN",
+  name: "Teranga Tech Mauritanie SARL",
+  tradeName: "Facturim Entreprise",
+  email: "contact@facturim.mr",
+  phone: "+222 45 25 00 00",
+  address: "Avenue du Roi Fayçal, Tevragh Zeina",
+  city: "Nouakchott",
+  country: "Mauritanie",
+  currency: "MRU" as CurrencyCode,
+  taxRate: 16, // TVA Mauritanie 16%
+  taxId: "00987654-MR", // NIF
+  rcNumber: "MR.NKTT.2025.B.1234",
+  invoicePrefix: "FAC-2025-",
+  bankRib: "MR12 00010 01001 12345678901 23 (BPM Mauritanie)",
+  bankilyPhone: "+222 45 12 34 56",
+  seddapPhone: "+222 36 78 90 12",
+  termsAndConditions:
+    "Paiement à réception par virement bancaire BPM ou Mobile Money (Bankily / Seddap). Conformément aux règles fiscales de la Direction Générale des Impôts de Mauritanie.",
 };

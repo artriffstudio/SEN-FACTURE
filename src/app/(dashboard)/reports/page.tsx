@@ -23,8 +23,10 @@ import toast from "react-hot-toast";
 import Tooltip from "@/components/ui/Tooltip";
 import { getInvoices } from "@/lib/services/invoiceService";
 import { Invoice } from "@/lib/types";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function ReportsPage() {
+  const { t, formatMoney, currentLanguage } = useTranslation();
   const [selectedPeriod, setSelectedPeriod] = useState("year");
   const [selectedMonthHover, setSelectedMonthHover] = useState<any | null>(null);
   const [dbInvoices, setDbInvoices] = useState<Invoice[]>([]);
@@ -43,10 +45,6 @@ export default function ReportsPage() {
     }
     load();
   }, []);
-
-  const formatMoney = (amount: number) => {
-    return `${amount.toLocaleString("fr-FR")} FCFA`;
-  };
 
   const kpis = useMemo(() => {
     if (!dbInvoices || dbInvoices.length === 0) {
@@ -111,10 +109,10 @@ export default function ReportsPage() {
 
     return [
       { code: "701100", label: "Ventes de prestations de services (HT)", credit: subtotalHT, debit: 0, status: "Créditeur" },
-      { code: "443100", label: "État, TVA facturée sur ventes (18%)", credit: tvaTotal, debit: 0, status: "En règle" },
+      { code: "443100", label: "État, TVA facturée sur ventes (16%)", credit: tvaTotal, debit: 0, status: "En règle" },
       { code: "411100", label: "Clients locaux (Créances exigibles)", credit: 0, debit: pendingTTC, status: "À recouvrer" },
-      { code: "521100", label: "Banque BICIS Sénégal (Virements)", credit: 0, debit: Math.round(paidTTC * 0.75), status: "Disponible" },
-      { code: "521200", label: "Comptes Wave & Orange Money", credit: 0, debit: Math.round(paidTTC * 0.25), status: "Disponible" },
+      { code: "521100", label: "Banque BPM Mauritanie (Virements)", credit: 0, debit: Math.round(paidTTC * 0.75), status: "Disponible" },
+      { code: "521200", label: "Comptes Bankily & Seddap", credit: 0, debit: Math.round(paidTTC * 0.25), status: "Disponible" },
     ];
   }, [dbInvoices]);
 
@@ -163,19 +161,19 @@ export default function ReportsPage() {
     toast.loading("Génération du fichier Excel (CSV)...", { id: "csv" });
     setTimeout(() => {
       const csvContent =
-        "data:text/csv;charset=utf-8,Mois,Chiffre d'affaires HT (FCFA),Nombre de factures,Objectif\n" +
+        "data:text/csv;charset=utf-8,Mois,Chiffre d'affaires HT (MRU),Nombre de factures,Objectif\n" +
         computedMonthlyData
           .map((m) => `${m.month},${m.revenue},${m.invoicesCount},${m.target}`)
           .join("\n");
       const encodedUri = encodeURI(csvContent);
       const link = document.createElement("a");
       link.setAttribute("href", encodedUri);
-      link.setAttribute("download", `rapport-chiffre-affaires-senfacture-2025.csv`);
+      link.setAttribute("download", `rapport-chiffre-affaires-facturim-2025.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       toast.success("Rapport financier CSV téléchargé !", { id: "csv" });
-    }, 400);
+    }, 600);
   };
 
   return (
@@ -187,14 +185,14 @@ export default function ReportsPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Rapports & Chiffre d&apos;affaires
+              {t.reports.title}
             </h1>
-            <span className="inline-flex items-center gap-1 bg-sky-100 text-sky-700 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
-              SYSCOHADA
+            <span className="inline-flex items-center gap-1 bg-sky-100 text-sky-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+              {t.countryName} DGI
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Analyse détaillée des performances commerciales, de la TVA légale et des créances clients au Sénégal.
+            {t.reports.subtitle}
           </p>
         </div>
 
@@ -210,17 +208,7 @@ export default function ReportsPage() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Ce mois
-            </button>
-            <button
-              onClick={() => setSelectedPeriod("quarter")}
-              className={`px-3 py-1.5 rounded-lg font-bold transition-all cursor-pointer ${
-                selectedPeriod === "quarter"
-                  ? "bg-sky-500 text-white shadow-xs"
-                  : "text-slate-600 hover:text-slate-900"
-              }`}
-            >
-              Trimestre (T1)
+              {t.landing.monthly}
             </button>
             <button
               onClick={() => setSelectedPeriod("year")}
@@ -230,32 +218,32 @@ export default function ReportsPage() {
                   : "text-slate-600 hover:text-slate-900"
               }`}
             >
-              Exercice 2025
+              {t.landing.yearly}
             </button>
           </div>
 
           {/* Export CSV */}
-          <Tooltip content="Exporter en CSV (Excel)" icon={FileSpreadsheet}>
+          <Tooltip content={t.reports.exportCSV} icon={FileSpreadsheet}>
             <button
               onClick={handleExportCSV}
               className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
             >
               <FileSpreadsheet size={15} className="text-sky-600" />
-              <span className="hidden md:inline">Export Excel</span>
+              <span className="hidden md:inline">{t.reports.exportCSV}</span>
             </button>
           </Tooltip>
 
           {/* Impression PDF */}
-          <Tooltip content="Imprimer le rapport" icon={Printer}>
+          <Tooltip content={t.reports.print} icon={Printer}>
             <button
               onClick={() => {
                 window.print();
-                toast.success("Impression lancée");
+                toast.success(t.reports.print);
               }}
               className="flex items-center gap-1.5 bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/90 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
             >
               <Printer size={15} className="text-slate-500" />
-              <span className="hidden md:inline">Imprimer</span>
+              <span className="hidden md:inline">{t.reports.print}</span>
             </button>
           </Tooltip>
         </div>
@@ -269,7 +257,7 @@ export default function ReportsPage() {
         <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Chiffre d&apos;affaires encaissé
+              {t.reports.kpiCollected}
             </span>
             <div className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-200/60">
               <TrendingUp size={16} />
@@ -284,7 +272,7 @@ export default function ReportsPage() {
                 <ArrowUpRight size={12} />
                 +14.2%
               </span>
-              <span className="text-slate-400 text-[11px]">vs période précédente</span>
+              <span className="text-slate-400 text-[11px]">{t.status.paid}</span>
             </div>
           </div>
         </div>
@@ -293,7 +281,7 @@ export default function ReportsPage() {
         <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Créances clients à échoir
+              {t.reports.kpiReceivables}
             </span>
             <div className="w-8 h-8 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200/60">
               <Clock size={16} />
@@ -305,9 +293,9 @@ export default function ReportsPage() {
             </h3>
             <div className="flex items-center gap-1.5 mt-1.5 text-xs">
               <span className="inline-flex items-center text-amber-700 font-extrabold bg-amber-50 px-1.5 py-0.5 rounded-md text-[10px]">
-                {kpis.creancesCount} factures
+                {kpis.creancesCount} {t.nav.invoices}
               </span>
-              <span className="text-slate-400 text-[11px]">Délai moyen : 19 jours</span>
+              <span className="text-slate-400 text-[11px]">{t.status.sent}</span>
             </div>
           </div>
         </div>
@@ -316,7 +304,7 @@ export default function ReportsPage() {
         <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              Taux de recouvrement
+              {t.reports.kpiRecoveryRate}
             </span>
             <div className="w-8 h-8 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-200/60">
               <CheckCircle2 size={16} />
@@ -336,11 +324,11 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        {/* KPI 4 : TVA Collectée (18% SYSCOHADA) */}
-        <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm space-y-3">
+        {/* KPI 4 : TVA Collectée (16% DGI Mauritanie) */}
+        <div className="bg-white border border-slate-200/80 rounded-2xl p-4 sm:p-5 shadow-sm card-interactive">
           <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
-              TVA légale 18% collectée
+            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">
+              {t.reports.kpiVat16}
             </span>
             <div className="w-8 h-8 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center border border-purple-200/60">
               <ShieldCheck size={16} />
@@ -352,9 +340,9 @@ export default function ReportsPage() {
             </h3>
             <div className="flex items-center gap-1.5 mt-1.5 text-xs">
               <span className="inline-flex items-center text-purple-700 font-extrabold bg-purple-50 px-1.5 py-0.5 rounded-md text-[10px]">
-                UEMOA / DGID
+                {t.vatRateLabel}
               </span>
-              <span className="text-slate-400 text-[11px]">Déclaration prête</span>
+              <span className="text-slate-400 text-[11px]">DGI {t.countryName}</span>
             </div>
           </div>
         </div>
@@ -369,14 +357,14 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between pb-3 border-b border-slate-100">
             <div>
               <h2 className="text-sm sm:text-base font-bold text-slate-900">
-                Évolution mensuelle du Chiffre d&apos;Affaires (2025)
+                {t.reports.monthlyEvolution}
               </h2>
               <p className="text-xs text-slate-500">
-                Comparatif des encaissements réels par rapport aux objectifs fixés
+                {t.dashboard.subtitle}
               </p>
             </div>
             <span className="text-[11px] font-bold text-sky-600 bg-sky-50 px-2.5 py-1 rounded-lg border border-sky-200/60">
-              Moyenne : 3 150 000 F / mois
+              {t.brandName} Cloud
             </span>
           </div>
 
@@ -395,8 +383,8 @@ export default function ReportsPage() {
                     {/* Tooltip flottant au survol de la barre */}
                     {isHovered && (
                       <div className="absolute -top-12 z-20 bg-slate-900 text-white text-[11px] font-bold px-2.5 py-1.5 rounded-lg shadow-lg whitespace-nowrap animate-in fade-in duration-150 pointer-events-none">
-                        <p>{item.month} 2025 : {formatMoney(item.revenue)}</p>
-                        <p className="text-[9px] text-sky-300">{item.invoicesCount} factures émises</p>
+                        <p>{item.month} : {formatMoney(item.revenue)}</p>
+                        <p className="text-[9px] text-sky-300">{item.invoicesCount} {t.nav.invoices}</p>
                       </div>
                     )}
 
@@ -423,11 +411,11 @@ export default function ReportsPage() {
             <div className="flex items-center justify-center gap-6 pt-4 text-xs text-slate-500">
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-sm bg-gradient-to-r from-sky-500 to-sky-600" />
-                <span>Périodes records (Objectifs dépassés)</span>
+                <span>{t.dashboard.kpiRevenue}</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="w-3 h-3 rounded-sm bg-slate-200" />
-                <span>Encaissements standards</span>
+                <span>{t.status.paid}</span>
               </div>
             </div>
           </div>
@@ -437,17 +425,17 @@ export default function ReportsPage() {
         <div className="lg:col-span-4 card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-4">
           <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
             <h2 className="text-sm sm:text-base font-bold text-slate-900">
-              Top Clients (CA)
+              {t.reports.clientBreakdown}
             </h2>
-            <span className="text-xs font-semibold text-slate-400">Total : 100%</span>
+            <span className="text-xs font-semibold text-slate-400">100%</span>
           </div>
 
           <div className="space-y-4 pt-1">
             {computedTopClients.length === 0 ? (
               <div className="py-8 text-center text-slate-400 text-xs">
-                <p className="font-semibold text-slate-600">Aucun client facturé</p>
+                <p className="font-semibold text-slate-600">{t.clients.emptyClients}</p>
                 <p className="text-[11px] text-slate-400 mt-1 max-w-[200px] mx-auto">
-                  Vos principaux partenaires apparaîtront ici dès l&apos;émission de vos premières factures.
+                  {t.clients.subtitle}
                 </p>
               </div>
             ) : (
@@ -471,7 +459,7 @@ export default function ReportsPage() {
                   </div>
 
                   <div className="flex items-center justify-between text-[11px] text-slate-400">
-                    <span>{client.invoices} factures émises</span>
+                    <span>{client.invoices} {t.nav.invoices}</span>
                     <span className="font-semibold text-slate-600">
                       {formatMoney(client.revenue)}
                     </span>
@@ -485,7 +473,7 @@ export default function ReportsPage() {
             <div className="p-3 bg-sky-50 rounded-xl border border-sky-100 flex items-center gap-2 text-xs text-sky-800">
               <Sparkles size={16} className="text-sky-600 shrink-0" />
               <span>
-                Calculé dynamiquement en temps réel depuis les factures Supabase.
+                {t.brandName} Cloud {t.countryName}
               </span>
             </div>
           </div>
@@ -493,20 +481,20 @@ export default function ReportsPage() {
       </div>
 
       {/* ======================================================== */}
-      {/* TABLEAU DE SYNTHÈSE COMPTABLE SYSCOHADA */}
+      {/* TABLEAU DE SYNTHÈSE COMPTABLE */}
       {/* ======================================================== */}
       <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-slate-100">
           <div>
             <h2 className="text-sm sm:text-base font-bold text-slate-900">
-              Registre d&apos;Écritures Fiscales & Comptables (SYSCOHADA Révisé)
+              {t.reports.generalLedger}
             </h2>
             <p className="text-xs text-slate-500">
-              Grand Livre des comptes de facturation émis conformément aux normes comptables de l&apos;OHADA
+              {t.invoices.certifiedNotice}
             </p>
           </div>
           <span className="self-start sm:self-auto bg-emerald-50 text-emerald-700 font-extrabold text-[11px] px-3 py-1 rounded-full border border-emerald-200/60">
-            Comptabilité Conforme
+            {t.status.paid}
           </span>
         </div>
 
@@ -514,11 +502,11 @@ export default function ReportsPage() {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="bg-slate-50/90 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200/70">
-                <th className="py-3 px-4">N° de Compte</th>
-                <th className="py-3 px-4">Intitulé du Compte SYSCOHADA</th>
-                <th className="py-3 px-4 text-right">Débit (FCFA)</th>
-                <th className="py-3 px-4 text-right">Crédit (FCFA)</th>
-                <th className="py-3 px-4 text-center">État / Solde</th>
+                <th className="py-3 px-4">Code</th>
+                <th className="py-3 px-4">{t.invoices.description}</th>
+                <th className="py-3 px-4 text-right">Débit ({t.currencySymbol})</th>
+                <th className="py-3 px-4 text-right">Crédit ({t.currencySymbol})</th>
+                <th className="py-3 px-4 text-center">{t.invoices.status}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -555,7 +543,7 @@ export default function ReportsPage() {
             <tfoot>
               <tr className="bg-slate-50 border-t-2 border-slate-900 text-slate-900 font-extrabold text-xs">
                 <td colSpan={2} className="py-3 px-4 uppercase tracking-wider">
-                  TOTAL DES FLUX COMPTABLES
+                  TOTAL
                 </td>
                 <td className="py-3 px-4 text-right text-sky-700">
                   {formatMoney(kpis.totalFlux)}
@@ -564,7 +552,7 @@ export default function ReportsPage() {
                   {formatMoney(kpis.totalFlux)}
                 </td>
                 <td className="py-3 px-4 text-center text-[10px] text-emerald-700 font-black">
-                  ÉQUILIBRÉ
+                  OK
                 </td>
               </tr>
             </tfoot>

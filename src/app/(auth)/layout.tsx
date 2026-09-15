@@ -1,12 +1,18 @@
+"use client";
+
 import React from "react";
 import Link from "next/link";
 import { ShieldCheck, CheckCircle2 } from "lucide-react";
+import LanguageSelector from "@/components/ui/LanguageSelector";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function AuthLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const { t } = useTranslation();
+
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col justify-between relative overflow-hidden">
       {/* Halo lumineux d'arrière-plan subtil */}
@@ -34,30 +40,31 @@ export default function AuthLayout({
                 fontFamily="system-ui, -apple-system, sans-serif"
                 letterSpacing="-0.5px"
               >
-                SF
+                FI
               </text>
             </svg>
           </div>
           <div>
             <div className="flex items-center gap-1.5">
               <span className="font-black text-slate-900 text-sm tracking-tight">
-                SEN FACTURE
+                {t.brandName.toUpperCase()}
               </span>
               <span className="bg-sky-100 text-sky-700 text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase">
-                Sénégal
+                {t.countryName}
               </span>
             </div>
             <p className="text-[10px] text-slate-400 font-medium">
-              Facturation SaaS & SYSCOHADA Révisé
+              {t.brandTagline}
             </p>
           </div>
         </Link>
 
-        <div className="hidden sm:flex items-center gap-3 text-xs text-slate-500 font-medium">
-          <span className="flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60 font-semibold text-[11px]">
+        <div className="flex items-center gap-3">
+          <div className="hidden sm:flex items-center gap-1 text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200/60 font-semibold text-[11px]">
             <CheckCircle2 size={13} />
-            DGID & SYSCOHADA Conforme
-          </span>
+            DGI Mauritanie & TVA 16% Conforme
+          </div>
+          <LanguageSelector variant="pill" />
         </div>
       </header>
 
@@ -69,7 +76,7 @@ export default function AuthLayout({
       {/* Pied de page d'authentification */}
       <footer className="py-4 px-6 border-t border-slate-200/60 bg-white/50 backdrop-blur-xs text-center text-xs text-slate-400 flex flex-col sm:flex-row items-center justify-between gap-2 max-w-7xl mx-auto w-full">
         <p>
-          © {new Date().getFullYear()} SEN FACTURE. Plateforme certifiée conforme aux normes comptables UEMOA.
+          © {new Date().getFullYear()} {t.brandName}. Plateforme certifiée conforme aux normes fiscales de Mauritanie.
         </p>
         <div className="flex items-center gap-4 text-[11px] font-medium text-slate-500">
           <span className="flex items-center gap-1">
@@ -77,7 +84,7 @@ export default function AuthLayout({
             Chiffrement SSL 256 bits
           </span>
           <Link href="/support" className="hover:text-sky-600 transition-colors">
-            Assistance & Hotline Dakar
+            Assistance & Hotline Nouakchott
           </Link>
         </div>
       </footer>

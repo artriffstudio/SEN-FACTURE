@@ -42,13 +42,13 @@ export default function DashboardLayout({
               fontWeight="900"
               fontFamily="system-ui, -apple-system, sans-serif"
             >
-              SF
+              FI
             </text>
           </svg>
         </div>
         <div className="w-6 h-6 border-2 border-sky-500 border-t-transparent rounded-full animate-spin mb-2" />
         <p className="text-xs font-semibold text-slate-500">
-          Chargement de votre espace SEN FACTURE...
+          Chargement de votre espace Facturim...
         </p>
       </div>
     );

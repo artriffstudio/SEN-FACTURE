@@ -44,6 +44,7 @@ import { downloadInvoicePDF, downloadAttachmentPDF } from "@/lib/pdfGenerator";
 import { getInvoices, updateInvoiceStatus } from "@/lib/services/invoiceService";
 import { getCompany } from "@/lib/services/companyService";
 import { Company, Invoice } from "@/lib/types";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 interface AddressItem {
   id: string;
@@ -65,8 +66,11 @@ interface InvoiceRow {
 }
 
 export default function DashboardPage() {
-  // Mode de devise (Franc CFA par défaut)
-  const [currencyMode, setCurrencyMode] = useState<"XOF" | "USD" | "EUR">("XOF");
+  const { t, currentLanguage, formatMoney: formatMoneyContext } = useTranslation();
+  const isAr = currentLanguage === "ar";
+
+  // Mode de devise (MRU par défaut)
+  const [currencyMode, setCurrencyMode] = useState<"MRU" | "USD" | "EUR">("MRU");
 
   // Onglets et Recherche
   const [activeTab, setActiveTab] = useState<"invoices" | "statement" | "open" | "comm">("invoices");
@@ -76,20 +80,20 @@ export default function DashboardPage() {
   const [actionMenuOpenId, setActionMenuOpenId] = useState<string | null>(null);
   const [customerActionsOpen, setCustomerActionsOpen] = useState(false);
 
-  // Adresses professionnelles dynamiques
+  // Adresses professionnelles dynamiques (Mauritanie)
   const [addresses, setAddresses] = useState<AddressItem[]>([
     {
       id: "billing",
       title: "Adresse de facturation",
-      street: "46 Boulevard de la République, Dakar Plateau, Sénégal",
-      phone: "+221 33 824 10 20",
+      street: "Avenue du Roi Fayçal, Tevragh-Zeina, Nouakchott, Mauritanie",
+      phone: "+222 45 25 00 00",
       type: "billing",
     },
     {
       id: "shipping",
       title: "Siège social & Opérations",
-      street: "Immeuble Keur Gorgui, Lot N° 12, VDN, Dakar",
-      phone: "+221 77 123 45 67",
+      street: "Ilot K, Lot 14, Nouakchott, Mauritanie",
+      phone: "+222 36 00 00 00",
       type: "shipping",
     },
   ]);
@@ -97,7 +101,7 @@ export default function DashboardPage() {
   const [isAddAddressModalOpen, setIsAddAddressModalOpen] = useState<boolean>(false);
   const [newAddressTitle, setNewAddressTitle] = useState("");
   const [newAddressStreet, setNewAddressStreet] = useState("");
-  const [newAddressPhone, setNewAddressPhone] = useState("+221 ");
+  const [newAddressPhone, setNewAddressPhone] = useState("+222 ");
 
   const handleAddAddress = (e: React.FormEvent) => {
     e.preventDefault();
@@ -109,14 +113,14 @@ export default function DashboardPage() {
       id: "addr-" + Date.now(),
       title: newAddressTitle.trim(),
       street: newAddressStreet.trim(),
-      phone: newAddressPhone.trim() || "+221 33 800 00 00",
+      phone: newAddressPhone.trim() || "+222 45 00 00 00",
       type: "branch",
     };
     setAddresses((prev) => [...prev, newAddr]);
     setSelectedAddressId(newAddr.id);
     setNewAddressTitle("");
     setNewAddressStreet("");
-    setNewAddressPhone("+221 ");
+    setNewAddressPhone("+222 ");
     setIsAddAddressModalOpen(false);
     toast.success(`Adresse "${newAddr.title}" ajoutée avec succès !`);
   };
@@ -245,13 +249,13 @@ export default function DashboardPage() {
 
   // Formatage monétaire localisé
   const formatMoney = (amount: number) => {
-    if (currencyMode === "XOF") {
-      return amount.toLocaleString("fr-FR") + " FCFA";
+    if (currencyMode === "MRU") {
+      return amount.toLocaleString("fr-FR") + " MRU";
     } else if (currencyMode === "USD") {
-      const usdAmount = Math.round(amount / 600);
+      const usdAmount = Math.round(amount / 39.5);
       return "$" + usdAmount.toLocaleString("en-US", { minimumFractionDigits: 2 });
     } else {
-      const eurAmount = Math.round(amount / 655.957);
+      const eurAmount = Math.round(amount / 43);
       return eurAmount.toLocaleString("fr-FR") + " €";
     }
   };
@@ -336,8 +340,8 @@ export default function DashboardPage() {
       const headers = [
         "Référence",
         "Client",
-        "Marge brute (FCFA)",
-        "Montant Total (FCFA)",
+        "Marge brute (MRU)",
+        "Montant Total (MRU)",
         "Date d'émission",
         "Document PDF",
         "Statut",
@@ -380,7 +384,7 @@ export default function DashboardPage() {
 
   // Partage WhatsApp
   const handleWhatsAppSend = (inv: InvoiceRow) => {
-    const text = `Bonjour ${inv.clientName},\nVoici votre facture *${inv.reference}* (${inv.invoiceCode || "N° en cours"}) d'un montant de *${formatMoney(inv.total)}* émise par SEN FACTURE.\nMerci pour votre confiance !`;
+    const text = `Bonjour ${inv.clientName},\nVoici votre facture *${inv.reference}* (${inv.invoiceCode || "N° en cours"}) d'un montant de *${formatMoney(inv.total)}* émise par Facturim.\nMerci pour votre confiance !`;
     const url = `https://wa.me/?text=${encodeURIComponent(text)}`;
     window.open(url, "_blank");
     toast.success(`Message WhatsApp préparé pour ${inv.clientName}`);
@@ -422,26 +426,26 @@ export default function DashboardPage() {
               className="w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-gentle shrink-0"
               title="Système opérationnel et synchronisé en temps réel"
             />
-            <span className="font-bold text-slate-900 tracking-tight">SEN FACTURE — Hub Opérationnel</span>
+            <span className="font-bold text-slate-900 tracking-tight">{t.dashboard.operationalHub}</span>
             <span className="text-slate-300">•</span>
-            <span className="text-slate-600 font-medium">Dakar, Sénégal (GMT)</span>
+            <span className="text-slate-600 font-medium">Nouakchott, {t.countryName} (GMT)</span>
             <span className="hidden md:inline-block text-[10px] bg-emerald-100 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              SYSCOHADA & UEMOA
+              DGI {t.countryName} &amp; {t.vatRateLabel}
             </span>
           </div>
 
           {/* Sélecteur de devise */}
           <div className="flex items-center gap-1 self-end sm:self-auto bg-slate-100/90 p-1 rounded-xl border border-slate-200/70 shadow-inner">
             <button
-              onClick={() => setCurrencyMode("XOF")}
+              onClick={() => setCurrencyMode("MRU")}
               className={`px-3 py-1 text-xs font-bold rounded-lg transition-all duration-200 cursor-pointer ${
-                currencyMode === "XOF"
+                currencyMode === "MRU"
                   ? "bg-white text-sky-700 shadow-xs scale-102"
                   : "text-slate-500 hover:text-slate-900"
               }`}
-              title="Franc CFA (XOF) — Devise officielle par défaut pour le Sénégal et l'UEMOA"
+              title="Ouguiya mauritanienne (MRU) — Devise officielle par défaut"
             >
-              FCFA
+              MRU
             </button>
             <button
               onClick={() => setCurrencyMode("USD")}
@@ -450,7 +454,7 @@ export default function DashboardPage() {
                   ? "bg-white text-slate-900 shadow-xs scale-102"
                   : "text-slate-500 hover:text-slate-900"
               }`}
-              title="Dollar américain (USD) — Conversion internationale"
+              title="Dollar américain (USD)"
             >
               USD
             </button>
@@ -461,7 +465,7 @@ export default function DashboardPage() {
                   ? "bg-white text-slate-900 shadow-xs scale-102"
                   : "text-slate-500 hover:text-slate-900"
               }`}
-              title="Euro (EUR) — Parité fixe avec le Franc CFA"
+              title="Euro (EUR)"
             >
               EUR
             </button>
@@ -481,18 +485,18 @@ export default function DashboardPage() {
           <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5.5 shadow-sm hover:shadow-xl hover:shadow-sky-500/10 hover:border-sky-300/80 space-y-4 group">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
-                <span title="Fiche officielle de votre entreprise émettrice" className="inline-flex items-center group-hover:scale-110 transition-transform duration-200">
+                <span title={t.settings.companyProfile} className="inline-flex items-center group-hover:scale-110 transition-transform duration-200">
                   <Package
                     size={17}
                     className="text-slate-600"
                   />
                 </span>
-                <span className="group-hover:text-sky-950 transition-colors">Informations de l&apos;entreprise</span>
+                <span className="group-hover:text-sky-950 transition-colors">{t.settings.companyProfile}</span>
               </div>
               <button
-                onClick={() => toast("Options de configuration de l'entreprise", { icon: "⚙️" })}
+                onClick={() => toast(t.settings.title, { icon: "⚙️" })}
                 className="text-slate-400 hover:text-slate-700 p-1.5 rounded-lg hover:bg-slate-100 hover:scale-110 active:scale-95 transition-all cursor-pointer"
-                title="Options et gestion de la fiche d'entreprise"
+                title={t.settings.title}
               >
                 <MoreVertical size={16} />
               </button>
@@ -503,10 +507,9 @@ export default function DashboardPage() {
               <button
                 onClick={() => setCustomerActionsOpen(!customerActionsOpen)}
                 className="w-fit flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-slate-50/80 hover:bg-white hover:border-sky-300 text-xs font-semibold text-slate-700 transition-all shadow-2xs hover:shadow-xs hover:-translate-y-0.5 cursor-pointer"
-                title="Actions rapides sur votre profil d'entreprise"
               >
                 <Eye size={14} className="text-slate-500" />
-                <span>Actions rapides</span>
+                <span>{t.invoices.actions}</span>
                 <ChevronDown size={14} className="text-slate-400 ml-0.5" />
               </button>
 
@@ -517,28 +520,28 @@ export default function DashboardPage() {
                     className="flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 transition-colors"
                   >
                     <UserCheck size={14} className="text-slate-400" />
-                    Modifier les paramètres
+                    {t.nav.settings}
                   </Link>
                   <button
                     onClick={() => {
-                      toast.success("Relevé d'activité généré");
+                      toast.success(t.reports.title);
                       setCustomerActionsOpen(false);
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 text-left transition-colors cursor-pointer"
                   >
                     <FileSpreadsheet size={14} className="text-slate-400" />
-                    Générer le relevé d&apos;activité
+                    {t.reports.title}
                   </button>
                   <button
                     onClick={() => {
-                      const url = `https://wa.me/?text=${encodeURIComponent("Bonjour, voici notre récapitulatif SEN FACTURE.")}`;
+                      const url = `https://wa.me/?text=${encodeURIComponent("Bonjour, voici notre récapitulatif Facturim.")}`;
                       window.open(url, "_blank");
                       setCustomerActionsOpen(false);
                     }}
                     className="w-full flex items-center gap-2 px-3 py-2 text-emerald-600 hover:bg-emerald-50 text-left font-medium transition-colors cursor-pointer"
                   >
                     <Share2 size={14} />
-                    Partager sur WhatsApp
+                    {t.invoices.shareWhatsApp}
                   </button>
                 </div>
               )}
@@ -556,26 +559,24 @@ export default function DashboardPage() {
                 ) : (
                   <div
                     className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 via-sky-500 to-sky-400 flex items-center justify-center text-white shadow-md shadow-sky-500/20 font-black text-base tracking-tighter group-hover:scale-105 group-hover:shadow-sky-500/30 transition-all duration-300"
-                    title="Logo officiel de l'entreprise"
                   >
-                    {company?.tradeName ? company.tradeName.slice(0, 2).toUpperCase() : "SF"}
+                    {company?.tradeName ? company.tradeName.slice(0, 2).toUpperCase() : "FI"}
                   </div>
                 )}
                 <div>
                   <h3 className="text-sm font-bold text-slate-900 leading-tight group-hover:text-sky-900 transition-colors">
-                    {company?.tradeName || company?.name || "SEN FACTURE"}
+                    {company?.tradeName || company?.name || t.brandName}
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5 font-medium">
-                    {company?.name || "SaaS Facturation Pro"}
+                    {company?.name || `${t.brandName} ${t.countryName}`}
                   </p>
                 </div>
               </div>
 
               <span
                 className="bg-emerald-500 text-white font-extrabold text-[11px] px-3 py-0.5 rounded-full shadow-2xs pulse-gentle"
-                title="Statut d'activité du compte : Actif et opérationnel sur Supabase"
               >
-                Actif
+                {t.status.paid ? "Actif" : "Active"}
               </span>
             </div>
 
@@ -584,76 +585,67 @@ export default function DashboardPage() {
               <div className="p-2 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200/70 transition-all duration-150">
                 <div
                   className="flex items-center gap-1.5 text-slate-400 mb-0.5"
-                  title="Statut juridique enregistré pour la facturation"
                 >
                   <Building size={13} />
-                  <span>Type de compte</span>
+                  <span>{t.settings.companyName}</span>
                 </div>
-                <p className="font-bold text-slate-800">Entreprise SARL</p>
+                <p className="font-bold text-slate-800">SARL ({t.countryName})</p>
               </div>
 
               <div className="p-2 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200/70 transition-all duration-150">
                 <div
                   className="flex items-center gap-1.5 text-slate-400 mb-0.5"
-                  title="Adresse email officielle pour l'envoi des factures"
                 >
                   <Mail size={13} />
-                  <span>Email contact</span>
+                  <span>{t.clients.email}</span>
                 </div>
-                <p className="font-bold text-slate-800 truncate" title={company?.email || "contact@senfacture.sn"}>
-                  {company?.email || "contact@senfacture.sn"}
+                <p className="font-bold text-slate-800 truncate" title={company?.email || "contact@facturim.mr"}>
+                  {company?.email || "contact@facturim.mr"}
                 </p>
               </div>
 
               <div className="p-2 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200/70 transition-all duration-150">
                 <div
                   className="flex items-center gap-1.5 text-slate-400 mb-0.5"
-                  title="Numéro d'Identification Nationale des Entreprises et Associations (Sénégal)"
                 >
                   <FileText size={13} />
-                  <span>N° Fiscal (NINEA)</span>
+                  <span>{t.settings.nifNumber}</span>
                 </div>
-                <p className="font-bold text-slate-800">{company?.taxId || "SN-009876543-2B"}</p>
+                <p className="font-bold text-slate-800">{company?.taxId || "00987654-MR"}</p>
               </div>
 
               <div className="p-2 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200/70 transition-all duration-150">
                 <div
                   className="flex items-center gap-1.5 text-slate-400 mb-0.5"
-                  title="Responsable de la facturation et des relances clients"
                 >
                   <UserCheck size={13} />
-                  <span>Responsable</span>
+                  <span>{t.settings.rcNumber}</span>
                 </div>
                 <div className="flex items-center gap-1.5 mt-0.5">
-                  <div className="w-5 h-5 rounded-full bg-sky-100 flex items-center justify-center text-[10px] font-bold text-sky-800">
-                    AD
-                  </div>
-                  <span className="font-bold text-slate-800">Abdoulaye Diop</span>
+                  <span className="font-bold text-slate-800">MR.NKTT.2025.B</span>
                 </div>
               </div>
 
               <div className="p-2 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200/70 transition-all duration-150">
                 <div
                   className="flex items-center gap-1.5 text-slate-400 mb-0.5"
-                  title="Portail web de l'entreprise"
                 >
                   <Globe size={13} />
-                  <span>Site web officiel</span>
+                  <span>{t.clients.city}</span>
                 </div>
-                <p className="font-bold text-slate-800 truncate" title={company?.website || "senfacture.sn"}>
-                  {company?.website || "senfacture.sn"}
+                <p className="font-bold text-slate-800 truncate">
+                  Nouakchott
                 </p>
               </div>
 
               <div className="p-2 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200/70 transition-all duration-150">
                 <div
                   className="flex items-center gap-1.5 text-slate-400 mb-0.5"
-                  title="Numéro téléphonique professionnel"
                 >
                   <Phone size={13} />
-                  <span>Téléphone</span>
+                  <span>{t.clients.phone}</span>
                 </div>
-                <p className="font-bold text-slate-800">{company?.phone || "+221 77 123 45 67"}</p>
+                <p className="font-bold text-slate-800">{company?.phone || "+222 45 25 00 00"}</p>
               </div>
             </div>
           </div>
@@ -910,17 +902,16 @@ export default function DashboardPage() {
                   <Activity size={16} />
                 </div>
                 <div>
-                  <h2 className="text-base font-bold text-slate-900 tracking-tight">Synthèse des factures</h2>
-                  <p className="text-[11px] text-slate-400">Performances et flux de trésorerie en temps réel</p>
+                  <h2 className="text-base font-bold text-slate-900 tracking-tight">{t.dashboard.welcome}</h2>
+                  <p className="text-[11px] text-slate-400">{t.dashboard.subtitle}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
                 <span
                   className="text-xs font-semibold text-sky-700 bg-sky-50 border border-sky-200/80 px-2.5 py-1 rounded-lg flex items-center gap-1.5 shadow-2xs"
-                  title="Période fiscale en cours d'exercice"
                 >
                   <Sparkles size={12} className="text-sky-500" />
-                  <span>Exercice en cours</span>
+                  <span>{t.vatRateLabel}</span>
                 </span>
               </div>
             </div>
@@ -930,43 +921,43 @@ export default function DashboardPage() {
               {/* KPI 1 : Valeur totale facturée */}
               <div className="sub-card-interactive p-3.5 rounded-xl bg-slate-50/70 border border-slate-200/70 cursor-pointer">
                 <div className="flex items-center justify-between text-slate-500 text-[11px] font-medium mb-1">
-                  <span>Total facturé</span>
-                  <span className="text-[10px] bg-slate-200/70 text-slate-700 font-bold px-1.5 py-0.5 rounded">{stats.countTotal} factures</span>
+                  <span>{t.clients.totalInvoiced}</span>
+                  <span className="text-[10px] bg-slate-200/70 text-slate-700 font-bold px-1.5 py-0.5 rounded">{stats.countTotal}</span>
                 </div>
                 <div className="text-base sm:text-lg font-extrabold text-slate-900 tracking-tight">
                   {formatMoney(stats.totalFacture)}
                 </div>
                 <div className="flex items-center gap-1 text-[11px] text-emerald-600 font-semibold mt-1">
                   <TrendingUp size={12} />
-                  <span>En temps réel via Supabase</span>
+                  <span>{t.brandName} Cloud</span>
                 </div>
               </div>
 
               {/* KPI 2 : Recouvrement encaissé */}
               <div className="sub-card-interactive p-3.5 rounded-xl bg-emerald-50/50 border border-emerald-200/60 cursor-pointer">
                 <div className="flex items-center justify-between text-emerald-700 text-[11px] font-medium mb-1">
-                  <span>Encaissé (Payé)</span>
+                  <span>{t.dashboard.kpiRevenue}</span>
                   <span className="text-[10px] bg-emerald-200/70 text-emerald-800 font-bold px-1.5 py-0.5 rounded">{stats.pctEncaisse}%</span>
                 </div>
                 <div className="text-base sm:text-lg font-extrabold text-emerald-900 tracking-tight">
                   {formatMoney(stats.encaisse)}
                 </div>
                 <div className="text-[11px] text-emerald-700 font-medium mt-1">
-                  {stats.countPayees} factures réglées
+                  {stats.countPayees} {t.status.paid.toLowerCase()}
                 </div>
               </div>
 
               {/* KPI 3 : Créances en attente */}
               <div className="sub-card-interactive p-3.5 rounded-xl bg-amber-50/50 border border-amber-200/60 cursor-pointer">
                 <div className="flex items-center justify-between text-amber-700 text-[11px] font-medium mb-1">
-                  <span>Créances à percevoir</span>
+                  <span>{t.dashboard.kpiPending}</span>
                   <span className="text-[10px] bg-amber-200/70 text-amber-800 font-bold px-1.5 py-0.5 rounded">{100 - stats.pctEncaisse}%</span>
                 </div>
                 <div className="text-base sm:text-lg font-extrabold text-amber-900 tracking-tight">
                   {formatMoney(stats.attente + stats.retard)}
                 </div>
                 <div className="text-[11px] text-amber-700 font-medium mt-1">
-                  {stats.countAttente + stats.countRetard} factures en cours
+                  {stats.countAttente + stats.countRetard} {t.status.sent.toLowerCase()}
                 </div>
               </div>
             </div>
@@ -974,24 +965,21 @@ export default function DashboardPage() {
             {/* Barre de progression tricolore avec effet SHIMMER continu */}
             <div className="space-y-1.5">
               <div className="flex items-center justify-between text-xs text-slate-500 font-medium">
-                <span>Progression du recouvrement global</span>
-                <span className="font-bold text-slate-800">{stats.pctEncaisse}% encaissé</span>
+                <span>{t.reports.kpiRecoveryRate}</span>
+                <span className="font-bold text-slate-800">{stats.pctEncaisse}%</span>
               </div>
               <div className="relative w-full h-3 rounded-full bg-slate-100 overflow-hidden flex shadow-inner">
                 <div
                   className="h-full bg-emerald-500 transition-all duration-500"
                   style={{ width: `${stats.pctEncaisse}%` }}
-                  title={`Payées : ${stats.pctEncaisse}% des créances recouvrées`}
                 />
                 <div
                   className="h-full bg-amber-400 transition-all duration-500"
                   style={{ width: `${stats.pctAttente}%` }}
-                  title={`En attente : ${stats.pctAttente}% des créances à échéance`}
                 />
                 <div
                   className="h-full bg-rose-500 transition-all duration-500"
                   style={{ width: `${stats.pctRetard}%` }}
-                  title={`En retard : ${stats.pctRetard}% des créances échues`}
                 />
                 {/* Voile de brillance animée (shimmer) qui traverse la barre */}
                 <div className="absolute inset-0 animate-shimmer pointer-events-none" />
@@ -1002,43 +990,40 @@ export default function DashboardPage() {
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-1 text-xs">
               <div
                 className="sub-card-interactive p-2.5 rounded-xl border border-slate-100 hover:border-emerald-200 hover:bg-emerald-50/30 flex items-center justify-between cursor-default"
-                title="Factures dont le paiement complet a été encaissé"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 shrink-0 pulse-gentle" />
-                  <span className="font-bold text-slate-800">Payées</span>
+                  <span className="font-bold text-slate-800">{t.status.paid}</span>
                 </div>
                 <div className="text-right">
                   <div className="font-extrabold text-slate-900">{formatMoney(stats.encaisse)}</div>
-                  <div className="text-[10px] text-slate-400">{stats.countPayees} Factures</div>
+                  <div className="text-[10px] text-slate-400">{stats.countPayees} {t.nav.invoices}</div>
                 </div>
               </div>
 
               <div
                 className="sub-card-interactive p-2.5 rounded-xl border border-slate-100 hover:border-amber-200 hover:bg-amber-50/30 flex items-center justify-between cursor-default"
-                title="Factures émises dont la date d'échéance n'est pas encore passée"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-amber-400 shrink-0 pulse-gentle" />
-                  <span className="font-bold text-slate-800">En attente</span>
+                  <span className="font-bold text-slate-800">{t.status.sent}</span>
                 </div>
                 <div className="text-right">
                   <div className="font-extrabold text-slate-900">{formatMoney(stats.attente)}</div>
-                  <div className="text-[10px] text-slate-400">{stats.countAttente} Factures</div>
+                  <div className="text-[10px] text-slate-400">{stats.countAttente} {t.nav.invoices}</div>
                 </div>
               </div>
 
               <div
                 className="sub-card-interactive p-2.5 rounded-xl border border-slate-100 hover:border-rose-200 hover:bg-rose-50/30 flex items-center justify-between cursor-default"
-                title="Factures non réglées dont la date d'échéance est dépassée"
               >
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-rose-500 shrink-0 pulse-gentle" />
-                  <span className="font-bold text-slate-800">En retard</span>
+                  <span className="font-bold text-slate-800">{t.status.overdue}</span>
                 </div>
                 <div className="text-right">
                   <div className="font-extrabold text-slate-900">{formatMoney(stats.retard)}</div>
-                  <div className="text-[10px] text-slate-400">{stats.countRetard} Factures</div>
+                  <div className="text-[10px] text-slate-400">{stats.countRetard} {t.nav.invoices}</div>
                 </div>
               </div>
             </div>
@@ -1049,16 +1034,16 @@ export default function DashboardPage() {
             {/* Ligne En-tête : Titre + Bouton Exporter FONCTIONNEL */}
             <div className="flex items-center justify-between pb-1">
               <div className="flex items-center gap-2">
-                <span title="Registre des factures émises et créances" className="inline-flex items-center group-hover:scale-110 transition-transform">
+                <span className="inline-flex items-center group-hover:scale-110 transition-transform">
                   <Receipt
                     size={18}
                     className="text-slate-700"
                   />
                 </span>
-                <h3 className="text-base font-bold text-slate-900 tracking-tight">Registre des factures</h3>
+                <h3 className="text-base font-bold text-slate-900 tracking-tight">{t.dashboard.recentInvoices}</h3>
                 {searchQuery && (
                   <span className="bg-sky-50 text-sky-700 text-xs font-semibold px-2 py-0.5 rounded-full border border-sky-200 shadow-2xs">
-                    {filteredInvoices.length} résultat(s)
+                    {filteredInvoices.length}
                   </span>
                 )}
               </div>
@@ -1068,10 +1053,9 @@ export default function DashboardPage() {
                 <button
                   onClick={() => setIsExportOpen(!isExportOpen)}
                   className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl border border-slate-200/90 bg-white hover:bg-sky-50/60 hover:border-sky-300 text-xs font-bold text-slate-700 shadow-2xs hover:shadow-sm hover:-translate-y-0.5 active:translate-y-0 transition-all cursor-pointer"
-                  title="Exporter la liste des factures au format Excel (CSV) ou imprimer en PDF"
                 >
                   <Download size={14} className="text-slate-500" />
-                  <span>Exporter</span>
+                  <span>{t.reports.exportCSV}</span>
                   <ChevronDown size={13} className="text-slate-400 ml-0.5" />
                 </button>
 
@@ -1081,10 +1065,9 @@ export default function DashboardPage() {
                     <button
                       onClick={handleExportCSV}
                       className="w-full flex items-center gap-2 px-3.5 py-2.5 text-slate-700 hover:bg-slate-50 font-medium transition-colors"
-                      title="Télécharge immédiatement un fichier .csv compatible avec Microsoft Excel et Google Sheets"
                     >
                       <Download size={14} className="text-sky-600" />
-                      <span>Télécharger en CSV (Excel)</span>
+                      <span>{t.reports.exportCSV}</span>
                     </button>
                     <button
                       onClick={() => {
@@ -1092,10 +1075,9 @@ export default function DashboardPage() {
                         setIsExportOpen(false);
                       }}
                       className="w-full flex items-center gap-2 px-3.5 py-2.5 text-slate-700 hover:bg-slate-50 font-medium transition-colors border-t border-slate-100"
-                      title="Imprimer ou enregistrer la liste en PDF"
                     >
                       <Printer size={14} className="text-slate-500" />
-                      <span>Imprimer le registre (PDF)</span>
+                      <span>{t.reports.print}</span>
                     </button>
                   </div>
                 )}
@@ -1104,27 +1086,27 @@ export default function DashboardPage() {
 
             {/* Ligne métadonnées rapides avec Tooltip blanc épuré */}
             <div className="flex flex-wrap items-center gap-y-2 gap-x-6 text-xs text-slate-500 pt-1 pb-2 border-b border-slate-100">
-              <Tooltip content="Conditions de règlement" icon={Calendar}>
+              <Tooltip content={t.invoices.paymentTerms} icon={Calendar}>
                 <div className="flex items-center gap-1.5 cursor-pointer">
                   <Calendar size={14} className="text-sky-600" />
-                  <span>Conditions :</span>
+                  <span>{t.invoices.paymentTerms} :</span>
                   <strong className="text-slate-800 font-bold">30 jours</strong>
                 </div>
               </Tooltip>
 
-              <Tooltip content="Compte comptable" icon={FileSpreadsheet}>
+              <Tooltip content={t.reports.generalLedger} icon={FileSpreadsheet}>
                 <div className="flex items-center gap-1.5 cursor-pointer">
                   <FileSpreadsheet size={14} className="text-sky-600" />
-                  <span>Compte :</span>
-                  <strong className="text-slate-800 font-bold">411-CO (SYSCOHADA)</strong>
+                  <span>{t.reports.generalLedger} :</span>
+                  <strong className="text-slate-800 font-bold">411 ({t.countryName})</strong>
                 </div>
               </Tooltip>
 
-              <Tooltip content="Gestionnaire de compte" icon={User}>
+              <Tooltip content={t.settings.companyProfile} icon={User}>
                 <div className="flex items-center gap-1.5 cursor-pointer">
                   <User size={14} className="text-sky-600" />
-                  <span>Gestionnaire :</span>
-                  <strong className="text-slate-800 font-bold">Abdoulaye Diop</strong>
+                  <span>{t.settings.companyName} :</span>
+                  <strong className="text-slate-800 font-bold">{company?.name || t.brandName}</strong>
                 </div>
               </Tooltip>
             </div>
@@ -1140,9 +1122,8 @@ export default function DashboardPage() {
                       ? "text-slate-900 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-slate-900"
                       : "text-slate-500 hover:text-slate-800 font-medium"
                   }`}
-                  title="Voir toutes les factures émises"
                 >
-                  Toutes ({invoices.length})
+                  {t.invoices.filterAll} ({invoices.length})
                 </button>
 
                 <button
@@ -1152,9 +1133,8 @@ export default function DashboardPage() {
                       ? "text-slate-900 font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-slate-900"
                       : "text-slate-500 hover:text-slate-800"
                   }`}
-                  title="Relevé récapitulatif de compte par client"
                 >
-                  Relevé de compte (3)
+                  {t.reports.title}
                 </button>
 
                 <button
@@ -1164,9 +1144,8 @@ export default function DashboardPage() {
                       ? "text-slate-900 font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-slate-900"
                       : "text-slate-500 hover:text-slate-800"
                   }`}
-                  title="Factures non réglées (en attente ou en retard)"
                 >
-                  Factures en cours (2)
+                  {t.invoices.filterPending}
                 </button>
 
                 <button
@@ -1176,9 +1155,8 @@ export default function DashboardPage() {
                       ? "text-slate-900 font-bold after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-slate-900"
                       : "text-slate-500 hover:text-slate-800"
                   }`}
-                  title="Historique des relances et messages WhatsApp / email"
                 >
-                  Échanges & Relances (3)
+                  {t.invoices.shareWhatsApp}
                 </button>
               </div>
 
@@ -1191,15 +1169,14 @@ export default function DashboardPage() {
                     type="text"
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Rechercher (client, réf, date)..."
+                    placeholder={t.invoices.searchPlaceholder}
                     className="w-40 sm:w-56 pl-8 pr-7 py-1.5 bg-white border border-slate-200 rounded-xl text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:border-sky-500 focus:ring-2 focus:ring-sky-100 shadow-2xs hover:border-slate-300 hover:shadow-xs transition-all"
-                    title="Tapez un nom de client, un numéro de facture ou une date pour filtrer instantanément"
                   />
                   {searchQuery && (
                     <button
                       onClick={() => setSearchQuery("")}
                       className="absolute right-2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
-                      title="Effacer la recherche"
+                      title="Effacer"
                     >
                       <X size={13} />
                     </button>
@@ -1211,13 +1188,12 @@ export default function DashboardPage() {
                   <select
                     value={sortBy}
                     onChange={(e) => setSortBy(e.target.value as any)}
-                    aria-label="Trier les factures"
+                    aria-label="Trier"
                     className="appearance-none bg-white border border-slate-200 rounded-xl text-xs text-slate-700 pl-2.5 pr-7 py-1.5 font-semibold shadow-2xs hover:border-slate-300 hover:shadow-xs focus:outline-none cursor-pointer transition-all"
-                    title="Choisir l'ordre d'affichage des factures"
                   >
-                    <option value="date">Trier par Date</option>
-                    <option value="total">Trier par Montant</option>
-                    <option value="ref">Trier par Réf</option>
+                    <option value="date">{t.invoices.issueDate}</option>
+                    <option value="total">{t.invoices.totalTTC}</option>
+                    <option value="ref">{t.invoices.invoiceNumber}</option>
                   </select>
                   <ChevronDown size={13} className="absolute right-2 top-2.5 text-slate-400 pointer-events-none" />
                 </div>
@@ -1231,7 +1207,6 @@ export default function DashboardPage() {
                         ? "border-sky-500 bg-sky-50 text-sky-700 font-bold ring-2 ring-sky-100"
                         : "border-slate-200 bg-white hover:bg-sky-50/50 hover:border-sky-300 text-slate-600 hover:text-slate-900"
                     }`}
-                    title="Ouvrir le panneau de filtres avancés"
                   >
                     <SlidersHorizontal size={14} />
                     {activeFiltersCount > 0 && (
@@ -1247,7 +1222,7 @@ export default function DashboardPage() {
                       <div className="flex items-center justify-between pb-2 border-b border-slate-100">
                         <div className="flex items-center gap-1.5 font-bold text-slate-900">
                           <Filter size={14} className="text-sky-600" />
-                          <span>Filtres avancés</span>
+                          <span>{t.invoices.actions}</span>
                         </div>
                         {activeFiltersCount > 0 && (
                           <button
@@ -1255,7 +1230,7 @@ export default function DashboardPage() {
                             className="text-[11px] text-rose-600 hover:underline flex items-center gap-1"
                           >
                             <RotateCcw size={11} />
-                            <span>Réinitialiser</span>
+                            <span>Effacer</span>
                           </button>
                         )}
                       </div>
@@ -1263,34 +1238,34 @@ export default function DashboardPage() {
                       {/* 1. Filtrer par statut */}
                       <div>
                         <label className="block font-semibold text-slate-700 mb-1">
-                          Statut de règlement
+                          {t.invoices.status}
                         </label>
                         <select
                           value={filterStatus}
                           onChange={(e) => setFilterStatus(e.target.value as any)}
                           className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
                         >
-                          <option value="all">Tous les statuts</option>
-                          <option value="paid">Payées uniquement</option>
-                          <option value="unpaid">En attente uniquement</option>
-                          <option value="overdue">En retard uniquement</option>
+                          <option value="all">{t.invoices.filterAll}</option>
+                          <option value="paid">{t.invoices.filterPaid}</option>
+                          <option value="unpaid">{t.invoices.filterPending}</option>
+                          <option value="overdue">{t.invoices.filterOverdue}</option>
                         </select>
                       </div>
 
                       {/* 2. Filtrer par montant */}
                       <div>
                         <label className="block font-semibold text-slate-700 mb-1">
-                          Tranche de montant
+                          {t.invoices.amountHT}
                         </label>
                         <select
                           value={filterAmountRange}
                           onChange={(e) => setFilterAmountRange(e.target.value as any)}
                           className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
                         >
-                          <option value="all">Tous les montants</option>
-                          <option value="low">Moins de 1 000 000 FCFA</option>
-                          <option value="mid">Entre 1M et 5M FCFA</option>
-                          <option value="high">Plus de 5 000 000 FCFA</option>
+                          <option value="all">{t.invoices.filterAll}</option>
+                          <option value="low">&lt; 100 000 {t.currencySymbol}</option>
+                          <option value="mid">100 000 - 500 000 {t.currencySymbol}</option>
+                          <option value="high">&gt; 500 000 {t.currencySymbol}</option>
                         </select>
                       </div>
 
@@ -1300,7 +1275,7 @@ export default function DashboardPage() {
                           onClick={() => setIsFilterOpen(false)}
                           className="w-full py-1.5 bg-sky-500 hover:bg-sky-600 text-white rounded-lg font-bold text-center transition-colors"
                         >
-                          Appliquer les filtres ({filteredInvoices.length})
+                          OK ({filteredInvoices.length})
                         </button>
                       </div>
                     </div>
@@ -1323,37 +1298,29 @@ export default function DashboardPage() {
                         }
                         onChange={handleSelectAll}
                         className="rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
-                        title="Sélectionner ou désélectionner toutes les factures affichées"
                       />
                     </th>
                     <th className="py-3 px-3 font-medium">
                       <div
                         onClick={() => setSortBy("ref")}
                         className="flex items-center gap-1 cursor-pointer hover:text-slate-700"
-                        title="Cliquer pour trier par numéro de référence"
                       >
-                        <span>Référence</span>
+                        <span>{t.invoices.invoiceNumber}</span>
                         <ArrowUpDown size={12} />
                       </div>
                     </th>
                     <th className="py-3 px-3 font-medium">
-                      <span>Client</span>
+                      <span>{t.invoices.client}</span>
                     </th>
                     <th className="py-3 px-3 font-medium">
-                      <div
-                        className="flex items-center gap-1 cursor-pointer hover:text-slate-700"
-                        title="Bénéfice net prévisionnel après déduction des coûts"
-                      >
-                        <span>Marge brute</span>
-                      </div>
+                      <span>{t.invoices.subtotal}</span>
                     </th>
                     <th className="py-3 px-3 font-medium">
                       <div
                         onClick={() => setSortBy("total")}
                         className="flex items-center gap-1 cursor-pointer hover:text-slate-700"
-                        title="Cliquer pour trier par montant total"
                       >
-                        <span>Montant Total</span>
+                        <span>{t.invoices.totalTTC}</span>
                         <ArrowUpDown size={12} />
                       </div>
                     </th>
@@ -1361,21 +1328,16 @@ export default function DashboardPage() {
                       <div
                         onClick={() => setSortBy("date")}
                         className="flex items-center gap-1 cursor-pointer hover:text-slate-700"
-                        title="Cliquer pour trier par date d'émission"
                       >
-                        <span>Date</span>
+                        <span>{t.invoices.issueDate}</span>
                         <ArrowUpDown size={12} />
                       </div>
                     </th>
                     <th className="py-3 px-3 font-medium">
-                      <span title="Visualiser ou télécharger la facture officielle au format A4">
-                        Document PDF
-                      </span>
+                      <span>PDF</span>
                     </th>
                     <th className="py-3 px-3 font-medium">
-                      <span title="État du recouvrement auprès du débiteur">
-                        Statut
-                      </span>
+                      <span>{t.invoices.status}</span>
                     </th>
                     <th className="py-3 px-2 text-right"></th>
                   </tr>
@@ -1390,17 +1352,17 @@ export default function DashboardPage() {
                             <Receipt size={24} />
                           </div>
                           <p className="font-bold text-slate-800 text-sm">
-                            Aucune facture enregistrée pour le moment
+                            {t.dashboard.emptyInvoices}
                           </p>
                           <p className="text-xs text-slate-400 max-w-sm">
-                            Vos factures et créances créées apparaîtront ici avec calcul automatique de la TVA 18% et modalités de règlement.
+                            {t.invoices.certifiedNotice}
                           </p>
                           <button
                             onClick={() => setIsLiveModalOpen(true)}
                             className="mt-1 px-4 py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-500/20 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer flex items-center gap-1.5"
                           >
                             <Plus size={15} />
-                            <span>Créer ma première facture</span>
+                            <span>{t.dashboard.createFirstInvoice}</span>
                           </button>
                         </div>
                       </td>
@@ -1411,10 +1373,7 @@ export default function DashboardPage() {
                         <div className="flex flex-col items-center justify-center gap-2">
                           <Search size={28} className="text-slate-300" />
                           <p className="font-semibold text-slate-700">
-                            Aucune facture ne correspond à votre recherche
-                          </p>
-                          <p className="text-[11px] text-slate-400">
-                            Essayez de modifier votre mot-clé ou réinitialisez les filtres
+                            {t.dashboard.emptyInvoices}
                           </p>
                           <button
                             onClick={() => {
@@ -1423,7 +1382,7 @@ export default function DashboardPage() {
                             }}
                             className="mt-2 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-semibold transition-colors"
                           >
-                            Effacer les filtres et recherche
+                            Reset
                           </button>
                         </div>
                       </td>
@@ -1449,7 +1408,6 @@ export default function DashboardPage() {
                               checked={isSelected}
                               onChange={() => handleToggleSelectRow(inv.id)}
                               className="rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer transition-transform group-hover:scale-110"
-                              title={`Sélectionner la facture ${inv.reference}`}
                             />
                           </td>
 
@@ -1481,10 +1439,10 @@ export default function DashboardPage() {
                           {/* Document PDF avec téléchargement direct et Tooltip */}
                           <td className="py-3.5 px-3">
                             {inv.invoiceCode ? (
-                              <Tooltip content="Télécharger la facture PDF" icon={Download}>
+                              <Tooltip content={t.invoices.downloadPDF} icon={Download}>
                                 <button
                                   onClick={async () => {
-                                    toast.loading(`Génération de ${inv.reference}...`, { id: `pdf-${inv.id}` });
+                                    toast.loading(`PDF ${inv.reference}...`, { id: `pdf-${inv.id}` });
                                     const ok = await downloadInvoicePDF({
                                       reference: inv.reference,
                                       clientName: inv.clientName,
@@ -1494,9 +1452,9 @@ export default function DashboardPage() {
                                       status: inv.status,
                                     });
                                     if (ok) {
-                                      toast.success(`Facture ${inv.reference} téléchargée en PDF !`, { id: `pdf-${inv.id}` });
+                                      toast.success(`PDF ${inv.reference} OK !`, { id: `pdf-${inv.id}` });
                                     } else {
-                                      toast.error("Erreur téléchargement facture", { id: `pdf-${inv.id}` });
+                                      toast.error("Erreur PDF", { id: `pdf-${inv.id}` });
                                     }
                                   }}
                                   className="flex items-center gap-1.5 text-slate-700 hover:text-sky-600 font-semibold group/code cursor-pointer"
@@ -1512,10 +1470,9 @@ export default function DashboardPage() {
                             ) : (
                               <div
                                 className="flex items-center gap-1.5 text-slate-400"
-                                title="Le PDF officiel sera généré dès la validation de la facture"
                               >
                                 <FileText size={14} className="text-slate-300" />
-                                <span>En attente</span>
+                                <span>{t.status.draft}</span>
                               </div>
                             )}
                           </td>
@@ -1524,29 +1481,26 @@ export default function DashboardPage() {
                           <td className="py-3.5 px-3">
                             {inv.status === "paid" && (
                               <span
-                                className="bg-emerald-100/80 text-emerald-700 font-bold text-[11px] px-3 py-0.5 rounded-full inline-flex items-center justify-center border border-emerald-200/60 shadow-2xs hover:scale-105 transition-transform cursor-help"
-                                title="Facture intégralement réglée par le client"
+                                className="bg-emerald-100/80 text-emerald-700 font-bold text-[11px] px-3 py-0.5 rounded-full inline-flex items-center justify-center border border-emerald-200/60 shadow-2xs hover:scale-105 transition-transform"
                               >
                                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 mr-1.5 pulse-gentle" />
-                                Payée
+                                {t.status.paid}
                               </span>
                             )}
                             {inv.status === "overdue" && (
                               <span
-                                className="bg-rose-100/80 text-rose-700 font-bold text-[11px] px-3 py-0.5 rounded-full inline-flex items-center justify-center border border-rose-200/60 shadow-2xs hover:scale-105 transition-transform cursor-help"
-                                title="Date d'échéance dépassée — relance de paiement nécessaire"
+                                className="bg-rose-100/80 text-rose-700 font-bold text-[11px] px-3 py-0.5 rounded-full inline-flex items-center justify-center border border-rose-200/60 shadow-2xs hover:scale-105 transition-transform"
                               >
                                 <span className="w-1.5 h-1.5 rounded-full bg-rose-500 mr-1.5 pulse-gentle" />
-                                En retard
+                                {t.status.overdue}
                               </span>
                             )}
                             {inv.status === "unpaid" && (
                               <span
-                                className="bg-amber-100/80 text-amber-700 font-bold text-[11px] px-3 py-0.5 rounded-full inline-flex items-center justify-center border border-amber-200/60 shadow-2xs hover:scale-105 transition-transform cursor-help"
-                                title="Facture émise en attente de paiement par le client"
+                                className="bg-amber-100/80 text-amber-700 font-bold text-[11px] px-3 py-0.5 rounded-full inline-flex items-center justify-center border border-amber-200/60 shadow-2xs hover:scale-105 transition-transform"
                               >
                                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 mr-1.5 pulse-gentle" />
-                                En attente
+                                {t.status.sent}
                               </span>
                             )}
                           </td>
@@ -1556,7 +1510,6 @@ export default function DashboardPage() {
                             <button
                               onClick={() => setActionMenuOpenId(isMenuOpen ? null : inv.id)}
                               className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                              title="Ouvrir le menu d'actions pour cette facture"
                             >
                               <MoreVertical size={16} />
                             </button>
@@ -1567,51 +1520,46 @@ export default function DashboardPage() {
                                 <Link
                                   href="/invoices"
                                   className="flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50"
-                                  title="Ouvrir le détail complet de la facture"
                                 >
                                   <Eye size={14} className="text-slate-400" />
-                                  Consulter la facture
+                                  {t.invoices.viewDetails}
                                 </Link>
 
                                 <button
                                   onClick={() => handleWhatsAppSend(inv)}
                                   className="w-full flex items-center gap-2 px-3 py-2 text-emerald-600 hover:bg-emerald-50 text-left font-medium cursor-pointer"
-                                  title="Envoyer un message pré-rempli avec le montant sur WhatsApp"
                                 >
                                   <Share2 size={14} />
-                                  Partager sur WhatsApp
+                                  {t.invoices.shareWhatsApp}
                                 </button>
 
                                 <button
                                   onClick={() => handleEmailSend(inv)}
                                   className="w-full flex items-center gap-2 px-3 py-2 text-sky-600 hover:bg-sky-50 text-left cursor-pointer"
-                                  title="Envoyer la facture par courriel au client"
                                 >
                                   <Send size={14} />
-                                  Envoyer par email
+                                  Email
                                 </button>
 
                                 <button
                                   onClick={() => {
                                     downloadInvoicePDF(inv);
-                                    toast.success(`Facture ${inv.reference} téléchargée en PDF !`);
+                                    toast.success(`${inv.reference} PDF !`);
                                     setActionMenuOpenId(null);
                                   }}
                                   className="w-full flex items-center gap-2 px-3 py-2 text-slate-700 hover:bg-slate-50 text-left cursor-pointer"
-                                  title="Télécharger la version papier A4"
                                 >
                                   <Download size={14} className="text-sky-600" />
-                                  Télécharger le PDF A4
+                                  {t.invoices.downloadPDF}
                                 </button>
 
                                 {inv.status !== "paid" && (
                                   <button
                                     onClick={() => handleMarkPaid(inv.id)}
                                     className="w-full flex items-center gap-2 px-3 py-2 text-emerald-600 hover:bg-emerald-50 text-left border-t border-slate-100 cursor-pointer"
-                                    title="Changer le statut en Payée"
                                   >
                                     <CheckCircle2 size={14} />
-                                    Marquer comme payée
+                                    {t.status.paid}
                                   </button>
                                 )}
                               </div>
@@ -1625,52 +1573,19 @@ export default function DashboardPage() {
               </table>
             </div>
 
-            {/* Pagination en français */}
+            {/* Pagination */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-3 border-t border-slate-100 text-xs text-slate-500">
               <div>
-                <span>Affichage de 1 à {filteredInvoices.length} sur {invoices.length} factures</span>
+                <span>{filteredInvoices.length} / {invoices.length} {t.nav.invoices}</span>
               </div>
 
               {/* Boutons de pagination */}
               <div className="flex items-center gap-1 self-center">
                 <button
-                  onClick={() => toast("Page 1")}
+                  onClick={() => toast("1")}
                   className="w-7 h-7 rounded-md bg-slate-100 text-slate-900 font-bold flex items-center justify-center shadow-2xs"
-                  title="Page 1"
                 >
                   1
-                </button>
-                <button
-                  onClick={() => toast("Page 2")}
-                  className="w-7 h-7 rounded-md border border-slate-200/80 hover:bg-slate-50 flex items-center justify-center font-medium text-slate-700"
-                  title="Page 2"
-                >
-                  2
-                </button>
-                <button
-                  onClick={() => toast("Page 3")}
-                  className="w-7 h-7 rounded-md border border-slate-200/80 hover:bg-slate-50 flex items-center justify-center font-medium text-slate-700"
-                  title="Page 3"
-                >
-                  3
-                </button>
-              </div>
-
-              {/* Boutons Précédent / Suivant */}
-              <div className="flex items-center gap-2 self-end sm:self-auto">
-                <button
-                  onClick={() => toast("Page précédente")}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200/90 text-slate-700 hover:bg-slate-50 font-medium text-xs shadow-2xs"
-                  title="Aller à la page précédente"
-                >
-                  Précédent
-                </button>
-                <button
-                  onClick={() => toast("Page suivante")}
-                  className="px-3 py-1.5 rounded-lg border border-slate-200/90 text-slate-700 hover:bg-slate-50 font-medium text-xs shadow-2xs"
-                  title="Aller à la page suivante"
-                >
-                  Suivant
                 </button>
               </div>
             </div>

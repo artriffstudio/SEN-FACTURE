@@ -22,12 +22,14 @@ import { getClientById } from "@/lib/services/clientService";
 import { Client, Invoice } from "@/lib/types";
 import Tooltip from "@/components/ui/Tooltip";
 import { downloadInvoicePDF } from "@/lib/pdfGenerator";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function ClientDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const { t, formatMoney } = useTranslation();
   const resolvedParams = use(params);
   const [client, setClient] = useState<Client | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
@@ -58,14 +60,10 @@ export default function ClientDetailPage({
     return clientInvoices.reduce((acc, inv) => acc + (inv.total || 0), 0) || (client?.totalRevenue || 0);
   }, [clientInvoices, client]);
 
-  const formatMoney = (amount: number) => {
-    return `${amount.toLocaleString("fr-FR")} FCFA`;
-  };
-
   const handleWhatsAppReminder = () => {
     if (!client) return;
-    const rawPhone = (client.phone || "+221770000000").replace(/[^0-9]/g, "");
-    const message = `Bonjour ${client.name},\nNous vous remercions de votre collaboration avec SEN FACTURE. N'hésitez pas à nous contacter pour tout suivi concernant vos factures en cours.\nCordialement, l'équipe SEN FACTURE.`;
+    const rawPhone = (client.phone || "+22245000000").replace(/[^0-9]/g, "");
+    const message = `Bonjour ${client.name},\nNous vous remercions de votre collaboration avec Facturim. N'hésitez pas à nous contacter pour tout suivi concernant vos factures en cours.\nCordialement, l'équipe Facturim Mauritanie.`;
     window.open(`https://wa.me/${rawPhone}?text=${encodeURIComponent(message)}`, "_blank");
     toast.success("Lien de relance WhatsApp ouvert !");
   };
@@ -86,13 +84,13 @@ export default function ClientDetailPage({
           <Building2 size={26} />
         </div>
         <h2 className="text-base font-bold text-slate-900 mb-1">Client introuvable</h2>
-        <p className="text-xs text-slate-500 mb-6">Ce client n'existe pas ou a été supprimé.</p>
+        <p className="text-xs text-slate-500 mb-6">{t.clients.emptyClients}</p>
         <Link
           href="/clients"
           className="inline-flex items-center gap-2 bg-slate-900 text-white font-bold text-xs px-4 py-2.5 rounded-xl hover:bg-slate-800 transition-all"
         >
           <ArrowLeft size={14} />
-          <span>Retour aux clients</span>
+          <span>{t.nav.clients}</span>
         </Link>
       </div>
     );
@@ -106,7 +104,7 @@ export default function ClientDetailPage({
           <Link
             href="/clients"
             className="w-9 h-9 rounded-xl bg-white border border-slate-200/90 flex items-center justify-center text-slate-500 hover:text-slate-900 hover:bg-slate-50 shadow-2xs hover:scale-105 active:scale-95 transition-all"
-            title="Retour à la liste des clients"
+            title={t.nav.clients}
           >
             <ArrowLeft size={16} />
           </Link>
@@ -116,18 +114,18 @@ export default function ClientDetailPage({
                 {client.name}
               </h1>
               <span className="bg-sky-100 text-sky-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase">
-                Client Actif
+                {t.countryName}
               </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5">
-              Fiche détaillée et historique comptable SYSCOHADA
+              {t.clients.clientDetails}
             </p>
           </div>
         </div>
 
         {/* Actions rapides */}
         <div className="flex items-center gap-2">
-          <Tooltip content="Relancer par WhatsApp" icon={Share2}>
+          <Tooltip content={t.clients.contactWhatsApp} icon={Share2}>
             <button
               onClick={handleWhatsAppReminder}
               className="flex items-center gap-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200/90 px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
@@ -137,13 +135,13 @@ export default function ClientDetailPage({
             </button>
           </Tooltip>
 
-          <Tooltip content="Nouvelle facture" icon={Plus}>
+          <Tooltip content={t.invoices.newInvoice} icon={Plus}>
             <Link
               href="/invoices/new"
               className="flex items-center gap-1.5 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs px-4 py-2 rounded-xl shadow-md shadow-sky-500/20 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer"
             >
               <Plus size={15} />
-              <span>Créer une facture</span>
+              <span>{t.invoices.newInvoice}</span>
             </Link>
           </Tooltip>
         </div>
@@ -157,17 +155,17 @@ export default function ClientDetailPage({
             <div className="flex items-center gap-2">
               <Building2 size={18} className="text-sky-600" />
               <h2 className="text-sm font-bold text-slate-900">
-                Informations légales & Coordonnées
+                {t.clients.clientDetails}
               </h2>
             </div>
             <span className="text-[10px] font-mono bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold">
-              {client.taxId || "SN-DKR-2024-B"}
+              {client.taxId || "00987654-MR"}
             </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
             <div className="space-y-1">
-              <span className="text-slate-400 font-semibold">Email officiel :</span>
+              <span className="text-slate-400 font-semibold">{t.clients.email} :</span>
               <p className="font-bold text-slate-800 flex items-center gap-1.5">
                 <Mail size={13} className="text-slate-400" />
                 {client.email}
@@ -175,7 +173,7 @@ export default function ClientDetailPage({
             </div>
 
             <div className="space-y-1">
-              <span className="text-slate-400 font-semibold">Téléphone de contact :</span>
+              <span className="text-slate-400 font-semibold">{t.clients.phone} :</span>
               <p className="font-bold text-slate-800 flex items-center gap-1.5">
                 <Phone size={13} className="text-slate-400" />
                 {client.phone}
@@ -183,7 +181,7 @@ export default function ClientDetailPage({
             </div>
 
             <div className="space-y-1">
-              <span className="text-slate-400 font-semibold">Adresse géographique :</span>
+              <span className="text-slate-400 font-semibold">{t.clients.address} :</span>
               <p className="font-bold text-slate-800 flex items-center gap-1.5">
                 <MapPin size={13} className="text-slate-400" />
                 {client.address}, {client.city}
@@ -191,10 +189,10 @@ export default function ClientDetailPage({
             </div>
 
             <div className="space-y-1">
-              <span className="text-slate-400 font-semibold">Conditions de règlement :</span>
+              <span className="text-slate-400 font-semibold">{t.invoices.paymentTerms} :</span>
               <p className="font-bold text-slate-800 flex items-center gap-1.5">
                 <Clock size={13} className="text-slate-400" />
-                30 jours nets (SYSCOHADA)
+                30 jours (DGI {t.countryName})
               </p>
             </div>
           </div>
@@ -204,23 +202,23 @@ export default function ClientDetailPage({
         <div className="lg:col-span-5 card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 shadow-sm space-y-4">
           <div className="pb-3 border-b border-slate-100 flex items-center justify-between">
             <h2 className="text-sm font-bold text-slate-900">
-              Encours financier
+              {t.clients.totalInvoiced}
             </h2>
-            <span className="text-xs text-slate-400">Total facturé</span>
+            <span className="text-xs text-slate-400">{t.currencyCode}</span>
           </div>
 
           <div className="space-y-3">
             <div>
-              <span className="text-xs text-slate-400">Chiffre d&apos;affaires généré :</span>
+              <span className="text-xs text-slate-400">{t.clients.totalInvoiced} :</span>
               <h3 className="text-2xl font-black text-slate-900 mt-0.5">
                 {formatMoney(totalInvoiced)}
               </h3>
             </div>
 
             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-xs">
-              <span className="text-slate-500">Statut du compte :</span>
+              <span className="text-slate-500">{t.invoices.status} :</span>
               <span className="bg-emerald-50 text-emerald-700 font-bold px-2.5 py-0.5 rounded-full border border-emerald-200/60">
-                Solvable & À jour
+                {t.status.paid} ✓
               </span>
             </div>
           </div>
@@ -233,11 +231,11 @@ export default function ClientDetailPage({
           <div className="flex items-center gap-2">
             <FileText size={18} className="text-sky-600" />
             <h2 className="text-sm sm:text-base font-bold text-slate-900">
-              Historique des factures de {client.name}
+              {t.invoices.title} ({client.name})
             </h2>
           </div>
           <span className="text-xs text-slate-400">
-            {clientInvoices.length > 0 ? clientInvoices.length : 1} facture(s) enregistrée(s)
+            {clientInvoices.length > 0 ? clientInvoices.length : 1} {t.clients.invoicesCount}
           </span>
         </div>
 
@@ -245,11 +243,11 @@ export default function ClientDetailPage({
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="bg-slate-50/90 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200/70">
-                <th className="py-3 px-4">Référence</th>
-                <th className="py-3 px-4">Date d&apos;émission</th>
-                <th className="py-3 px-4 text-right">Montant Total TTC</th>
-                <th className="py-3 px-4 text-center">Statut</th>
-                <th className="py-3 px-4 text-center">Document PDF</th>
+                <th className="py-3 px-4">{t.invoices.invoiceNumber}</th>
+                <th className="py-3 px-4">{t.invoices.issueDate}</th>
+                <th className="py-3 px-4 text-right">{t.invoices.totalTTC}</th>
+                <th className="py-3 px-4 text-center">{t.invoices.status}</th>
+                <th className="py-3 px-4 text-center">{t.invoices.downloadPDF}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -267,11 +265,11 @@ export default function ClientDetailPage({
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span className="bg-emerald-100/80 text-emerald-700 font-bold text-[10px] px-2.5 py-0.5 rounded-full">
-                        {inv.status === "paid" ? "Payée" : "En cours"}
+                        {inv.status === "paid" ? t.status.paid : t.status.sent}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <Tooltip content="Télécharger la facture PDF" icon={Download}>
+                      <Tooltip content={t.invoices.downloadPDF} icon={Download}>
                         <button
                           onClick={async () => {
                             toast.loading("Génération du PDF...", { id: "pdf" });
@@ -305,11 +303,11 @@ export default function ClientDetailPage({
                   </td>
                   <td className="py-3 px-4 text-center">
                     <span className="bg-emerald-100/80 text-emerald-700 font-bold text-[10px] px-2.5 py-0.5 rounded-full">
-                      Payée
+                      {t.status.paid}
                     </span>
                   </td>
                   <td className="py-3 px-4 text-center">
-                    <Tooltip content="Télécharger la facture PDF" icon={Download}>
+                    <Tooltip content={t.invoices.downloadPDF} icon={Download}>
                       <button
                         onClick={async () => {
                           toast.loading("Génération du PDF...", { id: "pdf" });

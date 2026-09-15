@@ -8,6 +8,7 @@ import {
   Users,
   Package,
   BarChart3,
+  Clock,
   Settings,
   Headphones,
   X,
@@ -17,67 +18,74 @@ import {
 import toast from "react-hot-toast";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 
-interface NavItem {
+interface NavItemConfig {
   id: string;
-  label: string;
-  description: string;
+  getLabel: (t: ReturnType<typeof useTranslation>["t"]) => string;
+  getDescription: (t: ReturnType<typeof useTranslation>["t"]) => string;
   href: string;
   icon: React.ComponentType<{ size?: number; className?: string }>;
 }
 
-// 7 piliers essentiels du SaaS Facturation avec routes et identifiants uniques
-const mainNavItems: NavItem[] = [
+const mainNavConfigs: NavItemConfig[] = [
   {
     id: "dashboard",
-    label: "Tableau de bord",
-    description: "Vue d'ensemble de l'activité, indicateurs clés et registre des factures",
+    getLabel: (t) => t.nav.dashboard,
+    getDescription: (t) => t.dashboard.subtitle,
     href: "/dashboard",
     icon: LayoutGrid,
   },
   {
     id: "invoices",
-    label: "Factures & Devis",
-    description: "Créer, consulter, imprimer et télécharger toutes vos factures",
+    getLabel: (t) => t.nav.invoices,
+    getDescription: (t) => t.invoices.subtitle,
     href: "/invoices",
     icon: Receipt,
   },
   {
     id: "clients",
-    label: "Clients & Entreprises",
-    description: "Gérer votre répertoire de clients, coordonnées et encours",
+    getLabel: (t) => t.nav.clients,
+    getDescription: (t) => t.clients.subtitle,
     href: "/clients",
     icon: Users,
   },
   {
     id: "inventory",
-    label: "Articles & Prestations",
-    description: "Catalogue de vos prestations de services et tarifs officiels",
+    getLabel: (t) => t.nav.inventory,
+    getDescription: (t) => t.inventory.subtitle,
     href: "/inventory",
     icon: Package,
   },
   {
     id: "reports",
-    label: "Rapports & Chiffre d'affaires",
-    description: "Statistiques des ventes, suivi des créances et conformité comptable",
+    getLabel: (t) => t.nav.reports,
+    getDescription: (t) => t.reports.subtitle,
     href: "/reports",
     icon: BarChart3,
   },
+  {
+    id: "receivables",
+    getLabel: (t) => t.nav.receivables,
+    getDescription: (t) => t.receivables.subtitle,
+    href: "/receivables",
+    icon: Clock,
+  },
 ];
 
-const otherNavItems: NavItem[] = [
+const otherNavConfigs: NavItemConfig[] = [
   {
     id: "settings",
-    label: "Paramètres de l'entreprise",
-    description: "Identifiants fiscaux NINEA, taux de TVA 18%, logo et devises",
+    getLabel: (t) => t.nav.settings,
+    getDescription: (t) => t.settings.subtitle,
     href: "/settings",
     icon: Settings,
   },
   {
     id: "support",
-    label: "Assistance & Support",
-    description: "Contacter le support client dédié et consulter l'aide",
+    getLabel: (t) => t.nav.support,
+    getDescription: (t) => t.support.subtitle,
     href: "/support",
     icon: Headphones,
   },
@@ -92,13 +100,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, signOut } = useAuth();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     try {
       await signOut();
-      toast.success("Vous avez été déconnecté.");
+      toast.success(t.nav.logout);
       router.push("/login");
-    } catch (err) {
+    } catch {
       toast.error("Erreur lors de la déconnexion");
     }
   };
@@ -106,8 +115,8 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
   const displayName =
     user?.user_metadata?.company_name ||
     user?.user_metadata?.full_name ||
-    "SEN FACTURE";
-  const displayEmail = user?.email || "contact@senfacture.sn";
+    t.brandName;
+  const displayEmail = user?.email || "contact@facturim.mr";
   const initials = displayName
     ? displayName
         .split(" ")
@@ -115,29 +124,31 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
         .join("")
         .substring(0, 2)
         .toUpperCase()
-    : "SF";
+    : "FI";
 
-  // Détection stricte et univoque de l'élément actif : UNE SEULE ICÔNE ACTIVE À LA FOIS
-  const isItemActive = (item: NavItem) => {
-    if (item.id === "dashboard") {
+  const isItemActive = (id: string) => {
+    if (id === "dashboard") {
       return pathname === "/dashboard";
     }
-    if (item.id === "invoices") {
+    if (id === "invoices") {
       return pathname === "/invoices" || (pathname.startsWith("/invoices/") && pathname !== "/invoices/new");
     }
-    if (item.id === "clients") {
+    if (id === "clients") {
       return pathname.startsWith("/clients");
     }
-    if (item.id === "inventory") {
+    if (id === "inventory") {
       return pathname.startsWith("/inventory");
     }
-    if (item.id === "reports") {
+    if (id === "reports") {
       return pathname.startsWith("/reports");
     }
-    if (item.id === "settings") {
+    if (id === "receivables") {
+      return pathname.startsWith("/receivables");
+    }
+    if (id === "settings") {
       return pathname === "/settings";
     }
-    if (item.id === "support") {
+    if (id === "support") {
       return pathname.startsWith("/support");
     }
     return false;
@@ -173,14 +184,14 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 className="flex items-center gap-3 shrink-0"
               >
                 <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-slate-900 via-slate-800 to-sky-700 shadow-md shadow-slate-900/10 group-hover:shadow-sky-500/20 flex items-center justify-center text-white font-extrabold text-sm tracking-tighter shrink-0 transition-transform group-hover:scale-105">
-                  SF
+                  FI
                 </div>
                 <div className="flex flex-col lg:hidden">
                   <span className="font-extrabold text-slate-900 text-sm tracking-tight leading-none">
-                    SEN FACTURE
+                    {t.brandName.toUpperCase()}
                   </span>
                   <span className="text-[10px] text-sky-600 font-bold uppercase tracking-wider mt-1">
-                    SaaS Facturation
+                    {t.countryName} Pro
                   </span>
                 </div>
               </Link>
@@ -190,7 +201,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-white drop-shadow-xs" />
                 <div className="bg-white text-slate-900 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xl border border-slate-200/90 whitespace-nowrap flex items-center gap-2 ring-1 ring-slate-900/5">
                   <span className="w-2 h-2 rounded-full bg-sky-500" />
-                  <span>SEN FACTURE</span>
+                  <span>{t.brandName}</span>
                 </div>
               </div>
             </div>
@@ -206,7 +217,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </div>
 
-        {/* Navigation Items (lg:overflow-visible so tooltips pop out without being clipped) */}
+        {/* Navigation Items */}
         <div className="flex-1 w-full overflow-y-auto lg:overflow-visible no-scrollbar py-3 px-3 lg:px-2 space-y-6">
           {/* SECTION MENU */}
           <div>
@@ -214,9 +225,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               MENU
             </div>
             <nav className="flex flex-col space-y-1.5">
-              {mainNavItems.map((item) => {
+              {mainNavConfigs.map((item) => {
                 const Icon = item.icon;
-                const active = isItemActive(item);
+                const active = isItemActive(item.id);
+                const label = item.getLabel(t);
 
                 return (
                   <div key={item.id} className="relative group w-full">
@@ -230,7 +242,6 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       onClick={onClose}
                       className={cn(
                         "relative flex items-center rounded-xl transition-all duration-200 cursor-pointer",
-                        // Mobile layout: icon + full text label + subtitle
                         "w-full px-3 py-2.5 gap-3 lg:w-11 lg:h-11 lg:p-0 lg:justify-center lg:mx-auto",
                         active
                           ? "bg-sky-100/90 text-sky-600 font-bold shadow-xs scale-102"
@@ -244,10 +255,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                           active ? "text-sky-600 stroke-[2.3]" : "stroke-[1.8]"
                         )}
                       />
-                      {/* Label visible on mobile */}
                       <div className="lg:hidden flex items-center min-w-0 flex-1">
                         <span className="text-xs font-bold truncate text-slate-800">
-                          {item.label}
+                          {label}
                         </span>
                       </div>
                       {active && (
@@ -255,13 +265,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       )}
                     </Link>
 
-                    {/* Desktop Tooltip Blanc épuré avec icône bleue et nom uniquement */}
+                    {/* Desktop Tooltip Blanc épuré avec icône bleue */}
                     <div className="hidden lg:group-hover:flex items-center absolute left-full ml-2.5 top-1/2 -translate-y-1/2 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-100">
-                      {/* Flèche blanche */}
                       <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-white drop-shadow-xs" />
                       <div className="bg-white text-slate-900 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xl border border-slate-200/90 whitespace-nowrap flex items-center gap-2 ring-1 ring-slate-900/5">
                         <Icon size={16} className="text-sky-600 shrink-0 stroke-[2.3]" />
-                        <span>{item.label}</span>
+                        <span>{label}</span>
                       </div>
                     </div>
                   </div>
@@ -276,9 +285,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
               AUTRES
             </div>
             <nav className="flex flex-col space-y-1.5">
-              {otherNavItems.map((item) => {
+              {otherNavConfigs.map((item) => {
                 const Icon = item.icon;
-                const active = isItemActive(item);
+                const active = isItemActive(item.id);
+                const label = item.getLabel(t);
 
                 return (
                   <div key={item.id} className="relative group w-full">
@@ -306,7 +316,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       />
                       <div className="lg:hidden flex items-center min-w-0 flex-1">
                         <span className="text-xs font-bold truncate text-slate-800">
-                          {item.label}
+                          {label}
                         </span>
                       </div>
                       {active && (
@@ -314,12 +324,12 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                       )}
                     </Link>
 
-                    {/* Desktop Tooltip Blanc épuré avec icône bleue et nom uniquement */}
+                    {/* Desktop Tooltip Blanc épuré avec icône bleue */}
                     <div className="hidden lg:group-hover:flex items-center absolute left-full ml-2.5 top-1/2 -translate-y-1/2 z-50 pointer-events-none animate-in fade-in zoom-in-95 duration-100">
                       <div className="absolute -left-1.5 top-1/2 -translate-y-1/2 w-0 h-0 border-y-[6px] border-y-transparent border-r-[6px] border-r-white drop-shadow-xs" />
                       <div className="bg-white text-slate-900 rounded-xl px-3.5 py-2 text-xs font-bold shadow-xl border border-slate-200/90 whitespace-nowrap flex items-center gap-2 ring-1 ring-slate-900/5">
                         <Icon size={16} className="text-sky-600 shrink-0 stroke-[2.3]" />
-                        <span>{item.label}</span>
+                        <span>{label}</span>
                       </div>
                     </div>
                   </div>
@@ -368,10 +378,10 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
             <button
               onClick={handleLogout}
               className="flex items-center gap-2.5 w-full px-2.5 py-2 rounded-xl text-rose-600 hover:text-rose-700 hover:bg-rose-50/80 transition-all text-xs font-semibold lg:justify-center cursor-pointer group"
-              title="Se déconnecter"
+              title={t.nav.logout}
             >
               <LogOut size={16} className="shrink-0 group-hover:scale-110 transition-transform" />
-              <span className="lg:hidden">Se déconnecter</span>
+              <span className="lg:hidden">{t.nav.logout}</span>
             </button>
           </div>
         </div>

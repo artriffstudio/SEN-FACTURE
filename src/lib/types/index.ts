@@ -123,6 +123,7 @@ export interface CompanyFormData {
 // ============================================================
 
 export type CurrencyCode =
+  | "MRU"
   | "XOF"
   | "XAF"
   | "NGN"

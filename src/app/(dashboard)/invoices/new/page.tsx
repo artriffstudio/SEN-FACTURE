@@ -46,10 +46,10 @@ export default function NewInvoicePage() {
   const [dueDate, setDueDate] = useState(
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
   );
-  const [taxRate, setTaxRate] = useState<number>(18);
-  const [paymentTerms, setPaymentTerms] = useState("Paiement sous 30 jours");
+  const [taxRate, setTaxRate] = useState<number>(16);
+  const [paymentTerms, setPaymentTerms] = useState("Paiement à 30 jours nets");
   const [notes, setNotes] = useState(
-    "Merci pour votre confiance. Règlements acceptés par virement bancaire ou Mobile Money (Wave / Orange Money)."
+    "Merci pour votre confiance. Règlements acceptés par virement bancaire BPM ou Mobile Money (Bankily : +222 45 12 34 56 / Seddap)."
   );
 
   const [items, setItems] = useState<LineItem[]>([
@@ -87,7 +87,9 @@ export default function NewInvoicePage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const saved = localStorage.getItem("sen_facture_company_logo");
+      const saved =
+        localStorage.getItem("facturim_company_logo") ||
+        localStorage.getItem("sen_facture_company_logo");
       if (saved) setCompanyLogo(saved);
     }
   }, []);
@@ -204,7 +206,7 @@ export default function NewInvoicePage() {
   };
 
   const handleWhatsApp = () => {
-    const msg = `Bonjour ${currentClient.name},\nVoici votre facture *${invoiceNumber}* émise par SEN FACTURE pour un montant total de *${total.toLocaleString("fr-FR")} FCFA*.\nDate d'échéance : ${dueDate}.\nMerci de votre confiance !`;
+    const msg = `Bonjour ${currentClient.name},\nVoici votre facture *${invoiceNumber}* émise par Facturim pour un montant total de *${total.toLocaleString("fr-FR")} MRU*.\nDate d'échéance : ${dueDate}.\nMerci de votre confiance !`;
     const url = `https://wa.me/?text=${encodeURIComponent(msg)}`;
     window.open(url, "_blank");
     toast.success("Lien WhatsApp prêt pour le partage !");
@@ -444,7 +446,7 @@ export default function NewInvoicePage() {
 
                   <div className="col-span-6 sm:col-span-3">
                     <label className="block font-medium text-slate-500 text-[10px] mb-0.5">
-                      Prix unit. (FCFA)
+                      Prix unit. (MRU)
                     </label>
                     <input
                       type="number"
@@ -487,9 +489,8 @@ export default function NewInvoicePage() {
                 onChange={(e) => setTaxRate(parseFloat(e.target.value))}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
               >
-                <option value={18}>18% (Taux standard Sénégal)</option>
-                <option value={0}>0% (Exonération)</option>
-                <option value={16}>16% (Mauritanie - Prévu)</option>
+                <option value={16}>TVA Standard Mauritanie (16%)</option>
+                <option value={0}>Exonéré de TVA (0%)</option>
               </select>
             </div>
 
@@ -551,18 +552,18 @@ export default function NewInvoicePage() {
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-lg bg-slate-900 text-white font-black text-sm flex items-center justify-center tracking-tighter shrink-0">
-                      SF
+                      FI
                     </div>
                   )}
                   <span className="text-base font-black text-slate-900 tracking-tight">
-                    SEN FACTURE
+                    FACTURIM
                   </span>
                 </div>
                 <div className="mt-2 text-[11px] text-slate-500 space-y-0.5">
-                  <p className="font-medium text-slate-700">Teranga Digital SARL</p>
-                  <p>46 Boulevard de la République, Dakar Plateau</p>
-                  <p>NINEA : SN-009876543-2B</p>
-                  <p>Tél : +221 77 123 45 67 | contact@senfacture.sn</p>
+                  <p className="font-medium text-slate-700">Facturim Mauritanie SARL</p>
+                  <p>Avenue du Roi Fayçal, Tevragh Zeina, Nouakchott</p>
+                  <p>NIF : 00987654-MR | RC : MR.NKTT.2025.B.1234</p>
+                  <p>Tél : +222 45 25 00 00 | contact@facturim.mr</p>
                 </div>
               </div>
 
@@ -627,10 +628,10 @@ export default function NewInvoicePage() {
                         {it.quantity}
                       </td>
                       <td className="py-2.5 text-right text-slate-600">
-                        {it.unitPrice.toLocaleString("fr-FR")} F
+                        {it.unitPrice.toLocaleString("fr-FR")} MRU
                       </td>
                       <td className="py-2.5 text-right font-bold text-slate-900">
-                        {(it.quantity * it.unitPrice).toLocaleString("fr-FR")} FCFA
+                        {(it.quantity * it.unitPrice).toLocaleString("fr-FR")} MRU
                       </td>
                     </tr>
                   ))}
@@ -644,7 +645,7 @@ export default function NewInvoicePage() {
                 <div className="flex justify-between text-slate-600">
                   <span>Sous-total HT :</span>
                   <span className="font-semibold text-slate-800">
-                    {subtotal.toLocaleString("fr-FR")} FCFA
+                    {subtotal.toLocaleString("fr-FR")} MRU
                   </span>
                 </div>
 
@@ -652,7 +653,7 @@ export default function NewInvoicePage() {
                   <div className="flex justify-between text-slate-600">
                     <span>TVA ({taxRate}%) :</span>
                     <span className="font-semibold text-slate-800">
-                      {taxAmount.toLocaleString("fr-FR")} FCFA
+                      {taxAmount.toLocaleString("fr-FR")} MRU
                     </span>
                   </div>
                 )}
@@ -660,7 +661,7 @@ export default function NewInvoicePage() {
                 <div className="flex justify-between items-baseline pt-2 border-t-2 border-slate-900 text-slate-900">
                   <span className="text-xs font-bold uppercase">Total TTC :</span>
                   <span className="text-sm sm:text-base font-black text-sky-600">
-                    {total.toLocaleString("fr-FR")} FCFA
+                    {total.toLocaleString("fr-FR")} MRU
                   </span>
                 </div>
               </div>
@@ -673,7 +674,7 @@ export default function NewInvoicePage() {
               </p>
               <p className="leading-snug">{notes}</p>
               <div className="pt-2 text-center text-[9px] text-slate-400 font-medium">
-                SEN FACTURE — Document conforme aux normes comptables et fiscales du Sénégal
+                FACTURIM — Document conforme aux normes fiscales de Mauritanie (DGI)
               </div>
             </div>
           </div>

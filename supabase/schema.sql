@@ -1,6 +1,6 @@
 -- ============================================================
--- SEN FACTURE — Schéma de Base de Données Supabase (PostgreSQL)
--- Conforme SYSCOHADA / UEMOA / République du Sénégal
+-- FACTURIM — Schéma de Base de Données Supabase (PostgreSQL)
+-- Conforme Réglementation Fiscale & DGI République Islamique de Mauritanie
 -- ============================================================
 
 -- 1. EXTENSIONS
@@ -16,19 +16,19 @@ create table if not exists public.companies (
   email text not null,
   phone text,
   address text,
-  city text default 'Dakar',
-  country text default 'Sénégal',
-  tax_id text, -- NINEA
-  rccm text,   -- Registre de Commerce et du Crédit Mobilier
-  currency text default 'XOF',
-  tax_rate numeric(5, 2) default 18.00, -- TVA 18% légale
+  city text default 'Nouakchott',
+  country text default 'Mauritanie',
+  tax_id text, -- NIF (Numéro d'Identification Fiscale)
+  rccm text,   -- Registre de Commerce (RC)
+  currency text default 'MRU',
+  tax_rate numeric(5, 2) default 16.00, -- TVA 16% légale Mauritanie
   logo_url text,
   invoice_prefix text default 'FAC-2025-',
   next_invoice_number integer default 1,
-  bank_rib text default 'SN012 01001 036156789012 45 (BICIS Sénégal)',
-  wave_phone text default '+221 77 890 12 34',
-  om_phone text default '+221 78 543 21 00',
-  terms_and_conditions text default 'Paiement à réception par virement bancaire BICIS ou Mobile Money (Wave / Orange Money). Conformément aux règles de facturation SYSCOHADA en vigueur au Sénégal.',
+  bank_rib text default 'MR13 00010 01234567890 12 (BPM Mauritanie)',
+  wave_phone text default '+222 45 00 00 00', -- Numéro Bankily / Paiement mobile
+  om_phone text default '+222 36 00 00 00',   -- Numéro Seddap / Masrvi
+  terms_and_conditions text default 'Paiement à réception par virement bancaire BPM ou paiement mobile (Bankily / Seddap / Masrvi). Conformément aux règles de facturation en vigueur en République Islamique de Mauritanie.',
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -43,9 +43,9 @@ create table if not exists public.clients (
   email text not null,
   phone text,
   address text,
-  city text default 'Dakar',
-  country text default 'Sénégal',
-  tax_id text, -- NINEA Client
+  city text default 'Nouakchott',
+  country text default 'Mauritanie',
+  tax_id text, -- NIF Client
   notes text,
   logo_url text,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
@@ -57,7 +57,7 @@ create index if not exists idx_clients_company on public.clients(company_id);
 create index if not exists idx_clients_email on public.clients(email);
 
 -- ============================================================
--- 4. TABLE : catalog_items (Catalogue de prestations SYSCOHADA)
+-- 4. TABLE : catalog_items (Catalogue de prestations & forfaits)
 -- ============================================================
 create table if not exists public.catalog_items (
   id uuid primary key default uuid_generate_v4(),
@@ -68,7 +68,7 @@ create table if not exists public.catalog_items (
   category text not null check (category in ('Developpement', 'Cloud & Reseau', 'Conseil & Audit', 'Maintenance', 'Formation')),
   unit_price numeric(15, 2) not null default 0,
   unit text not null default 'Forfait',
-  tax_rate numeric(5, 2) not null default 18.00,
+  tax_rate numeric(5, 2) not null default 16.00,
   active boolean not null default true,
   created_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -87,12 +87,12 @@ create table if not exists public.invoices (
   issue_date date not null default current_date,
   due_date date not null default (current_date + interval '30 days'),
   subtotal numeric(15, 2) not null default 0,
-  tax_rate numeric(5, 2) not null default 18.00,
+  tax_rate numeric(5, 2) not null default 16.00,
   tax_amount numeric(15, 2) not null default 0,
   total numeric(15, 2) not null default 0,
   notes text,
   paid_at timestamp with time zone,
-  payment_method text, -- Wave, Orange Money, BICIS, Espèces
+  payment_method text, -- Bankily, Seddap, Masrvi, BPM, Espèces
   created_at timestamp with time zone default timezone('utc'::text, now()) not null,
   updated_at timestamp with time zone default timezone('utc'::text, now()) not null
 );
@@ -183,14 +183,14 @@ create policy "Users can manage invoice items of their company"
   ));
 
 -- ============================================================
--- 9. DONNÉES DE DÉPART (Catalogue SYSCOHADA Standard Sénégal)
+-- 9. DONNÉES DE DÉPART (Catalogue de prestations standard en MRU)
 -- ============================================================
 insert into public.catalog_items (code, name, description, category, unit_price, unit, tax_rate, active)
 values
-  ('DEV-WEB', 'Développement Plateforme Web & API', 'Conception et développement complet d''une application web avec Next.js, API sécurisée et responsive design.', 'Developpement', 1500000, 'Forfait', 18.00, true),
-  ('DEV-MOB', 'Développement Application Mobile (iOS & Android)', 'Application mobile hybride ou native connectée aux passerelles de paiement Wave et Orange Money.', 'Developpement', 2200000, 'Forfait', 18.00, true),
-  ('CLOUD-VPS', 'Hébergement Cloud Dédié & Maintenance VPS', 'Serveur dédié haute disponibilité, sauvegardes automatiques quotidiennes, certificat SSL et monitoring 24/7.', 'Cloud & Reseau', 180000, 'Mois', 18.00, true),
-  ('AUDIT-SEC', 'Audit de Sécurité & Conformité SYSCOHADA', 'Analyse des vulnérabilités, vérification des sauvegardes et certification de conformité fiscale et comptable.', 'Conseil & Audit', 750000, 'Forfait', 18.00, true),
-  ('MAINT-ANN', 'Contrat de Maintenance & Support Technique', 'Support utilisateur prioritaire, correctifs de bugs, mises à jour logicielles régulières et astreinte téléphonique.', 'Maintenance', 350000, 'Mois', 18.00, true),
-  ('FORM-SYS', 'Formation des Équipes & Ateliers Pratiques', 'Session de formation pour 5 à 10 collaborateurs sur l''utilisation des logiciels de facturation et ERP.', 'Formation', 400000, 'Jour', 18.00, true)
+  ('DEV-WEB', 'Développement Plateforme Web & API', 'Conception et développement complet d''une application web avec Next.js, API sécurisée et responsive design.', 'Developpement', 95000, 'Forfait', 16.00, true),
+  ('DEV-MOB', 'Développement Application Mobile (iOS & Android)', 'Application mobile connectée aux passerelles de paiement Bankily et Seddap.', 'Developpement', 140000, 'Forfait', 16.00, true),
+  ('CLOUD-VPS', 'Hébergement Cloud Dédié & Maintenance VPS', 'Serveur dédié haute disponibilité, sauvegardes automatiques quotidiennes, certificat SSL et monitoring 24/7.', 'Cloud & Reseau', 12000, 'Mois', 16.00, true),
+  ('AUDIT-SEC', 'Audit de Sécurité & Conformité DGI', 'Analyse des vulnérabilités, vérification des sauvegardes et certification de conformité fiscale et comptable.', 'Conseil & Audit', 48000, 'Forfait', 16.00, true),
+  ('MAINT-ANN', 'Contrat de Maintenance & Support Technique', 'Support utilisateur prioritaire, correctifs de bugs, mises à jour logicielles régulières et astreinte téléphonique.', 'Maintenance', 22000, 'Mois', 16.00, true),
+  ('FORM-SYS', 'Formation des Équipes & Ateliers Pratiques', 'Session de formation pour collaborateurs sur l''utilisation des logiciels de facturation et de gestion.', 'Formation', 25000, 'Jour', 16.00, true)
 on conflict do nothing;

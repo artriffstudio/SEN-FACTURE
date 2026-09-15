@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export interface PricingCardProps {
   name: string;
@@ -25,6 +26,9 @@ export default function PricingCard({
   ctaHref,
   isPopular = false,
 }: PricingCardProps) {
+  const { currentLanguage } = useLanguage();
+  const isAr = currentLanguage === "ar";
+
   // Calcul avec 20% de remise si facturation annuelle
   const displayPrice = isYearly
     ? Math.round(monthlyPrice * 0.8)
@@ -41,7 +45,7 @@ export default function PricingCard({
       {/* Badge Top Hype si Populaire */}
       {isPopular && (
         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-sky-600 to-sky-500 text-white text-[11px] font-bold uppercase tracking-wider shadow-md whitespace-nowrap">
-          ⭐ Plus Populaire
+          ⭐ {isAr ? "الأكثر طلباً" : "Plus Populaire"}
         </div>
       )}
 
@@ -53,11 +57,11 @@ export default function PricingCard({
           </h3>
           {isPopular ? (
             <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700">
-              Recommandé
+              {isAr ? "موصى به" : "Recommandé"}
             </span>
           ) : (
             <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 group-hover:bg-sky-50 group-hover:text-sky-700 transition-colors duration-200">
-              {name === "Starter" ? "Freelance" : "Grand Compte"}
+              {name === "Starter" || name === "البداية" ? (isAr ? "مستقل" : "Freelance") : (isAr ? "شركات" : "Grand Compte")}
             </span>
           )}
         </div>
@@ -66,17 +70,19 @@ export default function PricingCard({
           {subtitle}
         </p>
 
-        {/* Montant Tarifaire en FCFA */}
+        {/* Montant Tarifaire en MRU */}
         <div className="mb-6">
           <div className="flex items-baseline">
             <span className="text-4xl font-extrabold text-slate-950 tabular-nums group-hover:text-sky-950 transition-colors">
               {displayPrice.toLocaleString("fr-FR")}
             </span>
-            <span className="text-sm font-semibold text-slate-500 ml-2">FCFA / mois</span>
+            <span className="text-sm font-semibold text-slate-500 ml-2">
+              {isAr ? "أوقية / شهرياً" : "MRU / mois"}
+            </span>
           </div>
           {isYearly && (
             <p className="text-[11px] text-emerald-600 font-semibold mt-1">
-              Facturé annuellement • 20% d&apos;économie
+              {isAr ? "فاتورة سنوية • خصم 20%" : "Facturé annuellement • 20% d'économie"}
             </p>
           )}
         </div>

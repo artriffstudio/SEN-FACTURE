@@ -26,19 +26,21 @@ import {
 } from "@/lib/services/invoiceService";
 import { Invoice } from "@/lib/types";
 import Tooltip from "@/components/ui/Tooltip";
-
-const statusTabs = [
-  { label: "Toutes", value: "all" },
-  { label: "Payées", value: "paid" },
-  { label: "En cours / Émission", value: "sent" },
-  { label: "En retard", value: "overdue" },
-];
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function InvoicesPage() {
+  const { t, formatMoney } = useTranslation();
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  const statusTabs = [
+    { label: t.invoices.filterAll, value: "all" },
+    { label: t.invoices.filterPaid, value: "paid" },
+    { label: t.invoices.filterPending, value: "sent" },
+    { label: t.invoices.filterOverdue, value: "overdue" },
+  ];
 
   const loadInvoices = async () => {
     try {
@@ -64,7 +66,7 @@ export default function InvoicesPage() {
     e.stopPropagation();
     try {
       await updateInvoiceStatus(inv.id, "paid");
-      toast.success(`Facture ${inv.invoiceNumber} marquée comme payée !`);
+      toast.success(`${t.invoices.invoiceNumber} ${inv.invoiceNumber} -> ${t.status.paid} !`);
       loadInvoices();
     } catch (err: any) {
       toast.error(err?.message || "Erreur lors de la mise à jour");
@@ -91,35 +93,31 @@ export default function InvoicesPage() {
     });
   }, [invoices, selectedStatus, searchQuery]);
 
-  const formatMoney = (amount: number) => {
-    return `${amount.toLocaleString("fr-FR")} FCFA`;
-  };
-
   const handleDownloadPDF = async (inv: any) => {
-    toast.loading(`Génération du PDF ${inv.invoiceNumber}...`, { id: `pdf-${inv.id}` });
-    const ok = await downloadInvoicePDF({
-      reference: inv.invoiceNumber,
-      clientName: inv.client?.name || "Client Entreprise",
-      clientAddress: inv.client?.address || "Dakar, Sénégal",
-      clientEmail: inv.client?.email || "contact@client.sn",
-      clientPhone: inv.client?.phone || "+221 33 800 00 00",
-      date: inv.issueDate || "12/03/2025",
-      dueDate: inv.dueDate || "12/04/2025",
-      total: inv.total,
-      taxRate: inv.taxRate || 18,
-      status: inv.status,
-      items: inv.items || undefined,
-    });
-    if (ok) {
-      toast.success(`Facture ${inv.invoiceNumber} téléchargée !`, { id: `pdf-${inv.id}` });
-    } else {
+    toast.loading(`${t.invoices.downloadPDF} ${inv.invoiceNumber}...`, { id: `pdf-${inv.id}` });
+    try {
+      await downloadInvoicePDF({
+        reference: inv.invoiceNumber,
+        clientName: inv.client?.name || "Client Entreprise",
+        clientAddress: inv.client?.address || "Nouakchott, Mauritanie",
+        clientEmail: inv.client?.email || "contact@client.mr",
+        clientPhone: inv.client?.phone || "+222 45 00 00 00",
+        date: inv.issueDate || "12/03/2025",
+        dueDate: inv.dueDate || "12/04/2025",
+        total: inv.total,
+        taxRate: inv.taxRate || 16,
+        status: inv.status,
+        items: inv.items || undefined,
+      });
+      toast.success(`${inv.invoiceNumber} - PDF OK !`, { id: `pdf-${inv.id}` });
+    } catch {
       toast.error("Erreur téléchargement PDF", { id: `pdf-${inv.id}` });
     }
   };
 
   const handleWhatsAppShare = (inv: any) => {
     const clientName = inv.client?.name || "Client";
-    const msg = `Bonjour ${clientName},\nVoici votre facture *${inv.invoiceNumber}* d'un montant de *${formatMoney(inv.total)}* émise par SEN FACTURE.\nMerci de votre confiance !`;
+    const msg = `Bonjour ${clientName},\nVoici votre facture *${inv.invoiceNumber}* d'un montant de *${formatMoney(inv.total)}* émise par Facturim.\nMerci de votre confiance !`;
     window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, "_blank");
     toast.success("Lien WhatsApp généré !");
   };
@@ -133,25 +131,25 @@ export default function InvoicesPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Factures & Devis
+              {t.invoices.title}
             </h1>
             <span className="inline-flex items-center gap-1 bg-sky-100 text-sky-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              {invoices.length} Documents
+              {invoices.length} {t.nav.invoices}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Registre complet de facturation conforme à la réglementation fiscale SYSCOHADA / Sénégal.
+            {t.invoices.subtitle}
           </p>
         </div>
 
         {/* Bouton CTA Primaire Unique */}
-        <Tooltip content="Nouvelle facture" icon={Plus}>
+        <Tooltip content={t.invoices.newInvoice} icon={Plus}>
           <Link
             href="/invoices/new"
             className="flex items-center gap-1.5 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 active:from-sky-700 active:to-sky-800 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-md shadow-sky-500/20 hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all shrink-0 cursor-pointer"
           >
             <Plus size={16} className="stroke-[2.5]" />
-            <span>Nouvelle facture</span>
+            <span>{t.invoices.newInvoice}</span>
           </Link>
         </Tooltip>
       </div>
@@ -214,13 +212,13 @@ export default function InvoicesPage() {
           <table className="w-full text-left text-xs">
             <thead>
               <tr className="bg-slate-50/90 text-slate-500 text-[11px] font-bold uppercase tracking-wider border-b border-slate-200/70">
-                <th className="py-3 px-4 sm:px-6">Référence</th>
-                <th className="py-3 px-4">Client</th>
-                <th className="py-3 px-4 hidden md:table-cell">Émise le</th>
-                <th className="py-3 px-4 hidden lg:table-cell">Échéance</th>
-                <th className="py-3 px-4 text-right">Montant Total TTC</th>
-                <th className="py-3 px-4 text-center">Statut</th>
-                <th className="py-3 px-4 sm:px-6 text-right">Actions</th>
+                <th className="py-3 px-4 sm:px-6">{t.invoices.invoiceNumber}</th>
+                <th className="py-3 px-4">{t.invoices.client}</th>
+                <th className="py-3 px-4 hidden md:table-cell">{t.invoices.issueDate}</th>
+                <th className="py-3 px-4 hidden lg:table-cell">{t.invoices.dueDate}</th>
+                <th className="py-3 px-4 text-right">{t.invoices.totalTTC}</th>
+                <th className="py-3 px-4 text-center">{t.invoices.status}</th>
+                <th className="py-3 px-4 sm:px-6 text-right">{t.invoices.actions}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -246,17 +244,17 @@ export default function InvoicesPage() {
 
                     {/* Client */}
                     <td className="py-3.5 px-4 font-semibold text-slate-800">
-                      {inv.client?.name || "Client Entreprise"}
+                      {inv.client?.name || "Client"}
                     </td>
 
                     {/* Date émission */}
                     <td className="py-3.5 px-4 text-slate-600 hidden md:table-cell">
-                      {inv.issueDate || "10/03/2025"}
+                      {inv.issueDate || "—"}
                     </td>
 
                     {/* Échéance */}
                     <td className="py-3.5 px-4 text-slate-600 hidden lg:table-cell">
-                      {inv.dueDate || "10/04/2025"}
+                      {inv.dueDate || "—"}
                     </td>
 
                     {/* Montant TTC */}
@@ -275,7 +273,7 @@ export default function InvoicesPage() {
                             : "bg-amber-100 text-amber-800 border-amber-200/60"
                         }`}
                       >
-                        {isPaid ? "Payée" : isOverdue ? "En retard" : "En cours"}
+                        {isPaid ? t.status.paid : isOverdue ? t.status.overdue : t.status.sent}
                       </span>
                     </td>
 
@@ -283,7 +281,7 @@ export default function InvoicesPage() {
                     <td className="py-3.5 px-4 sm:px-6 text-right">
                       <div className="flex items-center justify-end gap-1">
                         {!isPaid && (
-                          <Tooltip content="Marquer comme payée" icon={Check}>
+                          <Tooltip content={t.status.paid} icon={Check}>
                             <button
                               onClick={(e) => handleMarkAsPaid(inv, e)}
                               className="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition-all cursor-pointer"
@@ -294,7 +292,7 @@ export default function InvoicesPage() {
                         )}
 
                         {/* Télécharger PDF officiel */}
-                        <Tooltip content="Télécharger le PDF" icon={Download}>
+                        <Tooltip content={t.invoices.downloadPDF} icon={Download}>
                           <button
                             onClick={() => handleDownloadPDF(inv)}
                             className="p-1.5 text-slate-400 hover:text-sky-600 rounded-lg hover:bg-sky-50 transition-all cursor-pointer"
@@ -304,7 +302,7 @@ export default function InvoicesPage() {
                         </Tooltip>
 
                         {/* Partager WhatsApp */}
-                        <Tooltip content="WhatsApp" icon={Share2}>
+                        <Tooltip content={t.invoices.shareWhatsApp} icon={Share2}>
                           <button
                             onClick={() => handleWhatsAppShare(inv)}
                             className="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition-all cursor-pointer"
@@ -314,7 +312,7 @@ export default function InvoicesPage() {
                         </Tooltip>
 
                         {/* Consulter */}
-                        <Tooltip content="Consulter" icon={Eye}>
+                        <Tooltip content={t.invoices.viewDetails} icon={Eye}>
                           <Link
                             href={`/invoices/${inv.id}`}
                             className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-all"
@@ -337,22 +335,22 @@ export default function InvoicesPage() {
               <FileText size={26} className="stroke-[2.2]" />
             </div>
             <h3 className="text-sm sm:text-base font-bold text-slate-800">
-              Aucune facture pour le moment
+              {t.dashboard.emptyInvoices}
             </h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto mt-1 mb-5">
-              Émettez votre première facture certifiée conforme aux normes sénégalaises et SYSCOHADA en quelques clics.
+              {t.invoices.certifiedNotice}
             </p>
             <Link
               href="/invoices/new"
               className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs px-4 py-2.5 rounded-xl shadow-md shadow-sky-500/20 hover:shadow-lg transition-all"
             >
               <Plus size={15} className="stroke-[2.5]" />
-              <span>Créer ma première facture</span>
+              <span>{t.dashboard.createFirstInvoice}</span>
             </Link>
           </div>
         ) : filteredInvoices.length === 0 ? (
           <div className="p-8 text-center text-slate-500 text-xs">
-            <p className="font-semibold">Aucune facture trouvée pour ces critères.</p>
+            <p className="font-semibold">{t.dashboard.emptyInvoices}</p>
           </div>
         ) : null}
       </div>

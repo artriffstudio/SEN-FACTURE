@@ -1,65 +1,76 @@
 "use client";
 
 import React from "react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function PartnerMarquee() {
+  const { currentLanguage } = useLanguage();
+
+  const isAr = currentLanguage === "ar";
+
   const partners = [
     {
-      id: "wave",
-      name: "wave",
-      colorClass: "text-sky-500",
-      prefix: <span className="w-3 h-3 rounded-full bg-sky-400 inline-block shrink-0" />,
-      weight: "font-black text-2xl tracking-tighter",
+      id: "bankily",
+      name: "Bankily",
+      colorClass: "text-emerald-600",
+      prefix: <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block shrink-0" />,
+      weight: "font-black text-2xl tracking-tight",
     },
     {
-      id: "orange-money",
-      name: "orange money",
-      colorClass: "text-orange-500",
-      prefix: <span className="w-4 h-4 rounded-md bg-orange-500 inline-block shrink-0" />,
+      id: "seddap",
+      name: "Seddap",
+      colorClass: "text-sky-600",
+      prefix: <span className="w-3.5 h-3.5 rounded-md bg-sky-500 inline-block shrink-0" />,
       weight: "font-black text-xl tracking-tight",
     },
     {
-      id: "ecobank",
-      name: "Ecobank",
-      colorClass: "text-emerald-700",
-      weight: "font-extrabold text-xl tracking-widest uppercase",
-    },
-    {
-      id: "sg",
-      name: "SOCIÉTÉ GÉNÉRALE",
-      colorClass: "text-red-600",
-      prefix: <span className="w-3.5 h-3.5 bg-red-600 inline-block shrink-0" />,
-      weight: "font-bold text-lg tracking-tight",
-    },
-    {
-      id: "coris",
-      name: "CORIS BANK",
-      colorClass: "text-amber-600",
-      weight: "font-black text-xl tracking-wide",
-    },
-    {
-      id: "free-money",
-      name: "Free Money",
-      colorClass: "text-emerald-600",
-      weight: "font-extrabold text-xl tracking-tight",
-    },
-    {
-      id: "cbao",
-      name: "CBAO Attijariwafa",
+      id: "bpm",
+      name: "BPM",
       colorClass: "text-blue-900",
-      weight: "font-bold text-xl tracking-tighter",
+      weight: "font-black text-xl tracking-widest uppercase",
     },
     {
-      id: "uba",
-      name: "UBA",
-      colorClass: "text-red-700",
+      id: "masrvi",
+      name: "Masrvi",
+      colorClass: "text-emerald-700",
+      prefix: <span className="w-3 h-3 bg-emerald-600 inline-block shrink-0 rounded-xs" />,
+      weight: "font-bold text-xl tracking-tight",
+    },
+    {
+      id: "bmci",
+      name: "BMCI Mauritanie",
+      colorClass: "text-slate-900",
+      weight: "font-extrabold text-lg tracking-wide",
+    },
+    {
+      id: "bnm",
+      name: "BNM",
+      colorClass: "text-amber-700",
       weight: "font-black text-xl tracking-widest",
     },
     {
-      id: "stripe",
-      name: "Stripe",
-      colorClass: "text-indigo-700",
-      weight: "font-bold text-xl tracking-tight",
+      id: "mauritel",
+      name: "Mauritel",
+      colorClass: "text-blue-700",
+      weight: "font-extrabold text-xl tracking-tight",
+    },
+    {
+      id: "chinguitel",
+      name: "Chinguitel",
+      colorClass: "text-red-600",
+      weight: "font-bold text-xl tracking-tighter",
+    },
+    {
+      id: "mattel",
+      name: "Mattel",
+      colorClass: "text-purple-700",
+      weight: "font-black text-xl tracking-tight",
+    },
+    {
+      id: "snim",
+      name: "SNIM",
+      colorClass: "text-slate-800",
+      weight: "font-black text-xl tracking-widest",
     },
     {
       id: "visa",
@@ -68,6 +79,10 @@ export default function PartnerMarquee() {
       weight: "font-extrabold text-xl tracking-tight",
     },
   ];
+
+  const badgeText = isAr
+    ? "متوافق مع حلول الدفع البنكية والمحافظ الإلكترونية في موريتانيا"
+    : "Intégré avec Bankily, Seddap & les banques en Mauritanie";
 
   return (
     <section
@@ -82,7 +97,7 @@ export default function PartnerMarquee() {
           <div className="flex items-center space-x-10 sm:space-x-14 shrink-0">
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-600 bg-slate-50 border border-slate-200/90 px-4 py-1.5 rounded-full flex items-center gap-2 shrink-0 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span>Intégré avec vos solutions de paiement &amp; banques</span>
+              <span>{badgeText}</span>
             </span>
 
             {partners.map((p) => (
@@ -103,7 +118,7 @@ export default function PartnerMarquee() {
           >
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-600 bg-slate-50 border border-slate-200/90 px-4 py-1.5 rounded-full flex items-center gap-2 shrink-0 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-              <span>Intégré avec vos solutions de paiement &amp; banques</span>
+              <span>{badgeText}</span>
             </span>
 
             {partners.map((p) => (

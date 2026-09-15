@@ -2,7 +2,9 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Menu, X, ArrowRight, ChevronDown } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
+import LanguageSelector from "@/components/ui/LanguageSelector";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface LandingHeaderProps {
   onContactClick?: () => void;
@@ -10,31 +12,27 @@ interface LandingHeaderProps {
 
 export default function LandingHeader({ onContactClick }: LandingHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [langMenuOpen, setLangMenuOpen] = useState(false);
-  const [selectedLang, setSelectedLang] = useState({
-    code: "SN",
-    label: "Sénégal (FCFA)",
-    flag: "🇸🇳",
-  });
+  const { currentLanguage } = useLanguage();
+  const isAr = currentLanguage === "ar";
 
-  const navLinks = [
-    { label: "Fonctionnalités", href: "#fonctionnalites" },
-    { label: "Tarifs", href: "#tarifs" },
-    { label: "Paramètres", href: "#parametres" },
-    { label: "Contact", href: "#contact" },
-  ];
-
-  const countries = [
-    { code: "SN", label: "Sénégal (FCFA)", flag: "🇸🇳" },
-    { code: "CI", label: "Côte d'Ivoire (FCFA)", flag: "🇨🇮" },
-    { code: "ML", label: "Mali (FCFA)", flag: "🇲🇱" },
-    { code: "BJ", label: "Bénin (FCFA)", flag: "🇧🇯" },
-  ];
+  const navLinks = isAr
+    ? [
+        { label: "المميزات", href: "#fonctionnalites" },
+        { label: "الأسعار", href: "#tarifs" },
+        { label: "الإعدادات", href: "#parametres" },
+        { label: "اتصل بنا", href: "#contact" },
+      ]
+    : [
+        { label: "Fonctionnalités", href: "#fonctionnalites" },
+        { label: "Tarifs", href: "#tarifs" },
+        { label: "Paramètres", href: "#parametres" },
+        { label: "Contact", href: "#contact" },
+      ];
 
   return (
     <header className="sticky top-0 z-50 bg-white/85 backdrop-blur-xl border-b border-slate-100 transition-colors duration-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        {/* Brand Logo officiel SF avec centrage absolu */}
+        {/* Brand Logo officiel FI Facturim */}
         <div className="flex items-center space-x-3">
           <Link href="/" className="flex items-center space-x-2.5 group">
             <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-md shadow-slate-900/15 group-hover:scale-105 transition-transform shrink-0">
@@ -56,12 +54,12 @@ export default function LandingHeader({ onContactClick }: LandingHeaderProps) {
                   fontFamily="system-ui, -apple-system, sans-serif"
                   letterSpacing="-0.5px"
                 >
-                  SF
+                  FI
                 </text>
               </svg>
             </div>
             <span className="font-extrabold text-xl tracking-tight text-slate-900">
-              SEN <span className="text-sky-600">FACTURE</span>
+              FACTU<span className="text-sky-600">RIM</span>
             </span>
           </Link>
         </div>
@@ -79,60 +77,28 @@ export default function LandingHeader({ onContactClick }: LandingHeaderProps) {
           ))}
         </nav>
 
-        {/* Right Actions Desktop : Connexion décalé vers la gauche avec dégradé bleu ciel & Sélecteur de pays */}
+        {/* Right Actions Desktop : Connexion + Sélecteur de langue 4 drapeaux */}
         <div className="hidden sm:flex items-center space-x-3.5 pr-1">
           <Link
             href="/login"
             className="inline-flex items-center justify-center px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 rounded-full shadow-md shadow-sky-500/25 hover:shadow-lg hover:shadow-sky-500/35 hover:-translate-y-0.5 active:scale-95 transition-all mr-1.5"
           >
-            Connexion
+            {isAr ? "تسجيل الدخول" : "Connexion"}
           </Link>
 
-          {/* Language / Region Pill Selector */}
-          <div className="relative">
-            <button
-              onClick={() => setLangMenuOpen(!langMenuOpen)}
-              className="flex items-center space-x-1.5 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200/90 rounded-full hover:bg-slate-50 transition-all shadow-2xs cursor-pointer"
-              title="Sélectionner votre pays / devise"
-            >
-              <span className="text-base leading-none">{selectedLang.flag}</span>
-              <ChevronDown size={14} className="text-slate-400" />
-            </button>
-
-            {langMenuOpen && (
-              <div className="absolute right-0 mt-2 w-48 bg-white border border-slate-200 rounded-2xl shadow-xl z-50 py-1.5 text-xs animate-in fade-in duration-100">
-                <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400 border-b border-slate-100">
-                  Zone UEMOA / OHADA
-                </div>
-                {countries.map((c) => (
-                  <button
-                    key={c.code}
-                    onClick={() => {
-                      setSelectedLang(c);
-                      setLangMenuOpen(false);
-                    }}
-                    className={`w-full flex items-center space-x-2.5 px-3 py-2 text-left hover:bg-slate-50 transition-colors cursor-pointer ${
-                      selectedLang.code === c.code
-                        ? "bg-sky-50 text-sky-700 font-bold"
-                        : "text-slate-700"
-                    }`}
-                  >
-                    <span className="text-base">{c.flag}</span>
-                    <span>{c.label}</span>
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
+          {/* Multilingual Selector (AR, EN, ZH, FR) */}
+          <LanguageSelector />
         </div>
 
         {/* Mobile Hamburger Trigger */}
         <div className="flex sm:hidden items-center space-x-2.5">
+          <LanguageSelector />
+
           <Link
             href="/login"
             className="px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-sky-600 rounded-full shadow-sm shadow-sky-500/20 active:scale-95 transition-all"
           >
-            Connexion
+            {isAr ? "تسجيل الدخول" : "Connexion"}
           </Link>
 
           <button
@@ -168,7 +134,7 @@ export default function LandingHeader({ onContactClick }: LandingHeaderProps) {
               onClick={() => setMobileMenuOpen(false)}
               className="w-full py-3.5 px-4 rounded-2xl text-center font-bold text-sm text-white bg-gradient-to-r from-sky-500 to-sky-600 shadow-md shadow-sky-500/20 active:scale-95 transition-all"
             >
-              Connexion
+              {isAr ? "تسجيل الدخول" : "Connexion"}
             </Link>
           </div>
         </div>

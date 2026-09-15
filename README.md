@@ -1,6 +1,6 @@
-# SEN FACTURE 🇸🇳
+# FACTURIM 🇲🇷
 
-> Plateforme SaaS de facturation électronique, gestion commerciale et conformité comptable SYSCOHADA pour les entreprises et indépendants au Sénégal.
+> Plateforme SaaS de facturation électronique certifiée, gestion commerciale et passerelle Mobile Money (Bankily & Masrvi via Moosyl) pour les entreprises et indépendants en République Islamique de Mauritanie.
 
 ## 🚀 Accès en Ligne (Production)
 - **Application déployée** : [https://sen-facture-alpha.vercel.app](https://sen-facture-alpha.vercel.app)
@@ -9,14 +9,16 @@
 ---
 
 ## 💎 Fonctionnalités Principales
-- **Tableau de bord interactif** : Suivi du chiffre d'affaires, factures impayées, encours et clients clés.
-- **Atelier de Facturation en direct** : Création instantanée de factures avec aperçu synchrone sur feuille virtuelle A4 officielle.
-- **Moteur d'exportation PDF certifié** : Rendu vectoriel haute résolution fidèle à l'aperçu A4 (coordonnées NINEA, TVA 18%, RIB BICIS, Wave, Orange Money).
+- **Support Multilingue Intégral (4 langues)** : Arabe (العربية avec support RTL natif 🇲🇷), Français (FR 🇫🇷), Anglais (EN 🇬🇧) et Chinois (中文 🇨🇳).
+- **Conformité Fiscale DGI Mauritanie** : Calcul automatique de la TVA légale standard à 16%, NIF officiel, Registre du Commerce (RC) et mentions certifiées.
+- **Passerelle de Paiements Locaux Moosyl (moosyl.com)** : Encaissement et réconciliation automatique par Bankily (BPM), Masrvi (BMCI), Seddap et virements bancaires.
+- **Tableau de bord interactif** : Suivi du chiffre d'affaires en Ouguiya (MRU), créances en attente, encours en retard et clients partenaires.
+- **Atelier de Facturation en direct** : Création instantanée de factures avec aperçu synchrone sur feuille virtuelle A4 officielle (794px x 1123px).
+- **Moteur d'exportation PDF Haute Définition** : Rendu vectoriel haute résolution fidèle à l'aperçu A4 avec QR Code de paiement.
 - **Répertoire Clients** : Fiches détaillées, téléversement de logo d'entreprise et contact direct via WhatsApp.
-- **Catalogue SYSCOHADA** : Tarification unitaire, prestations pré-configurées et facturation en un clic.
-- **Rapports & Grand Livre** : Ventilation comptable (Comptes 701, 443, 411, 521) et export comptable.
-- **Support & Assistance** : Multi-canal (WhatsApp Business, téléphone Dakar Plateau et tickets).
-- **Authentification & RLS** : Sécurisation complète des données via Supabase Auth & PostgreSQL Row Level Security.
+- **Catalogue & Tarifs en MRU** : Forfaits de prestations, tarification unitaire et facturation en un clic.
+- **Rapports & Grand Livre Comptable** : Suivi des écritures comptables, déclarations TVA DGI et export CSV.
+- **Authentification & Données Sécurisées** : Sécurisation complète des données via Supabase Auth & PostgreSQL Row Level Security.
 
 ---
 
@@ -24,7 +26,9 @@
 - **Framework** : Next.js 16+ (App Router, Turbopack)
 - **Langage** : TypeScript 5 (Strict Mode)
 - **Base de données & Auth** : Supabase (PostgreSQL 15+, RLS)
-- **Styling** : Tailwind CSS (Clean Light SaaS, Accents Sky/Cyan)
+- **Paiements Mobile Money** : Moosyl Gateway (Bankily / Masrvi)
+- **Styling** : Clean Light SaaS Design System (Accents Sky/Cyan)
 - **Exports PDF** : html2canvas + jsPDF (Échelle Retina 2x)
 - **Hébergement** : Vercel
+
 

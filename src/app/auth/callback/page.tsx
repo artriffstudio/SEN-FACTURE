@@ -90,7 +90,7 @@ function AuthCallbackInner() {
                 href="/dashboard"
                 className="inline-flex items-center gap-2 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 text-white font-bold text-xs px-5 py-2.5 rounded-xl shadow-md shadow-sky-500/20"
               >
-                <span>Accéder à SEN FACTURE</span>
+                <span>Accéder à Facturim</span>
               </Link>
             </div>
           </div>

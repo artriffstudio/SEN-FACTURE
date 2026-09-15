@@ -4,8 +4,12 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { MapPin, Phone, Mail, Send, CheckCircle2 } from "lucide-react";
 import { createContactLead } from "@/lib/services/supportService";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function ContactSection() {
+  const { currentLanguage } = useLanguage();
+  const isAr = currentLanguage === "ar";
+
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -18,7 +22,7 @@ export default function ContactSection() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim()) {
-      toast.error("Veuillez remplir tous les champs obligatoires.");
+      toast.error(isAr ? "يرجى ملء جميع الحقول المطلوبة." : "Veuillez remplir tous les champs obligatoires.");
       return;
     }
 
@@ -26,10 +30,14 @@ export default function ContactSection() {
     try {
       await createContactLead(formData);
       setIsSubmitted(true);
-      toast.success("Demande reçue ! Notre équipe commerciale vous contacte sous 2h.");
+      toast.success(
+        isAr
+          ? "تم استلام طلبكم بنجاح! سيتواصل معكم فريقنا خلال ساعتين."
+          : "Demande reçue ! Notre équipe commerciale vous contacte sous 2h."
+      );
       setFormData({ fullName: "", email: "", phone: "", need: "" });
     } catch (err: any) {
-      toast.error("Une erreur est survenue lors de l'envoi.");
+      toast.error(isAr ? "حدث خطأ أثناء الإرسال." : "Une erreur est survenue lors de l'envoi.");
     } finally {
       setIsSubmitting(false);
     }
@@ -45,7 +53,7 @@ export default function ContactSection() {
             aria-hidden="true"
           />
           <div
-            className="absolute -left-20 -bottom-20 w-96 h-96 bg-orange-500/15 blur-[100px] rounded-full pointer-events-none"
+            className="absolute -left-20 -bottom-20 w-96 h-96 bg-emerald-500/15 blur-[100px] rounded-full pointer-events-none"
             aria-hidden="true"
           />
 
@@ -53,15 +61,17 @@ export default function ContactSection() {
             {/* Informations de contact à gauche */}
             <div className="lg:col-span-6 space-y-6">
               <span className="px-3.5 py-1.5 rounded-full bg-slate-800 text-sky-400 text-xs font-bold uppercase tracking-wider border border-slate-700 inline-block">
-                Prise de contact rapide
+                {isAr ? "تواصل سريع" : "Prise de contact rapide"}
               </span>
 
               <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-                Prêt à simplifier votre facturation ?
+                {isAr ? "جاهز لتبسيط فواتيرك وتنمية أعمالك؟" : "Prêt à simplifier votre facturation ?"}
               </h2>
 
               <p className="text-slate-300 text-base leading-relaxed">
-                Demandez une démonstration personnalisée ou posez vos questions à nos experts basés à Dakar et Abidjan. Réponse garantie sous 2 heures ouvrées.
+                {isAr
+                  ? "اطلب عرضاً تجريبياً مخصصاً أو اطرح استفساراتك على خبرائنا في نواكشوط. نضمن الرد خلال ساعتي عمل."
+                  : "Demandez une démonstration personnalisée ou posez vos questions à nos experts basés à Nouakchott. Réponse garantie sous 2 heures ouvrées."}
               </p>
 
               <div className="pt-4 space-y-4 text-sm text-slate-300">
@@ -69,7 +79,9 @@ export default function ContactSection() {
                   <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-sky-400 shrink-0">
                     <MapPin size={16} />
                   </div>
-                  <span className="font-medium">Point E &amp; Almadies, Dakar, Sénégal</span>
+                  <span className="font-medium">
+                    {isAr ? "تفرغ زينة، نواكشوط، موريتانيا" : "Tevragh-Zeina & Ksar, Nouakchott, Mauritanie"}
+                  </span>
                 </div>
 
                 <div className="flex items-center space-x-3.5">
@@ -77,7 +89,7 @@ export default function ContactSection() {
                     <Phone size={16} />
                   </div>
                   <span className="font-medium">
-                    +221 33 800 00 00 / WhatsApp +221 77 000 00 00
+                    +222 45 00 00 00 / WhatsApp +222 36 00 00 00
                   </span>
                 </div>
 
@@ -85,7 +97,7 @@ export default function ContactSection() {
                   <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-sky-400 shrink-0">
                     <Mail size={16} />
                   </div>
-                  <span className="font-medium">contact@senfacture.sn</span>
+                  <span className="font-medium">contact@facturim.mr</span>
                 </div>
               </div>
             </div>
@@ -97,15 +109,19 @@ export default function ContactSection() {
                   <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center mx-auto shadow-lg">
                     <CheckCircle2 size={32} />
                   </div>
-                  <h3 className="text-2xl font-bold text-white">Merci pour votre demande !</h3>
+                  <h3 className="text-2xl font-bold text-white">
+                    {isAr ? "شكراً لطلبكم!" : "Merci pour votre demande !"}
+                  </h3>
                   <p className="text-slate-300 text-sm leading-relaxed">
-                    Un conseiller SEN FACTURE dédié prendra contact avec vous dans les plus brefs délais par téléphone ou WhatsApp.
+                    {isAr
+                      ? "سيتواصل معكم مستشار FACTURIM المخصص في أقرب وقت عبر الهاتف أو واتساب."
+                      : "Un conseiller FACTURIM dédié prendra contact avec vous dans les plus brefs délais par téléphone ou WhatsApp."}
                   </p>
                   <button
                     onClick={() => setIsSubmitted(false)}
                     className="mt-4 px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-full text-xs font-semibold transition-all cursor-pointer"
                   >
-                    Envoyer un autre message
+                    {isAr ? "إرسال رسالة أخرى" : "Envoyer un autre message"}
                   </button>
                 </div>
               ) : (
@@ -115,7 +131,7 @@ export default function ContactSection() {
                 >
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                      Nom complet *
+                      {isAr ? "الاسم الكامل *" : "Nom complet *"}
                     </label>
                     <input
                       type="text"
@@ -124,7 +140,7 @@ export default function ContactSection() {
                       onChange={(e) =>
                         setFormData({ ...formData, fullName: e.target.value })
                       }
-                      placeholder="Ex: Aminata Diallo"
+                      placeholder={isAr ? "مثال: أحمد ولد محمد" : "Ex: Mohamed Lemine"}
                       className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 text-sm"
                     />
                   </div>
@@ -132,7 +148,7 @@ export default function ContactSection() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                        Email professionnel *
+                        {isAr ? "البريد المهني *" : "Email professionnel *"}
                       </label>
                       <input
                         type="email"
@@ -141,13 +157,13 @@ export default function ContactSection() {
                         onChange={(e) =>
                           setFormData({ ...formData, email: e.target.value })
                         }
-                        placeholder="amina@entreprise.sn"
+                        placeholder="contact@entreprise.mr"
                         className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 text-sm"
                       />
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                        Téléphone (Wave/WhatsApp) *
+                        {isAr ? "الهاتف (Bankily/WhatsApp) *" : "Téléphone (Bankily/WhatsApp) *"}
                       </label>
                       <input
                         type="tel"
@@ -156,7 +172,7 @@ export default function ContactSection() {
                         onChange={(e) =>
                           setFormData({ ...formData, phone: e.target.value })
                         }
-                        placeholder="+221 77..."
+                        placeholder="+222 45..."
                         className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 text-sm"
                       />
                     </div>
@@ -164,7 +180,7 @@ export default function ContactSection() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                      Votre besoin
+                      {isAr ? "احتياجاتكم" : "Votre besoin"}
                     </label>
                     <textarea
                       rows={3}
@@ -172,7 +188,11 @@ export default function ContactSection() {
                       onChange={(e) =>
                         setFormData({ ...formData, need: e.target.value })
                       }
-                      placeholder="Parlez-nous de votre entreprise et de vos besoins de facturation..."
+                      placeholder={
+                        isAr
+                          ? "أخبرنا عن نشاط شركتك ومتطلبات الفوترة الخاصة بك..."
+                          : "Parlez-nous de votre entreprise et de vos besoins de facturation..."
+                      }
                       className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 text-sm"
                     />
                   </div>
@@ -184,7 +204,9 @@ export default function ContactSection() {
                   >
                     <Send size={16} />
                     <span>
-                      {isSubmitting ? "Envoi en cours..." : "Demander une démo gratuite"}
+                      {isSubmitting
+                        ? (isAr ? "جاري الإرسال..." : "Envoi en cours...")
+                        : (isAr ? "طلب عرض تجريبي مجاني" : "Demander une démo gratuite")}
                     </span>
                   </button>
                 </form>

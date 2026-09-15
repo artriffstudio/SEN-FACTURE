@@ -8,8 +8,10 @@ import { Client } from "@/lib/types";
 import { getInitials } from "@/lib/utils";
 import Tooltip from "@/components/ui/Tooltip";
 import toast from "react-hot-toast";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function ClientsPage() {
+  const { t, formatMoney } = useTranslation();
   const [searchQuery, setSearchQuery] = useState("");
   const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,16 +30,12 @@ export default function ClientsPage() {
       (c.city || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const formatMoney = (amount: number) => {
-    return `${amount.toLocaleString("fr-FR")} FCFA`;
-  };
-
   const handleWhatsAppContact = (client: any, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    const message = `Bonjour ${client.name}, je vous contacte depuis SEN FACTURE.`;
+    const message = `Bonjour ${client.name}, je vous contacte depuis Facturim Mauritanie.`;
     window.open(`https://wa.me/${(client.phone || "").replace(/[^0-9]/g, "")}?text=${encodeURIComponent(message)}`, "_blank");
-    toast.success(`WhatsApp ouvert pour ${client.name}`);
+    toast.success(`WhatsApp -> ${client.name}`);
   };
 
   return (
@@ -49,25 +47,25 @@ export default function ClientsPage() {
         <div>
           <div className="flex items-center gap-2">
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              Clients & Entreprises
+              {t.clients.title}
             </h1>
             <span className="inline-flex items-center gap-1 bg-sky-100 text-sky-700 text-[10px] font-bold px-2.5 py-0.5 rounded-full uppercase tracking-wider">
-              {clients.length} Partenaires
+              {clients.length} {t.nav.clients}
             </span>
           </div>
           <p className="text-xs sm:text-sm text-slate-500 mt-1">
-            Gérez votre répertoire de clients professionnels, leurs coordonnées et leurs encours financiers.
+            {t.clients.subtitle}
           </p>
         </div>
 
         {/* Bouton CTA Primaire (Design System) */}
-        <Tooltip content="Nouveau client" icon={Plus}>
+        <Tooltip content={t.clients.newClient} icon={Plus}>
           <Link
             href="/clients/new"
             className="flex items-center gap-1.5 bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 active:from-sky-700 active:to-sky-800 text-white font-bold text-xs sm:text-sm px-4 py-2.5 rounded-xl shadow-md shadow-sky-500/20 hover:shadow-lg hover:shadow-sky-500/30 hover:-translate-y-0.5 active:translate-y-0 transition-all shrink-0 cursor-pointer"
           >
             <Plus size={16} className="stroke-[2.5]" />
-            <span>Nouveau client</span>
+            <span>{t.clients.newClient}</span>
           </Link>
         </Tooltip>
       </div>
@@ -81,7 +79,7 @@ export default function ClientsPage() {
           type="text"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Rechercher par nom, ville, email..."
+          placeholder={t.invoices.searchPlaceholder}
           className="bg-transparent text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none w-full font-medium"
         />
         {searchQuery && (
@@ -116,13 +114,13 @@ export default function ClientsPage() {
                   </h3>
                   <p className="text-xs text-slate-500 truncate flex items-center gap-1 mt-0.5">
                     <MapPin size={12} className="text-slate-400 shrink-0" />
-                    <span>{client.city}, Sénégal</span>
+                    <span>{client.city || "Nouakchott"}, Mauritanie</span>
                   </p>
                 </div>
               </div>
 
               {/* Action WhatsApp rapide */}
-              <Tooltip content="WhatsApp direct" icon={Share2}>
+              <Tooltip content={t.clients.contactWhatsApp} icon={Share2}>
                 <button
                   onClick={(e) => handleWhatsAppContact(client, e)}
                   className="w-8 h-8 rounded-lg bg-emerald-50 text-emerald-600 border border-emerald-200/60 flex items-center justify-center hover:bg-emerald-100 hover:scale-110 active:scale-95 transition-all shrink-0 cursor-pointer shadow-2xs"
@@ -148,16 +146,16 @@ export default function ClientsPage() {
             <div className="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
               <div>
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Factures
+                  {t.clients.invoicesCount}
                 </p>
                 <p className="text-xs font-bold text-slate-900 mt-0.5">
-                  {client.invoiceCount || 0} émise(s)
+                  {client.invoiceCount || 0}
                 </p>
               </div>
 
               <div className="text-right">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                  Total Encaissé
+                  {t.clients.totalInvoiced}
                 </p>
                 <p className="text-sm font-black text-sky-600 mt-0.5">
                   {formatMoney(client.totalRevenue || 0)}
@@ -174,17 +172,17 @@ export default function ClientsPage() {
             <Building2 size={24} />
           </div>
           <h3 className="text-base font-bold text-slate-900">
-            Aucun client enregistré pour le moment
+            {t.clients.emptyClients}
           </h3>
           <p className="text-xs text-slate-400 max-w-sm">
-            Enregistrez vos clients et entreprises partenaires sénégalais avec leurs coordonnées NINEA et contact pour émettre des factures en un clic.
+            {t.clients.subtitle}
           </p>
           <Link
             href="/clients/new"
             className="mt-1 px-4 py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-xl text-xs font-bold shadow-md shadow-sky-500/20 hover:shadow-lg hover:-translate-y-0.5 transition-all cursor-pointer flex items-center gap-1.5"
           >
             <Plus size={15} />
-            <span>Ajouter mon premier client</span>
+            <span>{t.clients.createFirstClient}</span>
           </Link>
         </div>
       ) : filteredClients.length === 0 ? (

@@ -1,0 +1,23 @@
+{
+  "name": "Facturim — Facturation Électronique & Trésorerie Mauritanie",
+  "short_name": "Facturim",
+  "description": "Solution SaaS de facturation conforme DGI Mauritanie (TVA 16%), encaissements Bankily & Masrvi via Moosyl.",
+  "start_url": "/dashboard",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#0ea5e9",
+  "orientation": "portrait-primary",
+  "lang": "fr-MR",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

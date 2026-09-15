@@ -2,13 +2,23 @@
 
 import React from "react";
 import { Check } from "lucide-react";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function SettingsShowcase() {
-  const highlights = [
-    "Modèles de factures personnalisables avec votre logo & charte",
-    "Gestion du NINEA, RCCM, COFEB et mentions obligatoires",
-    "Devises multiples : FCFA (XOF/XAF), Euro, Dollar US",
-  ];
+  const { currentLanguage } = useLanguage();
+  const isAr = currentLanguage === "ar";
+
+  const highlights = isAr
+    ? [
+        "نماذج فواتير قابلة للتخصيص الكامل مع شعار وهوية شركتك",
+        "إدارة الرقم الضريبي (NIF)، والسجل التجاري والبيانات الإلزامية",
+        "دعم العملات: الأوقية (MRU)، اليورو (€)، والدولار ($)",
+      ]
+    : [
+        "Modèles de factures personnalisables avec votre logo & charte",
+        "Gestion du NIF, Registre de Commerce et mentions obligatoires DGI",
+        "Devises supportées : Ouguiya (MRU), Euro (€), Dollar US ($)",
+      ];
 
   return (
     <section className="py-20 lg:py-28 bg-white border-b border-slate-100" id="parametres">
@@ -17,13 +27,15 @@ export default function SettingsShowcase() {
           {/* Détails et Arguments Textuels */}
           <div className="lg:col-span-5 space-y-6">
             <span className="px-3.5 py-1.5 rounded-full bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider border border-slate-200">
-              Paramètres &amp; Personnalisation
+              {isAr ? "الإعدادات والتخصيص" : "Paramètres & Personnalisation"}
             </span>
             <h2 className="text-3xl sm:text-4xl font-extrabold text-slate-900 tracking-tight leading-tight">
-              Configurez votre entreprise en 2 minutes chrono
+              {isAr ? "قم بتهيئة بيانات شركتك في دقيقتين فقط" : "Configurez votre entreprise en 2 minutes chrono"}
             </h2>
             <p className="text-slate-600 leading-relaxed text-base">
-              Adaptez chaque détail selon votre régime fiscal et l&apos;image de votre marque : devise (XOF, EUR, USD), logo, mentions NINEA, RCCM et taux de taxes modulables.
+              {isAr
+                ? "خصص كل التفاصيل وفقاً لنظامك الضريبي وهوية شركتك: العملة الرسمية (MRU)، الشعار، الرقم الضريبي (NIF)، ومعدلات الضريبة المرنة."
+                : "Adaptez chaque détail selon votre régime fiscal et l'image de votre marque : devise (MRU, EUR, USD), logo, mentions NIF, RC et taux de TVA 16%."}
             </p>
 
             <div className="space-y-3.5 pt-2">
@@ -48,11 +60,11 @@ export default function SettingsShowcase() {
                   <div className="w-3 h-3 rounded-full bg-amber-500" />
                   <div className="w-3 h-3 rounded-full bg-emerald-500" />
                   <span className="text-xs font-mono text-slate-400 pl-2">
-                    Paramètres de l&apos;entreprise • SEN FACTURE
+                    Paramètres de l&apos;entreprise • FACTURIM
                   </span>
                 </div>
                 <span className="px-2.5 py-1 text-xs rounded-full bg-slate-800 text-emerald-400 font-semibold border border-slate-700">
-                  Actif • Dakar, SN
+                  Actif • Nouakchott, MR
                 </span>
               </div>
 
@@ -61,22 +73,22 @@ export default function SettingsShowcase() {
                 {/* Champ 1 */}
                 <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
                   <span className="text-xs font-medium text-slate-400 block mb-1">Raison Sociale</span>
-                  <div className="text-sm font-semibold text-white">TERANGA DIGITAL SARL</div>
+                  <div className="text-sm font-semibold text-white">MAURI TECH SARL</div>
                 </div>
 
                 {/* Champ 2 */}
                 <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
-                  <span className="text-xs font-medium text-slate-400 block mb-1">Numéro NINEA / RCCM</span>
-                  <div className="text-sm font-semibold text-white">SN-DKR-2024-B-8910</div>
+                  <span className="text-xs font-medium text-slate-400 block mb-1">Numéro NIF &amp; RC</span>
+                  <div className="text-sm font-semibold text-white">NIF 00987654 / RC NKTT-2025</div>
                 </div>
 
                 {/* Champ 3 */}
                 <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
                   <span className="text-xs font-medium text-slate-400 block mb-1">Devise par défaut</span>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-white">Franc CFA (FCFA / XOF)</span>
+                    <span className="text-sm font-semibold text-white">Ouguiya (MRU)</span>
                     <span className="text-xs bg-sky-600/30 text-sky-400 px-2 py-0.5 rounded font-bold">
-                      UEMOA
+                      Mauritanie
                     </span>
                   </div>
                 </div>
@@ -85,22 +97,22 @@ export default function SettingsShowcase() {
                 <div className="bg-slate-800/60 p-4 rounded-2xl border border-slate-700/60">
                   <span className="text-xs font-medium text-slate-400 block mb-1">Taux TVA appliqué</span>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-semibold text-white">18% (Standard Sénégal)</span>
+                    <span className="text-sm font-semibold text-white">16% (Standard Mauritanie)</span>
                     <span className="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded">
-                      Modifiable
+                      DGI
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Barre de Statut Portefeuille Mobile Money Wave Connecté */}
-              <div className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-sky-950/50 to-slate-800/80 border border-sky-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              {/* Barre de Statut Portefeuille Mobile Money Bankily Connecté */}
+              <div className="mt-6 p-4 rounded-2xl bg-gradient-to-r from-emerald-950/50 to-slate-800/80 border border-emerald-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
                 <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-xs">
-                    W
+                  <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
+                    B
                   </div>
                   <div>
-                    <div className="text-xs font-bold text-white">Compte Wave Marchand connecté</div>
+                    <div className="text-xs font-bold text-white">Compte Bankily Marchand connecté</div>
                     <div className="text-[11px] text-slate-400">Encaissements crédités automatiquement</div>
                   </div>
                 </div>
