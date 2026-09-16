@@ -69,7 +69,18 @@ export default function InvoiceDetailPage({
     try {
       await updateInvoiceStatus(invoice.id, "paid");
       setInvoice({ ...invoice, status: "paid" });
-      toast.success(`Facture ${invoice.invoiceNumber} marquée comme payée !`);
+      toast.success(`Facture ${invoice.invoiceNumber} marquée comme payée en intégralité !`);
+    } catch (err: any) {
+      toast.error(err?.message || "Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleMarkAsPartiallyPaid = async () => {
+    if (!invoice) return;
+    try {
+      await updateInvoiceStatus(invoice.id, "partially_paid");
+      setInvoice({ ...invoice, status: "partially_paid" });
+      toast.success(`Acompte pour la facture ${invoice.invoiceNumber} enregistré avec succès !`);
     } catch (err: any) {
       toast.error(err?.message || "Erreur lors de la mise à jour");
     }
@@ -88,6 +99,9 @@ export default function InvoiceDetailPage({
       dueDate: invoice.dueDate || "12/04/2025",
       total: invoice.total,
       taxRate: invoice.taxRate || 16,
+      depositAmount: invoice.depositAmount,
+      depositPercentage: invoice.depositPercentage,
+      remainingAmount: invoice.remainingAmount,
       status: invoice.status,
       logoUrl: companyLogo || undefined,
     });
@@ -100,7 +114,11 @@ export default function InvoiceDetailPage({
 
   const handleWhatsAppShare = () => {
     if (!invoice) return;
-    const message = `Bonjour ${invoice.client?.name || "Client"},\nVoici votre facture *${invoice.invoiceNumber}* d'un montant de *${formatMoney(invoice.total)}* émise par Facturim.\nMerci de votre confiance !`;
+    const acompteMention =
+      invoice.depositAmount && invoice.depositAmount > 0
+        ? `\n*Acompte exigible : ${formatMoney(invoice.depositAmount)}*\n*Solde : ${formatMoney(invoice.remainingAmount || invoice.total - invoice.depositAmount)}*`
+        : "";
+    const message = `Bonjour ${invoice.client?.name || "Client"},\nVoici votre facture *${invoice.invoiceNumber}* d'un montant de *${formatMoney(invoice.total)}* émise par Facturim.${acompteMention}\nMerci de votre confiance !`;
     window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, "_blank");
     toast.success("Lien WhatsApp généré !");
   };
@@ -133,6 +151,16 @@ export default function InvoiceDetailPage({
     );
   }
 
+  const effectiveDeposit =
+    invoice.depositAmount ||
+    (invoice.depositPercentage ? Math.round(invoice.total * (invoice.depositPercentage / 100)) : 0);
+  const effectiveRemaining =
+    invoice.remainingAmount !== undefined
+      ? invoice.remainingAmount
+      : effectiveDeposit > 0
+      ? invoice.total - effectiveDeposit
+      : invoice.total;
+
   return (
     <div className="space-y-6">
       {/* En-tête de la page */}
@@ -154,13 +182,17 @@ export default function InvoiceDetailPage({
                 className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
                   invoice.status === "paid"
                     ? "bg-emerald-100/80 text-emerald-700 border-emerald-200/60"
+                    : invoice.status === "partially_paid"
+                    ? "bg-amber-100/90 text-amber-900 border-amber-300/70"
                     : invoice.status === "overdue"
                     ? "bg-rose-100 text-rose-700 border-rose-200/60"
-                    : "bg-amber-100 text-amber-800 border-amber-200/60"
+                    : "bg-sky-100 text-sky-800 border-sky-200/60"
                 }`}
               >
                 {invoice.status === "paid"
                   ? t.status.paid
+                  : invoice.status === "partially_paid"
+                  ? t.status.partially_paid
                   : invoice.status === "overdue"
                   ? t.status.overdue
                   : t.status.sent}
@@ -199,14 +231,32 @@ export default function InvoiceDetailPage({
             </button>
           </Tooltip>
 
+          {/* Encaisser l'acompte si non payé */}
+          {invoice.status !== "paid" && invoice.status !== "partially_paid" && effectiveDeposit > 0 && (
+            <Tooltip content={t.invoices.collectDeposit} icon={Check}>
+              <button
+                onClick={handleMarkAsPartiallyPaid}
+                className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
+              >
+                <Check size={14} className="stroke-[2.5]" />
+                <span>{t.invoices.collectDeposit} ({formatMoney(effectiveDeposit)})</span>
+              </button>
+            </Tooltip>
+          )}
+
+          {/* Encaisser le solde ou marquer comme payée */}
           {invoice.status !== "paid" && (
-            <Tooltip content="Marquer comme payée" icon={Check}>
+            <Tooltip content={invoice.status === "partially_paid" ? t.invoices.collectBalance : t.status.paid} icon={Check}>
               <button
                 onClick={handleMarkAsPaid}
                 className="flex items-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-white px-3.5 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs hover:scale-105 active:scale-95 cursor-pointer"
               >
                 <Check size={14} className="stroke-[2.5]" />
-                <span>{t.status.paid}</span>
+                <span>
+                  {invoice.status === "partially_paid"
+                    ? `${t.invoices.collectBalance} (${formatMoney(effectiveRemaining)})`
+                    : t.status.paid}
+                </span>
               </button>
             </Tooltip>
           )}
@@ -290,8 +340,20 @@ export default function InvoiceDetailPage({
             <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
               {t.invoices.status}
             </p>
-            <span className="inline-block mt-1 bg-emerald-50 text-emerald-700 font-bold px-3 py-0.5 rounded-full text-[10px] border border-emerald-200/60">
-              {invoice.status === "paid" ? t.status.paid : t.status.sent}
+            <span
+              className={`inline-block mt-1 font-bold px-3 py-0.5 rounded-full text-[10px] border ${
+                invoice.status === "paid"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-200/60"
+                  : invoice.status === "partially_paid"
+                  ? "bg-amber-100 text-amber-900 border-amber-300/70"
+                  : "bg-sky-50 text-sky-700 border-sky-200/60"
+              }`}
+            >
+              {invoice.status === "paid"
+                ? t.status.paid
+                : invoice.status === "partially_paid"
+                ? t.status.partially_paid
+                : t.status.sent}
             </span>
           </div>
         </div>
@@ -345,7 +407,7 @@ export default function InvoiceDetailPage({
 
         {/* Totaux financiers */}
         <div className="pt-2 border-t border-slate-200 flex justify-end">
-          <div className="w-72 space-y-2 text-[11px]">
+          <div className="w-80 space-y-2 text-[11px]">
             <div className="flex justify-between text-slate-600">
               <span>{t.invoices.amountHT} :</span>
               <span className="font-bold text-slate-800">
@@ -364,6 +426,20 @@ export default function InvoiceDetailPage({
                 {formatMoney(invoice.total)}
               </span>
             </div>
+
+            {/* Ligne d'acompte si configuré */}
+            {effectiveDeposit > 0 && (
+              <div className="mt-2 p-2.5 bg-amber-50 border border-amber-200/90 rounded-xl space-y-1.5">
+                <div className="flex justify-between items-center text-amber-900 font-extrabold text-xs">
+                  <span>{t.invoices.depositDue} ({invoice.depositPercentage || Math.round((effectiveDeposit / invoice.total) * 100)}%) :</span>
+                  <span>{formatMoney(effectiveDeposit)}</span>
+                </div>
+                <div className="flex justify-between items-center text-slate-600 font-bold text-[11px] pt-1 border-t border-dashed border-amber-300/80">
+                  <span>{t.invoices.remainingBalance} :</span>
+                  <span className="text-slate-900">{formatMoney(effectiveRemaining)}</span>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 

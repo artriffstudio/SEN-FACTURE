@@ -80,17 +80,11 @@ export default function PricingCard({
               {isAr ? "أوقية / شهرياً" : "MRU / mois"}
             </span>
           </div>
-          <div className="mt-2 flex items-center gap-2 flex-wrap">
-            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200/70">
-              <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
-              {isAr ? "سعر مضمون 60 يوماً" : "Tarif garanti 60 jours"}
-            </span>
-            {isYearly && (
-              <span className="text-[11px] text-emerald-700 font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/70">
-                {isAr ? "خصم 20%" : "-20% annuel"}
-              </span>
-            )}
-          </div>
+          {isYearly && (
+            <p className="text-[11px] text-emerald-600 font-semibold mt-1">
+              {isAr ? "فاتورة سنوية • خصم 20%" : "Facturé annuellement • 20% d'économie"}
+            </p>
+          )}
         </div>
 
         {/* Liste des Fonctionnalités Incluses */}

@@ -79,76 +79,37 @@
   }
 }
 
-/* --- Keyframes Animations Dynamiques --- */
-@keyframes heroFloat {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-10px) rotate(0.4deg);
-  }
+/* --- Classes d'Animation --- */
+.animate-float-left {
+  animation: floatLeft 7s ease-in-out infinite;
 }
 
-@keyframes gradientFlow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
+.animate-float-left-delayed {
+  animation: floatLeft 7s ease-in-out infinite -3s;
 }
 
-@keyframes softPulseGlow {
-  0%, 100% {
-    opacity: 0.35;
-    transform: scale(0.96);
-  }
-  50% {
-    opacity: 0.75;
-    transform: scale(1.04);
-  }
+.animate-float-right {
+  animation: floatRight 8s ease-in-out infinite 1s;
 }
 
-.animate-hero-float {
-  animation: heroFloat 5.5s ease-in-out infinite;
+.animate-float-right-delayed {
+  animation: floatRight 8s ease-in-out infinite -2s;
 }
 
-.animate-gradient-flow {
-  background-size: 200% auto;
-  animation: gradientFlow 4s ease-in-out infinite;
+.animate-float-back {
+  animation: floatJackBack 9s ease-in-out infinite 0.5s;
 }
 
-.animate-pulse-slow {
-  animation: softPulseGlow 6s ease-in-out infinite;
+.animate-pulse-glow {
+  animation: pulseGlow 4s ease-in-out infinite;
 }
 
-.btn-shimmer-effect {
-  position: relative;
-  overflow: hidden;
+.animate-drift-left-to-right {
+  animation: driftLeftToRight 6s ease-in-out infinite;
 }
 
-.btn-shimmer-effect::after {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    60deg,
-    rgba(255, 255, 255, 0) 20%,
-    rgba(255, 255, 255, 0.35) 50%,
-    rgba(255, 255, 255, 0) 80%
-  );
-  transform: translateX(-100%) rotate(25deg);
-  transition: transform 0.75s ease;
-}
-
-.btn-shimmer-effect:hover::after {
-  transform: translateX(100%) rotate(25deg);
+.animate-drift-right-to-left {
+  animation: driftRightToLeft 6s ease-in-out infinite;
 }
 
 /* --- Marquee Défilant Infini --- */
@@ -324,62 +285,3 @@
 .jack-rot-2 {
   transform: rotate(2deg);
 }
-
-/* ========================================================================= */
-/* NOUVEAUX STYLES HERO 3D CASE STUDY (MOCKUP CASCADE SUR TABLE EN BÉTON)    */
-/* ========================================================================= */
-
-.studio-ambient-bg {
-  background: 
-    radial-gradient(ellipse 80% 50% at 75% 45%, rgba(14, 165, 233, 0.08) 0%, transparent 70%),
-    radial-gradient(ellipse 60% 40% at 20% 60%, rgba(241, 245, 249, 0.9) 0%, transparent 60%),
-    #fafbfd;
-}
-
-.studio-shadow-3d {
-  box-shadow: 
-    0 25px 50px -12px rgba(15, 23, 42, 0.18),
-    0 12px 24px -8px rgba(14, 165, 233, 0.12),
-    0 0 0 1px rgba(226, 232, 240, 0.7);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.studio-shadow-3d:hover {
-  box-shadow: 
-    0 35px 65px -15px rgba(15, 23, 42, 0.22),
-    0 20px 32px -10px rgba(14, 165, 233, 0.18),
-    0 0 0 1px rgba(56, 189, 248, 0.4);
-  transform: translateY(-4px) scale(1.01);
-}
-
-.hero-pill-badge {
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-  background: #ffffff;
-  border: 1px solid #e2e8f0;
-}
-
-.hero-pill-badge:hover {
-  transform: translateY(-2px);
-  border-color: #38bdf8;
-  box-shadow: 0 10px 20px -5px rgba(14, 165, 233, 0.15);
-  background: #f0f9ff;
-}
-
-.hero-floating-badge {
-  animation: floatLeft 6s ease-in-out infinite;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.hero-floating-badge-delayed {
-  animation: floatRight 7s ease-in-out infinite -2.5s;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.hero-floating-badge-bottom {
-  animation: floatJackBack 8s ease-in-out infinite -1s;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-

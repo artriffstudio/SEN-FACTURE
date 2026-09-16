@@ -28,6 +28,7 @@ import { createInvoice } from "@/lib/services/invoiceService";
 import { getCompany } from "@/lib/services/companyService";
 import { Client } from "@/lib/types";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { BankilyLogo, MasrviLogo } from "@/components/ui/PaymentLogos";
 
 interface InvoiceItem {
   id: string;
@@ -69,6 +70,11 @@ export default function LiveInvoiceModal({
   const [paymentTerms, setPaymentTerms] = useState("Paiement à 30 jours nets");
   const [taxRate, setTaxRate] = useState<number>(16); // TVA standard Mauritanie : 16%
   const [docLang, setDocLang] = useState<"bilingual" | "fr" | "ar">("bilingual");
+  
+  // Gestion des acomptes / paiements partiels (ex: 50% à la commande)
+  const [depositType, setDepositType] = useState<"none" | "30" | "50" | "70" | "custom">("none");
+  const [customDepositAmount, setCustomDepositAmount] = useState<number>(0);
+
   const [notes, setNotes] = useState(
     "Merci pour votre confiance. Règlements acceptés par virement bancaire BPM ou Mobile Money (Bankily : +222 45 12 34 56 / Masrvi / Seddap)."
   );
@@ -159,6 +165,24 @@ export default function LiveInvoiceModal({
     return subtotal + taxAmount;
   }, [subtotal, taxAmount]);
 
+  // Calculs d'acompte
+  const depositAmount = useMemo(() => {
+    if (depositType === "none") return 0;
+    if (depositType === "custom") return Math.min(total, Math.max(0, customDepositAmount || 0));
+    const pct = parseFloat(depositType) || 0;
+    return Math.round(total * (pct / 100));
+  }, [depositType, customDepositAmount, total]);
+
+  const remainingAmount = useMemo(() => {
+    return Math.max(0, total - depositAmount);
+  }, [total, depositAmount]);
+
+  const activeDepositPercentage = useMemo(() => {
+    if (depositType === "none" || total === 0) return 0;
+    if (depositType === "custom") return Math.round((depositAmount / total) * 100);
+    return parseFloat(depositType) || 0;
+  }, [depositType, depositAmount, total]);
+
   // Gestion des lignes de prestations
   const handleAddItem = () => {
     setItems((prev) => [
@@ -234,6 +258,9 @@ export default function LiveInvoiceModal({
         issueDate,
         dueDate,
         taxRate,
+        depositAmount: depositAmount > 0 ? depositAmount : undefined,
+        depositPercentage: activeDepositPercentage > 0 ? activeDepositPercentage : undefined,
+        remainingAmount: depositAmount > 0 ? remainingAmount : undefined,
         notes: notes || undefined,
         items: items.map((it) => ({
           description: it.description,
@@ -273,7 +300,11 @@ export default function LiveInvoiceModal({
   // Partager sur WhatsApp
   const handleWhatsAppShare = () => {
     const payLink = `https://facturim.mr/pay/${invoiceNumber}`;
-    const message = `Bonjour ${currentClient.name},\nVoici votre facture *${invoiceNumber}* d'un montant de *${total.toLocaleString("fr-FR")} MRU* émise par Facturim.\nDate d'échéance : ${dueDate}.\n\n💳 Régler en 1 clic via Bankily ou Masrvi : ${payLink}\n\nMerci de votre confiance !`;
+    const acompteMention =
+      depositAmount > 0
+        ? `\n*Acompte exigible (${activeDepositPercentage}%) : ${depositAmount.toLocaleString("fr-FR")} MRU*\n*Solde restant : ${remainingAmount.toLocaleString("fr-FR")} MRU*`
+        : "";
+    const message = `Bonjour ${currentClient.name},\nVoici votre facture *${invoiceNumber}* d'un montant de *${total.toLocaleString("fr-FR")} MRU* émise par Facturim.${acompteMention}\nDate d'échéance : ${dueDate}.\n\n💳 Régler en 1 clic via Bankily ou Masrvi : ${payLink}\n\nMerci de votre confiance !`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
     toast.success("Lien WhatsApp généré avec accès paiement Moosyl !");
@@ -291,6 +322,9 @@ export default function LiveInvoiceModal({
       dueDate: dueDate,
       total: total,
       taxRate: taxRate,
+      depositAmount: depositAmount > 0 ? depositAmount : undefined,
+      depositPercentage: activeDepositPercentage > 0 ? activeDepositPercentage : undefined,
+      remainingAmount: depositAmount > 0 ? remainingAmount : undefined,
       paymentTerms: paymentTerms,
       documentLanguage: docLang,
       items: items.map((it) => ({
@@ -299,7 +333,7 @@ export default function LiveInvoiceModal({
         quantity: it.quantity,
         unitPrice: it.unitPrice,
       })),
-      status: "unpaid",
+      status: depositAmount > 0 ? "partially_paid" : "unpaid",
       notes: notes,
       logoUrl: companyLogo || undefined,
     };
@@ -590,6 +624,126 @@ export default function LiveInvoiceModal({
               </div>
             </div>
 
+            {/* Section Acompte & Modalités de Paiement */}
+            <div className="p-3.5 bg-slate-50/90 rounded-xl border border-slate-200/90 space-y-3 text-xs">
+              <div className="flex items-center justify-between">
+                <label className="font-bold text-slate-800 flex items-center gap-1.5">
+                  <DollarSign size={14} className="text-sky-600" />
+                  <span>Modalités de règlement &amp; Acompte</span>
+                </label>
+                <span className="text-[11px] text-slate-500 font-medium">
+                  {depositAmount > 0
+                    ? `Acompte : ${depositAmount.toLocaleString("fr-FR")} MRU (${activeDepositPercentage}%)`
+                    : "Paiement comptant (100%)"}
+                </span>
+              </div>
+
+              {/* Boutons de sélection rapide d'acompte */}
+              <div className="grid grid-cols-5 gap-1.5 bg-white p-1 rounded-lg border border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => setDepositType("none")}
+                  className={`py-1.5 px-2 rounded-md font-bold text-[11px] transition-all cursor-pointer ${
+                    depositType === "none"
+                      ? "bg-slate-900 text-white shadow-2xs"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  100%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDepositType("30")}
+                  className={`py-1.5 px-2 rounded-md font-bold text-[11px] transition-all cursor-pointer ${
+                    depositType === "30"
+                      ? "bg-sky-500 text-white shadow-2xs"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  30%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDepositType("50")}
+                  className={`py-1.5 px-2 rounded-md font-bold text-[11px] transition-all cursor-pointer ${
+                    depositType === "50"
+                      ? "bg-sky-500 text-white shadow-2xs"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  50%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setDepositType("70")}
+                  className={`py-1.5 px-2 rounded-md font-bold text-[11px] transition-all cursor-pointer ${
+                    depositType === "70"
+                      ? "bg-sky-500 text-white shadow-2xs"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  70%
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setDepositType("custom");
+                    if (!customDepositAmount && total > 0) {
+                      setCustomDepositAmount(Math.round(total * 0.5));
+                    }
+                  }}
+                  className={`py-1.5 px-2 rounded-md font-bold text-[11px] transition-all cursor-pointer ${
+                    depositType === "custom"
+                      ? "bg-sky-500 text-white shadow-2xs"
+                      : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  Libre
+                </button>
+              </div>
+
+              {/* Saisie montant libre si actif */}
+              {depositType === "custom" && (
+                <div className="pt-1 flex items-center gap-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="number"
+                      min="0"
+                      max={total}
+                      step="500"
+                      placeholder="Montant d'acompte personnalisé en MRU"
+                      value={customDepositAmount || ""}
+                      onChange={(e) =>
+                        setCustomDepositAmount(parseFloat(e.target.value) || 0)
+                      }
+                      className="w-full pl-3 pr-12 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-xs font-bold focus:outline-none focus:border-sky-500"
+                    />
+                    <span className="absolute right-2.5 top-1.5 text-[10px] text-slate-400 font-bold pointer-events-none">
+                      MRU
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Résumé Acompte / Solde */}
+              {depositAmount > 0 && (
+                <div className="grid grid-cols-2 gap-2 p-2.5 bg-amber-50/80 rounded-lg border border-amber-200/80 text-[11px]">
+                  <div>
+                    <span className="text-amber-800 font-medium">Acompte exigible ({activeDepositPercentage}%) :</span>
+                    <p className="text-amber-950 font-black text-xs">
+                      {depositAmount.toLocaleString("fr-FR")} MRU
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <span className="text-slate-600 font-medium">Solde restant dû :</span>
+                    <p className="text-slate-900 font-black text-xs">
+                      {remainingAmount.toLocaleString("fr-FR")} MRU
+                    </p>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Section TVA et Conditions */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
               <div>
@@ -712,8 +866,14 @@ export default function LiveInvoiceModal({
                   <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
                     Statut / الحالة
                   </p>
-                  <span className="inline-block mt-1 bg-amber-100 text-amber-800 font-bold px-2.5 py-0.5 rounded-full text-[10px]">
-                    En cours d&apos;émission
+                  <span
+                    className={`inline-block mt-1 font-bold px-2.5 py-0.5 rounded-full text-[10px] ${
+                      depositAmount > 0
+                        ? "bg-amber-100 text-amber-900 border border-amber-300/70"
+                        : "bg-sky-100 text-sky-800"
+                    }`}
+                  >
+                    {depositAmount > 0 ? "Acompte exigible" : "En cours d'émission"}
                   </span>
                 </div>
               </div>
@@ -754,18 +914,21 @@ export default function LiveInvoiceModal({
 
               {/* Bloc Récapitulatif et Totaux + Cartouche Moosyl */}
               <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
-                {/* Badge Moosyl Pay */}
+                {/* Badge Moosyl Pay avec Logos Authentiques */}
                 <div className="flex items-center gap-2.5 bg-slate-50 p-2 rounded-lg border border-slate-200/80">
-                  <div className="w-10 h-10 bg-white rounded border border-slate-200 flex items-center justify-center text-slate-700">
+                  <div className="w-10 h-10 bg-white rounded border border-slate-200 flex items-center justify-center text-slate-700 shadow-2xs">
                     <QrCode size={22} />
                   </div>
-                  <div className="text-[10px] text-slate-600 leading-tight">
+                  <div className="text-[10px] text-slate-600 leading-tight space-y-1">
                     <p className="font-bold text-slate-800">Moosyl Gateway</p>
-                    <p className="text-emerald-700 font-semibold">🟢 Bankily • 🔵 Masrvi</p>
+                    <div className="flex items-center gap-1.5">
+                      <BankilyLogo variant="badge" className="text-[9px] py-0 px-1.5" />
+                      <MasrviLogo variant="badge" className="text-[9px] py-0 px-1.5" />
+                    </div>
                   </div>
                 </div>
 
-                <div className="w-56 space-y-1 text-[11px]">
+                <div className="w-64 space-y-1 text-[11px]">
                   <div className="flex justify-between text-slate-600">
                     <span>Sous-total HT :</span>
                     <span className="font-semibold text-slate-800">
@@ -783,11 +946,25 @@ export default function LiveInvoiceModal({
                   )}
 
                   <div className="flex justify-between items-baseline pt-1.5 border-t-2 border-slate-900 text-slate-900">
-                    <span className="text-xs font-bold uppercase">Total TTC :</span>
+                    <span className="text-xs font-bold uppercase">Total Net TTC :</span>
                     <span className="text-sm sm:text-base font-black text-sky-600">
                       {total.toLocaleString("fr-FR")} MRU
                     </span>
                   </div>
+
+                  {/* Lignes d'acompte et solde virtuel */}
+                  {depositAmount > 0 && (
+                    <div className="mt-1.5 pt-1.5 border-t border-dashed border-amber-300 bg-amber-50/70 p-2 rounded-lg space-y-1">
+                      <div className="flex justify-between items-center text-amber-900 font-extrabold text-[11px]">
+                        <span>Acompte ({activeDepositPercentage}%) :</span>
+                        <span className="text-xs">{depositAmount.toLocaleString("fr-FR")} MRU</span>
+                      </div>
+                      <div className="flex justify-between items-center text-slate-600 font-bold text-[10.5px]">
+                        <span>Solde restant :</span>
+                        <span className="text-slate-900">{remainingAmount.toLocaleString("fr-FR")} MRU</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

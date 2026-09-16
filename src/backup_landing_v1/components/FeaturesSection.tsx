@@ -86,9 +86,9 @@ export default function FeaturesSection() {
           iconBgClass: "bg-sky-50 border border-sky-100 group-hover:bg-sky-600",
           badgeText: "Conformité 100%",
           badgeColorClass: "bg-emerald-50 text-emerald-700 border border-emerald-200/60",
-          title: "Factures Normalisées & Certifiées",
+          title: "Factures Normalisées Mauritanie",
           description:
-            "Éditez des factures certifiées intégrant automatiquement le NIF, la TVA légale (16%) et toutes les mentions obligatoires requises par la DGI.",
+            "Éditez des factures certifiées intégrant automatiquement le NIF, la TVA mauritanienne (16%) et toutes les mentions légales requises par la DGI.",
         },
         {
           id: "devis",
@@ -106,9 +106,9 @@ export default function FeaturesSection() {
           iconBgClass: "bg-sky-50 border border-sky-100 group-hover:bg-sky-500",
           badgeText: "Mobile Money",
           badgeColorClass: "bg-sky-50 text-sky-700 border border-sky-200/60",
-          title: "Bankily & Masrvi Direct",
+          title: "Bankily & Seddap Direct",
           description:
-            "Un QR Code ou lien de paiement sécurisé inséré sur vos factures permet à vos clients de régler instantanément via Bankily, Masrvi ou virement bancaire.",
+            "Un QR Code ou lien sécurisé inséré sur vos factures permet à vos clients de régler instantanément via Bankily, Seddap ou virement BPM.",
         },
         {
           id: "tresorerie",
@@ -138,25 +138,25 @@ export default function FeaturesSection() {
           badgeColorClass: "bg-purple-50 text-purple-700 border border-purple-200/60",
           title: "Grand Livre & Déclarations",
           description:
-            "Exportez vos écritures comptables sous format Excel ou CSV pour faciliter vos déclarations de TVA (16%) auprès de la DGI.",
+            "Exportez vos écritures comptables sous format Excel, CSV pour faciliter vos déclarations de TVA (16%) auprès de la DGI Mauritanie.",
         },
       ];
 
   return (
     <section className="py-20 lg:py-28 bg-slate-50/70" id="fonctionnalites">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* En-tête de section */}
         <div className="text-center max-w-2xl mx-auto mb-16">
           <span className="px-4 py-1.5 rounded-full bg-sky-50 border border-sky-200/80 text-sky-700 text-xs font-bold uppercase tracking-wider">
-            {isAr ? "منظومة الفوترة المتكاملة" : "Écosystème Facturation"}
+            {isAr ? "منظومة الفوترة الإلكترونية" : "Écosystème Facturation"}
           </span>
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-950 tracking-tight mt-4 mb-3 leading-tight">
             {isAr ? "كل ما تحتاجه لإدارة أعمالك بسرعة واحترافية" : "Tout pour piloter votre entreprise à grande vitesse"}
           </h2>
           <p className="text-slate-600 text-base sm:text-lg">
             {isAr
-              ? "أدوات متطورة ومؤتمتة مصممة خصيصاً للتوافق التام مع المعايير التجارية والمصرفية."
-              : "Des outils automatisés conçus spécialement pour répondre aux exigences fiscales et commerciales modernes."}
+              ? "أدوات متطورة مصممة خصيصاً للتوافق التام مع متطلبات السوق والأنظمة المالية في موريتانيا."
+              : "Des outils automatisés conçus spécialement pour répondre aux exigences fiscales et commerciales en Mauritanie."}
           </p>
         </div>
 

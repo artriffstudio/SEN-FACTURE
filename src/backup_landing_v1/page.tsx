@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import LandingHeader from "@/components/landing/LandingHeader";
 import LandingHero from "@/components/landing/LandingHero";
+import PartnerMarquee from "@/components/landing/PartnerMarquee";
 import FeaturesSection from "@/components/landing/FeaturesSection";
 import SettingsShowcase from "@/components/landing/SettingsShowcase";
 import PricingSection from "@/components/landing/PricingSection";
@@ -40,10 +41,13 @@ export default function LandingPage() {
       <LandingHeader />
 
       <main className="flex-1">
-        {/* 2. Hero Section épurée avec Laptop 3D sans cadre + Marquee en pied de page Hero */}
+        {/* 2. Hero Section avec 3D Jacks Organiques et Formulaire CTA Animé */}
         <LandingHero />
 
-        {/* 3. Section Écosystème Facturation (6 Cartes Fonctionnalités) */}
+        {/* 3. Défilement Infini Continu des Partenaires & Banques */}
+        <PartnerMarquee />
+
+        {/* 4. Section Écosystème Facturation (6 Cartes Fonctionnalités) */}
         <FeaturesSection />
 
         {/* 5. Showcase Paramètres d'Entreprise & Terminal Sombre */}

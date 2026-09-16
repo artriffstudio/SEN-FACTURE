@@ -41,14 +41,20 @@ export async function getInvoices(
           email: inv.clients.email,
           phone: inv.clients.phone || "",
           address: inv.clients.address || "",
-          city: inv.clients.city || "Dakar",
-          country: inv.clients.country || "Sénégal",
+          city: inv.clients.city || "Nouakchott",
+          country: inv.clients.country || "Mauritanie",
           taxId: inv.clients.tax_id || "",
           logoUrl: inv.clients.logo_url || undefined,
           createdAt: inv.clients.created_at,
           updatedAt: inv.clients.updated_at,
         }
       : undefined;
+
+    const subtotalNum = Number(inv.subtotal) || 0;
+    const totalNum = Number(inv.total) || 0;
+    const depAmt = inv.deposit_amount ? Number(inv.deposit_amount) : undefined;
+    const depPct = inv.deposit_percentage ? Number(inv.deposit_percentage) : undefined;
+    const remAmt = inv.remaining_amount ? Number(inv.remaining_amount) : depAmt ? totalNum - depAmt : undefined;
 
     return {
       id: inv.id,
@@ -59,10 +65,13 @@ export async function getInvoices(
       status: inv.status as InvoiceStatus,
       issueDate: inv.issue_date,
       dueDate: inv.due_date,
-      subtotal: Number(inv.subtotal),
-      taxRate: Number(inv.tax_rate),
-      taxAmount: Number(inv.tax_amount),
-      total: Number(inv.total),
+      subtotal: subtotalNum,
+      taxRate: Number(inv.tax_rate) || 16,
+      taxAmount: Number(inv.tax_amount) || 0,
+      total: totalNum,
+      depositAmount: depAmt,
+      depositPercentage: depPct,
+      remainingAmount: remAmt,
       notes: inv.notes,
       createdAt: inv.created_at,
       updatedAt: inv.updated_at,
@@ -110,14 +119,20 @@ export async function getInvoiceById(id: string): Promise<Invoice | null> {
         email: inv.clients.email,
         phone: inv.clients.phone || "",
         address: inv.clients.address || "",
-        city: inv.clients.city || "Dakar",
-        country: inv.clients.country || "Sénégal",
+        city: inv.clients.city || "Nouakchott",
+        country: inv.clients.country || "Mauritanie",
         taxId: inv.clients.tax_id || "",
         logoUrl: inv.clients.logo_url || undefined,
         createdAt: inv.clients.created_at,
         updatedAt: inv.clients.updated_at,
       }
     : undefined;
+
+  const subtotalNum = Number(inv.subtotal) || 0;
+  const totalNum = Number(inv.total) || 0;
+  const depAmt = inv.deposit_amount ? Number(inv.deposit_amount) : undefined;
+  const depPct = inv.deposit_percentage ? Number(inv.deposit_percentage) : undefined;
+  const remAmt = inv.remaining_amount ? Number(inv.remaining_amount) : depAmt ? totalNum - depAmt : undefined;
 
   return {
     id: inv.id,
@@ -128,10 +143,13 @@ export async function getInvoiceById(id: string): Promise<Invoice | null> {
     status: inv.status as InvoiceStatus,
     issueDate: inv.issue_date,
     dueDate: inv.due_date,
-    subtotal: Number(inv.subtotal),
-    taxRate: Number(inv.tax_rate),
-    taxAmount: Number(inv.tax_amount),
-    total: Number(inv.total),
+    subtotal: subtotalNum,
+    taxRate: Number(inv.tax_rate) || 16,
+    taxAmount: Number(inv.tax_amount) || 0,
+    total: totalNum,
+    depositAmount: depAmt,
+    depositPercentage: depPct,
+    remainingAmount: remAmt,
     notes: inv.notes,
     createdAt: inv.created_at,
     updatedAt: inv.updated_at,
@@ -155,7 +173,7 @@ export async function createInvoice(data: InvoiceFormData): Promise<Invoice> {
     (sum, item) => sum + item.quantity * item.unitPrice,
     0
   );
-  const taxRate = 18.0;
+  const taxRate = 16.0; // TVA Standard Mauritanie DGI 16%
   const taxAmount = Math.round((subtotal * taxRate) / 100);
   const total = subtotal + taxAmount;
 
@@ -177,24 +195,31 @@ export async function createInvoice(data: InvoiceFormData): Promise<Invoice> {
     .eq("id", companyId);
 
   // 3. Insérer la facture
+  const invoiceInsertPayload: Record<string, any> = {
+    company_id: companyId,
+    client_id: data.clientId,
+    invoice_number: invoiceNumber,
+    status: data.status,
+    issue_date: data.issueDate,
+    due_date: data.dueDate,
+    subtotal,
+    tax_rate: taxRate,
+    tax_amount: taxAmount,
+    total,
+    notes: data.notes || null,
+    paid_at: data.status === "paid" ? new Date().toISOString() : null,
+  };
+
+  if (data.depositAmount !== undefined && data.depositAmount > 0) {
+    invoiceInsertPayload.deposit_amount = data.depositAmount;
+  }
+  if (data.depositPercentage !== undefined && data.depositPercentage > 0) {
+    invoiceInsertPayload.deposit_percentage = data.depositPercentage;
+  }
+
   const { data: createdInv, error: invError } = await supabase
     .from("invoices")
-    .insert([
-      {
-        company_id: companyId,
-        client_id: data.clientId,
-        invoice_number: invoiceNumber,
-        status: data.status,
-        issue_date: data.issueDate,
-        due_date: data.dueDate,
-        subtotal,
-        tax_rate: taxRate,
-        tax_amount: taxAmount,
-        total,
-        notes: data.notes || null,
-        paid_at: data.status === "paid" ? new Date().toISOString() : null,
-      },
-    ])
+    .insert([invoiceInsertPayload])
     .select()
     .single();
 
@@ -259,7 +284,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
   const { data: invoices } = await supabase
     .from("invoices")
-    .select("status, total")
+    .select("status, total, deposit_amount, deposit_percentage")
     .eq("company_id", companyId);
 
   const { count: clientCount } = await supabase
@@ -277,9 +302,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
   if (invoices) {
     for (const inv of invoices) {
       const amount = Number(inv.total) || 0;
+      const dep = Number(inv.deposit_amount) || (inv.deposit_percentage ? Math.round(amount * (Number(inv.deposit_percentage) / 100)) : 0);
+
       if (inv.status === "paid") {
         totalRevenue += amount;
         paidCount++;
+      } else if (inv.status === "partially_paid") {
+        totalRevenue += dep > 0 ? dep : Math.round(amount * 0.5);
+        pendingAmount += amount - (dep > 0 ? dep : Math.round(amount * 0.5));
       } else if (inv.status === "sent") {
         pendingAmount += amount;
       } else if (inv.status === "overdue") {

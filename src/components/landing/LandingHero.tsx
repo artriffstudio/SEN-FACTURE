@@ -1,79 +1,168 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
-import JackShape from "./JackShape";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useLanguage, useTranslation } from "@/contexts/LanguageContext";
+
+import PartnerMarquee from "./PartnerMarquee";
 
 export default function LandingHero() {
-  const router = useRouter();
   const { currentLanguage } = useLanguage();
+  const { t } = useTranslation();
   const isAr = currentLanguage === "ar";
   const [email, setEmail] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = ((e.clientX - rect.left) / rect.width - 0.5) * 8; // -4deg to +4deg
+    const y = ((e.clientY - rect.top) / rect.height - 0.5) * -8;
+    setMousePos({ x, y });
+  };
+
+  const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+    if (e.touches.length > 0) {
+      const touch = e.touches[0];
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = ((touch.clientX - rect.left) / rect.width - 0.5) * 8;
+      const y = ((touch.clientY - rect.top) / rect.height - 0.5) * -8;
+      setMousePos({ x, y });
+    }
+  };
+
+  const handleMouseLeave = () => {
+    setMousePos({ x: 0, y: 0 });
+  };
+
+  const handleQuickStart = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email.trim()) return;
-
-    setIsSubmitting(true);
-    // Redirige vers la page d'inscription avec l'email prérempli
-    router.push(`/register?email=${encodeURIComponent(email.trim())}`);
+    if (email.trim()) {
+      window.location.href = `/register?email=${encodeURIComponent(email.trim())}`;
+    } else {
+      window.location.href = "/register";
+    }
   };
 
   return (
     <section
-      className="relative overflow-hidden min-h-[calc(100svh-80px-68px)] sm:min-h-[calc(100vh-80px-74px)] flex flex-col justify-center items-center py-12 sm:py-16 lg:py-20 bg-white"
-      data-purpose="hero-section"
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+      onTouchStart={handleTouchMove}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleMouseLeave}
+      className="relative overflow-hidden bg-white min-h-[calc(100vh-5rem)] flex flex-col justify-between"
+      data-purpose="hero-clean-minimal"
     >
-      {/* Halo lumineux atmosphérique en arrière-plan */}
-      <div
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[750px] h-[450px] hero-atmospheric-glow blur-[130px] rounded-full pointer-events-none -z-10"
-        aria-hidden="true"
-      />
+      {/* Zone centrale Hero pleine largeur (Gauche : Titre + CTA, Droite : Laptop 3D) */}
+      <div className="flex-1 flex items-center w-full px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 py-8 sm:py-10 lg:py-12">
+        <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 xl:gap-16 items-center">
+          {/* ========================================================================= */}
+          {/* COLONNE GAUCHE : ALIGNÉE AU LOGO + TITRE STRICTEMENT SUR 2 LIGNES          */}
+          {/* ========================================================================= */}
+          <div className="lg:col-span-6 xl:col-span-5 flex flex-col items-start text-left space-y-5 sm:space-y-6 z-10">
+            {/* Badge interactif élégant avec pastille vivante */}
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-sky-50/90 border border-sky-200/80 text-sky-800 text-xs font-bold tracking-wide shadow-2xs hover:scale-105 transition-all cursor-default select-none">
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping shrink-0" />
+              <span>{t.landing.heroBadge}</span>
+            </div>
 
-      {/* Composition 3D Jack Gauche */}
-      <JackShape variant="left" />
+            {/* Titre Principal STRICTEMENT sur 2 lignes avec dégradé fluide animé */}
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-[42px] xl:text-[50px] 2xl:text-[56px] font-black text-slate-950 tracking-tight leading-[1.14]">
+              <span className="block whitespace-nowrap">
+                {isAr ? "مرحباً بكم في" : "Bienvenue dans votre"}
+              </span>
+              <span className="block whitespace-nowrap text-transparent bg-clip-text bg-gradient-to-r from-slate-950 via-sky-700 to-sky-500 animate-gradient-flow">
+                {isAr ? "منصة الفوترة والتحصيل" : "solution de facturation"}
+              </span>
+            </h1>
 
-      {/* Composition 3D Jack Droite */}
-      <JackShape variant="right" />
+            {/* Formulaire Pill Épuré Responsive : Email + Bouton Démarrer avec Shimmer */}
+            <div className="w-full max-w-lg space-y-3.5">
+              <form
+                onSubmit={handleQuickStart}
+                className="flex items-center p-1.5 sm:p-2 bg-white rounded-full border border-slate-200 shadow-xl shadow-slate-200/60 hover:border-sky-400 hover:shadow-sky-500/15 transition-all duration-300 focus-within:ring-4 focus-within:ring-sky-500/20 focus-within:border-sky-500"
+              >
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder={isAr ? "أدخل بريدك الإلكتروني المهني" : "Votre email professionnel..."}
+                  required
+                  className="w-full px-4 sm:px-6 py-3 sm:py-3.5 text-xs sm:text-base bg-transparent border-none focus:ring-0 text-slate-900 placeholder-slate-400 outline-none"
+                />
+                <button
+                  type="submit"
+                  className="hero-cta-btn btn-shimmer-effect shrink-0 px-6 sm:px-8 py-3 sm:py-3.5 text-white font-bold text-xs sm:text-base rounded-full flex items-center space-x-2 cursor-pointer select-none hover:scale-105 active:scale-95 transition-all duration-200 shadow-lg shadow-sky-500/30"
+                >
+                  <span>{isAr ? "ابدأ مجاناً" : "Démarrer"}</span>
+                  <ArrowRight size={18} className="hero-cta-arrow stroke-[2.5]" />
+                </button>
+              </form>
 
-      {/* Contenu Central du Hero épuré et parfaitement dimensionné */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 relative z-10 text-center w-full my-auto">
-        {/* Titre Principal percutant avec grand gradient */}
-        <h1 className="text-4xl sm:text-6xl lg:text-7xl font-extrabold text-slate-950 tracking-tight leading-[1.08] mb-10 sm:mb-12">
-          {isAr ? "مرحباً بكم في" : "Bienvenue dans votre"} <br className="hidden sm:block" />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-slate-950 via-sky-800 to-sky-600">
-            {isAr ? "منصة الفوترة والتحصيل" : "solution de facturation"}
-          </span>
-        </h1>
+              {/* Lien de redirection Connexion CENTRÉ sous le formulaire */}
+              <div className="text-center text-sm sm:text-base font-semibold text-slate-500">
+                <Link
+                  href="/login"
+                  className="text-slate-600 hover:text-sky-600 transition-colors underline underline-offset-4 decoration-slate-300 hover:decoration-sky-500 inline-block hover:scale-105"
+                >
+                  {isAr ? "لديك حساب بالفعل؟ تسجيل الدخول" : "Déjà un compte ? Se connecter"}
+                </Link>
+              </div>
+            </div>
+          </div>
 
-        {/* Formulaire Pill avec micro-animations au hover & click */}
-        <div className="max-w-md sm:max-w-lg mx-auto">
-          <form
-            onSubmit={handleSubmit}
-            className="flex items-center p-1.5 sm:p-2 bg-white rounded-full border border-slate-200/90 shadow-xl shadow-slate-200/60 hover:border-sky-300/80 transition-all focus-within:ring-2 focus-within:ring-sky-500/25 focus-within:border-sky-400"
-          >
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={isAr ? "أدخل بريدك الإلكتروني المهني" : "Entrez votre email professionnel"}
-              required
-              className="w-full px-4 sm:px-5 py-2.5 sm:py-3 text-xs sm:text-base bg-transparent border-none focus:ring-0 text-slate-900 placeholder-slate-400 outline-none"
+          {/* ========================================================================= */}
+          {/* COLONNE DROITE : LAPTOP 3D ISOLÉ AVEC PARALLAXE & FLOTTEMENT VIVANT       */}
+          {/* ========================================================================= */}
+          <div className="lg:col-span-6 xl:col-span-7 relative flex items-center justify-center lg:justify-end w-full overflow-visible">
+            {/* Halo lumineux d'ambiance ultra-subtil */}
+            <div
+              className="absolute w-[450px] h-[450px] bg-gradient-to-tr from-sky-400/15 via-blue-500/10 to-transparent blur-[80px] rounded-full pointer-events-none animate-pulse-slow"
+              aria-hidden="true"
             />
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="hero-cta-btn shrink-0 px-5 sm:px-7 py-3 text-white font-bold text-xs sm:text-base rounded-full flex items-center space-x-2 cursor-pointer select-none"
+
+            <div
+              className="relative w-full max-w-[580px] sm:max-w-[720px] lg:max-w-[920px] xl:max-w-[1100px] 2xl:max-w-[1240px] will-change-transform"
+              style={{
+                transform: `perspective(1200px) rotateY(${mousePos.x}deg) rotateX(${mousePos.y}deg)`,
+                transition: "transform 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
+              }}
             >
-              <span>{isSubmitting ? (isAr ? "جاري التحميل..." : "Chargement...") : (isAr ? "ابدأ مجاناً" : "Commencer gratuitement")}</span>
-              <ArrowRight size={16} className="hero-cta-arrow stroke-[2.5]" />
-            </button>
-          </form>
+              {/* Animation de flottement fluide continue active sur tous supports (Mobile & Desktop) */}
+              <div className="relative w-full animate-hero-float will-change-transform">
+                <div className="relative aspect-[4/3] w-full">
+                  <Image
+                    src="/images/landing/facturim_cascading_hero_3d.png"
+                    alt="Facturim — Logiciel de facturation électronique en Mauritanie"
+                    fill
+                    priority
+                    sizes="(max-width: 640px) 100vw, (max-width: 1024px) 90vw, 60vw"
+                    className="object-contain object-center drop-shadow-sm scale-105 sm:scale-108 lg:scale-112 xl:scale-115 transform origin-center"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* PIED DU BLOC HERO : DÉFILEMENT CONTINU DES PARTENAIRES EN BAS DU HERO     */}
+      {/* ========================================================================= */}
+      <div className="w-full shrink-0">
+        <PartnerMarquee />
       </div>
     </section>
   );
 }
+
+
+
+
+
+
+
+
+

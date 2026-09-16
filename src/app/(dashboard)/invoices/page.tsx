@@ -38,6 +38,7 @@ export default function InvoicesPage() {
   const statusTabs = [
     { label: t.invoices.filterAll, value: "all" },
     { label: t.invoices.filterPaid, value: "paid" },
+    { label: t.invoices.filterPartiallyPaid, value: "partially_paid" },
     { label: t.invoices.filterPending, value: "sent" },
     { label: t.invoices.filterOverdue, value: "overdue" },
   ];
@@ -73,6 +74,18 @@ export default function InvoicesPage() {
     }
   };
 
+  const handleMarkAsPartiallyPaid = async (inv: Invoice, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      await updateInvoiceStatus(inv.id, "partially_paid");
+      toast.success(`${t.invoices.invoiceNumber} ${inv.invoiceNumber} -> ${t.status.partially_paid} !`);
+      loadInvoices();
+    } catch (err: any) {
+      toast.error(err?.message || "Erreur lors de la mise à jour");
+    }
+  };
+
   const filteredInvoices = useMemo(() => {
     return invoices.filter((inv) => {
       const matchStatus =
@@ -80,6 +93,8 @@ export default function InvoicesPage() {
           ? true
           : selectedStatus === "paid"
           ? inv.status === "paid"
+          : selectedStatus === "partially_paid"
+          ? inv.status === "partially_paid"
           : selectedStatus === "overdue"
           ? inv.status === "overdue"
           : inv.status === "sent" || inv.status === "draft";
@@ -106,6 +121,9 @@ export default function InvoicesPage() {
         dueDate: inv.dueDate || "12/04/2025",
         total: inv.total,
         taxRate: inv.taxRate || 16,
+        depositAmount: inv.depositAmount,
+        depositPercentage: inv.depositPercentage,
+        remainingAmount: inv.remainingAmount,
         status: inv.status,
         items: inv.items || undefined,
       });
@@ -224,6 +242,7 @@ export default function InvoicesPage() {
             <tbody className="divide-y divide-slate-100">
               {filteredInvoices.map((inv) => {
                 const isPaid = inv.status === "paid";
+                const isPartiallyPaid = inv.status === "partially_paid";
                 const isOverdue = inv.status === "overdue";
 
                 return (
@@ -244,7 +263,14 @@ export default function InvoicesPage() {
 
                     {/* Client */}
                     <td className="py-3.5 px-4 font-semibold text-slate-800">
-                      {inv.client?.name || "Client"}
+                      <div>
+                        <span>{inv.client?.name || "Client"}</span>
+                        {inv.depositAmount && inv.depositAmount > 0 && !isPaid && (
+                          <span className="block text-[10px] text-amber-700 font-bold">
+                            Acompte : {formatMoney(inv.depositAmount)} ({inv.depositPercentage || 50}%)
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     {/* Date émission */}
@@ -268,20 +294,39 @@ export default function InvoicesPage() {
                         className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
                           isPaid
                             ? "bg-emerald-100/80 text-emerald-700 border-emerald-200/60"
+                            : isPartiallyPaid
+                            ? "bg-amber-100 text-amber-900 border-amber-300/70"
                             : isOverdue
                             ? "bg-rose-100 text-rose-700 border-rose-200/60"
-                            : "bg-amber-100 text-amber-800 border-amber-200/60"
+                            : "bg-sky-100 text-sky-800 border-sky-200/60"
                         }`}
                       >
-                        {isPaid ? t.status.paid : isOverdue ? t.status.overdue : t.status.sent}
+                        {isPaid
+                          ? t.status.paid
+                          : isPartiallyPaid
+                          ? t.status.partially_paid
+                          : isOverdue
+                          ? t.status.overdue
+                          : t.status.sent}
                       </span>
                     </td>
 
                     {/* Actions avec Tooltips Design System */}
                     <td className="py-3.5 px-4 sm:px-6 text-right">
                       <div className="flex items-center justify-end gap-1">
+                        {!isPaid && !isPartiallyPaid && inv.depositAmount && inv.depositAmount > 0 && (
+                          <Tooltip content={t.invoices.collectDeposit} icon={Check}>
+                            <button
+                              onClick={(e) => handleMarkAsPartiallyPaid(inv, e)}
+                              className="p-1.5 text-slate-400 hover:text-amber-600 rounded-lg hover:bg-amber-50 transition-all cursor-pointer"
+                            >
+                              <Check size={14} className="stroke-[2.5]" />
+                            </button>
+                          </Tooltip>
+                        )}
+
                         {!isPaid && (
-                          <Tooltip content={t.status.paid} icon={Check}>
+                          <Tooltip content={isPartiallyPaid ? t.invoices.collectBalance : t.status.paid} icon={Check}>
                             <button
                               onClick={(e) => handleMarkAsPaid(inv, e)}
                               className="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition-all cursor-pointer"

@@ -18,8 +18,12 @@ export interface PDFInvoiceData {
   dueDate?: string;
   total: number;
   grossProfit?: number;
+  depositAmount?: number;
+  depositPercentage?: number;
+  paidAmount?: number;
+  remainingAmount?: number;
   items?: PDFInvoiceItem[];
-  status?: "paid" | "overdue" | "unpaid" | "sent" | "draft" | string;
+  status?: "paid" | "partially_paid" | "overdue" | "unpaid" | "sent" | "draft" | string;
   taxRate?: number;
   paymentTerms?: string;
   notes?: string;
@@ -112,6 +116,10 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
     statusBg = "#ecfdf5";
     statusColor = "#047857";
     statusLabel = isBilingual ? "PAYÉE / مدفوعة ✓" : isArOnly ? "مدفوعة ✓" : "PAYÉE ✓";
+  } else if (invoice.status === "partially_paid") {
+    statusBg = "#fef3c7";
+    statusColor = "#92400e";
+    statusLabel = isBilingual ? "ACOMPTE VERSÉ / تم دفع العربون" : isArOnly ? "تم دفع العربون" : "ACOMPTE VERSÉ";
   } else if (invoice.status === "overdue") {
     statusBg = "#fff1f2";
     statusColor = "#be123c";
@@ -121,6 +129,28 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
     statusColor = "#0369a1";
     statusLabel = isBilingual ? "ÉMISE / تم الإرسال" : isArOnly ? "تم الإرسال" : "ÉMISE";
   }
+
+  // Calculs d'acompte
+  const effectiveDepositAmount =
+    invoice.depositAmount !== undefined && invoice.depositAmount > 0
+      ? invoice.depositAmount
+      : invoice.depositPercentage !== undefined && invoice.depositPercentage > 0 && invoice.depositPercentage < 100
+      ? Math.round(total * (invoice.depositPercentage / 100))
+      : undefined;
+
+  const effectiveRemainingAmount =
+    effectiveDepositAmount !== undefined
+      ? invoice.remainingAmount !== undefined
+        ? invoice.remainingAmount
+        : total - effectiveDepositAmount
+      : undefined;
+
+  const effectiveDepositPercentage =
+    invoice.depositPercentage !== undefined && invoice.depositPercentage > 0
+      ? invoice.depositPercentage
+      : effectiveDepositAmount !== undefined
+      ? Math.round((effectiveDepositAmount / total) * 100)
+      : undefined;
 
   // QR Code de paiement Moosyl (Bankily / Masrvi)
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
@@ -276,6 +306,22 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
             <span style="font-size: 12px; font-weight: 800; text-transform: uppercase;">${netTotalLabel}</span>
             <span style="font-size: 19px; font-weight: 900; color: #0284c7;">${total.toLocaleString("fr-FR")} MRU</span>
           </div>
+          ${
+            effectiveDepositAmount !== undefined
+              ? `
+          <div style="margin-top: 8px; padding: 6px 10px; background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; color: #92400e; font-weight: 800; font-size: 11px;">
+              <span>${isBilingual ? `Acompte exigible (${effectiveDepositPercentage}%) / العربون :` : isArOnly ? `العربون المطلوب (${effectiveDepositPercentage}%) :` : `Acompte exigible (${effectiveDepositPercentage}%) :`}</span>
+              <span style="font-size: 12.5px; font-weight: 900;">${effectiveDepositAmount.toLocaleString("fr-FR")} MRU</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; align-items: center; color: #78350f; font-weight: 700; font-size: 10.5px; margin-top: 3px; padding-top: 3px; border-top: 1px dashed #fcd34d;">
+              <span>${isBilingual ? "Solde restant dû / المبلغ المتبقي :" : isArOnly ? "المبلغ المتبقي للتحصيل :" : "Solde restant dû :"}</span>
+              <span style="font-weight: 800;">${(effectiveRemainingAmount ?? (total - effectiveDepositAmount)).toLocaleString("fr-FR")} MRU</span>
+            </div>
+          </div>
+          `
+              : ""
+          }
         </div>
       </div>
     </div>

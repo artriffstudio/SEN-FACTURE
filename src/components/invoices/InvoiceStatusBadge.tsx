@@ -26,6 +26,7 @@ export default function InvoiceStatusBadge({
         className={cn(
           "w-1.5 h-1.5 rounded-full mr-1.5",
           status === "paid" && "bg-success",
+          status === "partially_paid" && "bg-amber-500",
           status === "sent" && "bg-info",
           status === "draft" && "bg-gray-400",
           status === "overdue" && "bg-danger",

@@ -2,7 +2,7 @@
 // Invoice Types
 // ============================================================
 
-export type InvoiceStatus = "draft" | "sent" | "paid" | "overdue" | "cancelled";
+export type InvoiceStatus = "draft" | "sent" | "paid" | "partially_paid" | "overdue" | "cancelled";
 
 export interface InvoiceItem {
   id: string;
@@ -27,6 +27,11 @@ export interface Invoice {
   taxRate: number;
   taxAmount: number;
   total: number;
+  depositAmount?: number;
+  depositPercentage?: number;
+  paidAmount?: number;
+  remainingAmount?: number;
+  paymentTerms?: string;
   notes?: string;
   createdAt: string;
   updatedAt: string;
@@ -38,6 +43,10 @@ export interface InvoiceFormData {
   issueDate: string;
   dueDate: string;
   items: Omit<InvoiceItem, "id" | "sortOrder">[];
+  depositAmount?: number;
+  depositPercentage?: number;
+  paidAmount?: number;
+  paymentTerms?: string;
   notes?: string;
   status: InvoiceStatus;
 }

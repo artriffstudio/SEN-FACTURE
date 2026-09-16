@@ -45,7 +45,7 @@ export default function ContactSection() {
 
   return (
     <section className="py-20 lg:py-28 bg-white" id="contact">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900 rounded-[2.5rem] p-8 sm:p-14 text-white shadow-2xl relative overflow-hidden border border-slate-800">
           {/* Halos d'ambiance en arrière-plan */}
           <div

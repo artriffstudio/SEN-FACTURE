@@ -30,10 +30,10 @@ export default function LandingHeader({ onContactClick }: LandingHeaderProps) {
       ];
 
   return (
-    <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100 transition-colors duration-300">
-      <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 h-20 flex items-center justify-between">
+    <header className="sticky top-0 z-50 bg-white/85 backdrop-blur-xl border-b border-slate-100 transition-colors duration-200">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Brand Logo officiel FI Facturim */}
-        <div className="flex items-center space-x-3 shrink-0">
+        <div className="flex items-center space-x-3">
           <Link href="/" className="flex items-center space-x-2.5 group">
             <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-md shadow-slate-900/15 group-hover:scale-105 transition-transform shrink-0">
               <svg
@@ -64,44 +64,41 @@ export default function LandingHeader({ onContactClick }: LandingHeaderProps) {
           </Link>
         </div>
 
-        {/* Navigation Links Desktop (Pill Style avec espacement optimisé) */}
-        <nav
-          className="hidden md:flex items-center justify-center flex-1 max-w-3xl mx-6 lg:mx-10 gap-3.5 lg:gap-6 xl:gap-8"
-          aria-label="Navigation principale"
-        >
+        {/* Navigation Links Desktop (Pill Style) */}
+        <nav className="hidden md:flex items-center space-x-1.5" aria-label="Navigation principale">
           {navLinks.map((link) => (
             <a
               key={link.href}
               href={link.href}
-              className="px-5 lg:px-6 py-2.5 text-xs lg:text-sm font-bold text-slate-700 hover:text-sky-600 bg-slate-50/90 hover:bg-sky-50/80 rounded-full border border-slate-200/80 hover:border-sky-300 transition-all nav-pill-item shadow-2xs hover:scale-105 whitespace-nowrap"
+              className="px-5 py-2 text-sm font-semibold text-slate-600 hover:text-slate-900 bg-slate-50/80 hover:bg-slate-100 rounded-full border border-slate-200/60 transition-all nav-pill-item shadow-2xs"
             >
               {link.label}
             </a>
           ))}
         </nav>
 
-        {/* Right Actions Desktop : Langue + Connexion */}
-        <div className="hidden sm:flex items-center space-x-3 lg:space-x-4 pr-1 shrink-0">
-          {/* Multilingual Selector (AR, EN, ZH, FR) */}
-          <LanguageSelector />
-
+        {/* Right Actions Desktop : Connexion + Sélecteur de langue 4 drapeaux */}
+        <div className="hidden sm:flex items-center space-x-3.5 pr-1">
           <Link
             href="/login"
-            className="inline-flex items-center justify-center px-6 lg:px-7 py-2.5 text-xs lg:text-sm font-bold text-white bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 rounded-full shadow-md shadow-sky-500/25 hover:shadow-lg hover:shadow-sky-500/35 hover:-translate-y-0.5 active:scale-95 transition-all"
+            className="inline-flex items-center justify-center px-6 py-2.5 text-sm font-bold text-white bg-gradient-to-r from-sky-500 to-sky-600 hover:from-sky-600 hover:to-sky-700 rounded-full shadow-md shadow-sky-500/25 hover:shadow-lg hover:shadow-sky-500/35 hover:-translate-y-0.5 active:scale-95 transition-all mr-1.5"
           >
             {isAr ? "تسجيل الدخول" : "Connexion"}
           </Link>
+
+          {/* Multilingual Selector (AR, EN, ZH, FR) */}
+          <LanguageSelector />
         </div>
 
-        {/* Mobile Actions: Language + Connexion + Hamburger */}
-        <div className="flex sm:hidden items-center space-x-2">
+        {/* Mobile Hamburger Trigger */}
+        <div className="flex sm:hidden items-center space-x-2.5">
           <LanguageSelector />
 
           <Link
             href="/login"
-            className="px-3.5 py-2 text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-sky-600 rounded-full shadow-sm shadow-sky-500/20 active:scale-95 transition-all"
+            className="px-4 py-2 text-xs font-bold text-white bg-gradient-to-r from-sky-500 to-sky-600 rounded-full shadow-sm shadow-sky-500/20 active:scale-95 transition-all"
           >
-            {isAr ? "تسجيل" : "Connexion"}
+            {isAr ? "تسجيل الدخول" : "Connexion"}
           </Link>
 
           <button
@@ -109,7 +106,7 @@ export default function LandingHeader({ onContactClick }: LandingHeaderProps) {
             className="p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
             aria-label="Ouvrir le menu de navigation"
           >
-            {mobileMenuOpen ? <X size={22} /> : <Menu size={22} />}
+            {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
           </button>
         </div>
       </div>

@@ -22,7 +22,7 @@ export default function SettingsShowcase() {
 
   return (
     <section className="py-20 lg:py-28 bg-white border-b border-slate-100" id="parametres">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
           {/* Détails et Arguments Textuels */}
           <div className="lg:col-span-5 space-y-6">

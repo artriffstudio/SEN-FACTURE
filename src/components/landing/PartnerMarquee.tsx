@@ -2,87 +2,114 @@
 
 import React from "react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import {
+  BankilyLogo,
+  MasrviLogo,
+  SedadLogo,
+  EywaLogo,
+  BPMLogo,
+  BMCILogo,
+} from "@/components/ui/PaymentLogos";
 
 export default function PartnerMarquee() {
   const { currentLanguage } = useLanguage();
-
   const isAr = currentLanguage === "ar";
 
   const partners = [
     {
       id: "bankily",
-      name: "Bankily",
-      colorClass: "text-emerald-600",
-      prefix: <span className="w-3.5 h-3.5 rounded-full bg-emerald-500 inline-block shrink-0" />,
-      weight: "font-black text-2xl tracking-tight",
-    },
-    {
-      id: "seddap",
-      name: "Seddap",
-      colorClass: "text-sky-600",
-      prefix: <span className="w-3.5 h-3.5 rounded-md bg-sky-500 inline-block shrink-0" />,
-      weight: "font-black text-xl tracking-tight",
-    },
-    {
-      id: "bpm",
-      name: "BPM",
-      colorClass: "text-blue-900",
-      weight: "font-black text-xl tracking-widest uppercase",
+      component: <BankilyLogo variant="badge" height={28} />,
     },
     {
       id: "masrvi",
-      name: "Masrvi",
-      colorClass: "text-emerald-700",
-      prefix: <span className="w-3 h-3 bg-emerald-600 inline-block shrink-0 rounded-xs" />,
-      weight: "font-bold text-xl tracking-tight",
+      component: <MasrviLogo variant="badge" height={28} />,
+    },
+    {
+      id: "sedad",
+      component: <SedadLogo variant="badge" height={28} />,
+    },
+    {
+      id: "eywa",
+      component: <EywaLogo variant="badge" height={28} />,
+    },
+    {
+      id: "bpm",
+      component: <BPMLogo height={26} />,
     },
     {
       id: "bmci",
-      name: "BMCI Mauritanie",
-      colorClass: "text-slate-900",
-      weight: "font-extrabold text-lg tracking-wide",
+      component: <BMCILogo height={26} />,
     },
     {
       id: "bnm",
-      name: "BNM",
-      colorClass: "text-amber-700",
-      weight: "font-black text-xl tracking-widest",
+      component: (
+        <div className="inline-flex items-center gap-2 select-none">
+          <div className="w-7 h-7 rounded-lg bg-amber-700 flex items-center justify-center text-white font-black text-xs shrink-0 shadow-xs">
+            BNM
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="text-sm font-black text-slate-900 tracking-wider">BNM</span>
+            <span className="text-[9px] text-slate-500 font-medium">Banque Nationale</span>
+          </div>
+        </div>
+      ),
     },
     {
       id: "mauritel",
-      name: "Mauritel",
-      colorClass: "text-blue-700",
-      weight: "font-extrabold text-xl tracking-tight",
+      component: (
+        <div className="inline-flex items-center gap-2 select-none">
+          <div className="w-7 h-7 rounded-lg bg-blue-700 flex items-center justify-center text-white font-black text-xs shrink-0 shadow-xs">
+            M
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="text-sm font-black text-slate-900 tracking-tight">Mauritel</span>
+            <span className="text-[9px] text-slate-500 font-medium">Télécom</span>
+          </div>
+        </div>
+      ),
     },
     {
       id: "chinguitel",
-      name: "Chinguitel",
-      colorClass: "text-red-600",
-      weight: "font-bold text-xl tracking-tighter",
-    },
-    {
-      id: "mattel",
-      name: "Mattel",
-      colorClass: "text-purple-700",
-      weight: "font-black text-xl tracking-tight",
+      component: (
+        <div className="inline-flex items-center gap-2 select-none">
+          <div className="w-7 h-7 rounded-lg bg-red-600 flex items-center justify-center text-white font-black text-xs shrink-0 shadow-xs">
+            C
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="text-sm font-black text-slate-900 tracking-tight">Chinguitel</span>
+            <span className="text-[9px] text-slate-500 font-medium">Réseau</span>
+          </div>
+        </div>
+      ),
     },
     {
       id: "snim",
-      name: "SNIM",
-      colorClass: "text-slate-800",
-      weight: "font-black text-xl tracking-widest",
+      component: (
+        <div className="inline-flex items-center gap-2 select-none">
+          <div className="w-7 h-7 rounded-lg bg-slate-800 flex items-center justify-center text-white font-black text-xs shrink-0 shadow-xs">
+            SN
+          </div>
+          <div className="flex flex-col leading-none">
+            <span className="text-sm font-black text-slate-900 tracking-widest uppercase">SNIM</span>
+            <span className="text-[9px] text-slate-500 font-medium">Industrie</span>
+          </div>
+        </div>
+      ),
     },
     {
       id: "visa",
-      name: "VISA",
-      colorClass: "text-blue-600",
-      weight: "font-extrabold text-xl tracking-tight",
+      component: (
+        <div className="inline-flex items-center gap-1.5 select-none">
+          <span className="text-xl font-black italic tracking-tighter text-blue-700">VISA</span>
+          <span className="text-[10px] font-bold text-slate-400">/ Mastercard</span>
+        </div>
+      ),
     },
   ];
 
   const badgeText = isAr
-    ? "متوافق مع حلول الدفع البنكية والمحافظ الإلكترونية في موريتانيا"
-    : "Intégré avec Bankily, Seddap & les banques en Mauritanie";
+    ? "ربط مباشر مع حلول الدفع والمحافظ الإلكترونية"
+    : "Intégrations bancaires directes & Mobile Money";
 
   return (
     <section
@@ -95,19 +122,18 @@ export default function PartnerMarquee() {
         <div className="animate-marquee-track flex items-center space-x-12 sm:space-x-16">
           {/* Jeu 1 de Partenaires avec badge introductif intégré */}
           <div className="flex items-center space-x-10 sm:space-x-14 shrink-0">
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-600 bg-slate-50 border border-slate-200/90 px-4 py-1.5 rounded-full flex items-center gap-2 shrink-0 shadow-2xs">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-50 border border-slate-200/90 px-4 py-1.5 rounded-full flex items-center gap-2 shrink-0 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
               <span>{badgeText}</span>
             </span>
 
             {partners.map((p) => (
-              <span
+              <div
                 key={p.id}
-                className={`${p.weight} ${p.colorClass} opacity-75 hover:opacity-100 flex items-center gap-1.5 whitespace-nowrap select-none hover:scale-105 transition-all duration-200`}
+                className="opacity-85 hover:opacity-100 flex items-center gap-1.5 whitespace-nowrap select-none hover:scale-105 transition-all duration-200"
               >
-                {p.prefix}
-                {p.name}
-              </span>
+                {p.component}
+              </div>
             ))}
           </div>
 
@@ -116,19 +142,18 @@ export default function PartnerMarquee() {
             aria-hidden="true"
             className="flex items-center space-x-10 sm:space-x-14 shrink-0"
           >
-            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-600 bg-slate-50 border border-slate-200/90 px-4 py-1.5 rounded-full flex items-center gap-2 shrink-0 shadow-2xs">
+            <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-50 border border-slate-200/90 px-4 py-1.5 rounded-full flex items-center gap-2 shrink-0 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
               <span>{badgeText}</span>
             </span>
 
             {partners.map((p) => (
-              <span
+              <div
                 key={`${p.id}-duplicate`}
-                className={`${p.weight} ${p.colorClass} opacity-75 hover:opacity-100 flex items-center gap-1.5 whitespace-nowrap select-none hover:scale-105 transition-all duration-200`}
+                className="opacity-85 hover:opacity-100 flex items-center gap-1.5 whitespace-nowrap select-none hover:scale-105 transition-all duration-200"
               >
-                {p.prefix}
-                {p.name}
-              </span>
+                {p.component}
+              </div>
             ))}
           </div>
         </div>

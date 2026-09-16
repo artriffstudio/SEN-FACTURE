@@ -10,7 +10,7 @@ export default function LandingFooter() {
 
   return (
     <footer className="bg-slate-950 text-slate-400 pt-16 pb-12 border-t border-slate-900" id="footer">
-      <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-5 gap-10 mb-12">
           {/* Colonne 1 : Marque & Mission */}
           <div className="space-y-4 md:col-span-2">
@@ -138,23 +138,23 @@ export default function LandingFooter() {
             </ul>
           </div>
 
-          {/* Colonne 4 : Présence & Support */}
+          {/* Colonne 4 : Présence Locale */}
           <div>
             <h4 className="text-white font-semibold text-sm mb-4">
-              {isAr ? "مكاتب الدعم والعمليات" : "Bureaux & Support"}
+              {isAr ? "التواجد في موريتانيا" : "Présence en Mauritanie"}
             </h4>
             <ul className="space-y-2.5 text-sm">
               <li>
-                <span className="text-slate-300 font-medium">Nouakchott :</span> Tevragh-Zeina & Ksar
+                <span className="text-slate-300 font-medium">🇲🇷 Nouakchott :</span> Tevragh-Zeina
               </li>
               <li>
-                <span className="text-slate-300 font-medium">Nouadhibou :</span> Centre Ville
+                <span className="text-slate-300 font-medium">🇲🇷 Nouadhibou :</span> Centre Ville
               </li>
               <li>
-                <span className="text-slate-300 font-medium">Kiffa :</span> Assaba
+                <span className="text-slate-300 font-medium">🇲🇷 Kiffa :</span> Assaba
               </li>
               <li>
-                <span className="text-slate-300 font-medium">Rosso :</span> Trarza
+                <span className="text-slate-300 font-medium">🇲🇷 Rosso :</span> Trarza
               </li>
             </ul>
           </div>
@@ -164,8 +164,8 @@ export default function LandingFooter() {
         <div className="border-t border-slate-900 pt-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-4">
           <p>
             {isAr
-              ? "© 2026 FACTURIM. جميع الحقوق محفوظة. المنصة المعتمدة للفوترة الإلكترونية والامتثال الضريبي."
-              : "© 2026 FACTURIM. Tous droits réservés. Plateforme de facturation électronique certifiée."}
+              ? "© 2026 FACTURIM. جميع الحقوق محفوظة. صُمم خصيصاً للنمو الاقتصادي في موريتانيا."
+              : "© 2026 FACTURIM. Tous droits réservés. Conçu pour le dynamisme en Mauritanie."}
           </p>
           <div className="flex space-x-6">
             <span className="hover:text-white transition-colors cursor-pointer">

@@ -18,6 +18,11 @@ export const INVOICE_STATUSES: Record<
     color: "text-sky-700",
     bgColor: "bg-sky-100/70 border border-sky-200/50",
   },
+  partially_paid: {
+    label: "Acompte versé",
+    color: "text-amber-800",
+    bgColor: "bg-amber-100/80 border border-amber-300/60",
+  },
   paid: {
     label: "Payée",
     color: "text-emerald-700",

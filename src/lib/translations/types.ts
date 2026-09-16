@@ -98,12 +98,23 @@ export interface TranslationDictionary {
     previewTab: string;
     certifiedNotice: string;
     itemsTitle: string;
+    depositAmount: string;
+    depositPercentage: string;
+    depositDue: string;
+    depositPreset: string;
+    remainingBalance: string;
+    paymentCash: string;
+    paymentDeposit: string;
+    filterPartiallyPaid: string;
+    collectDeposit: string;
+    collectBalance: string;
   };
 
   // Statuses
   status: {
     draft: string;
     sent: string;
+    partially_paid: string;
     paid: string;
     overdue: string;
     cancelled: string;
@@ -251,6 +262,11 @@ export interface TranslationDictionary {
     perMonth: string;
     popular: string;
     choosePlan: string;
+    promoBadge: string;
+    promoNotice: string;
+    promoSubtext: string;
+    guarantee60Days: string;
+    freeTrial14Days: string;
     contactTitle: string;
     contactSubtitle: string;
     rightsReserved: string;

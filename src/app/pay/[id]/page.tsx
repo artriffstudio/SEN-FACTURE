@@ -16,6 +16,7 @@ import {
   ChevronRight,
   Globe,
 } from "lucide-react";
+import { BankilyLogo, MasrviLogo } from "@/components/ui/PaymentLogos";
 import toast from "react-hot-toast";
 import { getInvoiceById, updateInvoiceStatus } from "@/lib/services/invoiceService";
 import { downloadInvoicePDF } from "@/lib/pdfGenerator";
@@ -172,7 +173,7 @@ export default function InvoicePaymentPage({ params }: PageProps) {
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-colors cursor-pointer"
             >
               <Globe size={13} className="text-sky-400" />
-              <span>{lang === "fr" ? "العربية 🇲🇷" : "Français 🇫🇷"}</span>
+              <span>{lang === "fr" ? "العربية" : "Français"}</span>
             </button>
           </div>
         </div>
@@ -322,46 +323,42 @@ export default function InvoicePaymentPage({ params }: PageProps) {
                   <button
                     type="button"
                     onClick={() => setSelectedMethod("bankily")}
-                    className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                    className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                       selectedMethod === "bankily"
-                        ? "bg-emerald-950/40 border-emerald-500/80 ring-2 ring-emerald-500/30 text-white"
+                        ? "bg-emerald-950/50 border-emerald-500/80 ring-2 ring-emerald-500/30 text-white"
                         : "bg-slate-800/60 border-slate-700/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
                     }`}
                   >
                     <div className="flex items-center justify-between w-full mb-3">
-                      <div className="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
-                        B
-                      </div>
+                      <BankilyLogo variant="dark" height={26} />
                       {selectedMethod === "bankily" && (
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
                       )}
                     </div>
                     <div>
-                      <span className="text-sm font-extrabold block text-white">Bankily (BPM)</span>
-                      <span className="text-[11px] text-slate-400">{isAr ? "محفظة بنكيلي" : "Mobile Banking BPM"}</span>
+                      <span className="text-xs font-bold block text-slate-200">{isAr ? "دفع بنكيلي (BPM)" : "Bankily par BPM"}</span>
+                      <span className="text-[10.5px] text-slate-400">{isAr ? "محفظة الهاتف الذكي" : "Débit mobile instantané"}</span>
                     </div>
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setSelectedMethod("masrvi")}
-                    className={`p-4 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                    className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
                       selectedMethod === "masrvi"
-                        ? "bg-sky-950/40 border-sky-500/80 ring-2 ring-sky-500/30 text-white"
+                        ? "bg-sky-950/50 border-sky-500/80 ring-2 ring-sky-500/30 text-white"
                         : "bg-slate-800/60 border-slate-700/80 text-slate-400 hover:bg-slate-800 hover:text-slate-200"
                     }`}
                   >
                     <div className="flex items-center justify-between w-full mb-3">
-                      <div className="w-8 h-8 rounded-full bg-sky-500/20 text-sky-400 flex items-center justify-center font-bold text-xs">
-                        M
-                      </div>
+                      <MasrviLogo variant="dark" height={26} />
                       {selectedMethod === "masrvi" && (
-                        <span className="w-2 h-2 rounded-full bg-sky-400 animate-pulse" />
+                        <span className="w-2.5 h-2.5 rounded-full bg-sky-400 animate-pulse" />
                       )}
                     </div>
                     <div>
-                      <span className="text-sm font-extrabold block text-white">Masrvi (BMCI)</span>
-                      <span className="text-[11px] text-slate-400">{isAr ? "محفظة مصرفي" : "Digital Banking BMCI"}</span>
+                      <span className="text-xs font-bold block text-slate-200">{isAr ? "دفع مصرفي (BMCI)" : "Masrvi par BMCI"}</span>
+                      <span className="text-[10.5px] text-slate-400">{isAr ? "الخدمات الرقمية" : "Banque digitale BMCI"}</span>
                     </div>
                   </button>
                 </div>
