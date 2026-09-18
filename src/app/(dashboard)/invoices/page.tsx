@@ -24,15 +24,19 @@ import {
   updateInvoiceStatus,
   deleteInvoice,
 } from "@/lib/services/invoiceService";
-import { Invoice } from "@/lib/types";
+import { Invoice, Company } from "@/lib/types";
+import { getCompany } from "@/lib/services/companyService";
 import Tooltip from "@/components/ui/Tooltip";
 import { useTranslation } from "@/contexts/LanguageContext";
+import DatePicker, { CalendarEventDot } from "@/components/ui/DatePicker";
 
 export default function InvoicesPage() {
   const { t, formatMoney } = useTranslation();
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedDate, setSelectedDate] = useState("");
   const [invoices, setInvoices] = useState<Invoice[]>([]);
+  const [company, setCompany] = useState<Company | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const statusTabs = [
@@ -57,6 +61,9 @@ export default function InvoicesPage() {
 
   useEffect(() => {
     loadInvoices();
+    getCompany().then((comp) => {
+      if (comp) setCompany(comp);
+    });
     const onCreated = () => loadInvoices();
     window.addEventListener("invoice-created", onCreated);
     return () => window.removeEventListener("invoice-created", onCreated);
@@ -86,6 +93,19 @@ export default function InvoicesPage() {
     }
   };
 
+  const invoiceCalendarEvents = useMemo(() => {
+    return invoices
+      .map((inv) => ({
+        date: inv.issueDate ? inv.issueDate.split("T")[0] : "",
+        color: (inv.status === "paid"
+          ? "green"
+          : inv.status === "overdue"
+          ? "rose"
+          : "amber") as CalendarEventDot["color"],
+      }))
+      .filter((ev) => Boolean(ev.date));
+  }, [invoices]);
+
   const filteredInvoices = useMemo(() => {
     return invoices.filter((inv) => {
       const matchStatus =
@@ -104,9 +124,13 @@ export default function InvoicesPage() {
         inv.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
         clientName.toLowerCase().includes(searchQuery.toLowerCase());
 
-      return matchStatus && matchSearch;
+      const matchDate = selectedDate
+        ? inv.issueDate === selectedDate || inv.dueDate === selectedDate
+        : true;
+
+      return matchStatus && matchSearch && matchDate;
     });
-  }, [invoices, selectedStatus, searchQuery]);
+  }, [invoices, selectedStatus, searchQuery, selectedDate]);
 
   const handleDownloadPDF = async (inv: any) => {
     toast.loading(`${t.invoices.downloadPDF} ${inv.invoiceNumber}...`, { id: `pdf-${inv.id}` });
@@ -126,6 +150,12 @@ export default function InvoicesPage() {
         remainingAmount: inv.remainingAmount,
         status: inv.status,
         items: inv.items || undefined,
+        companyName: company?.name,
+        companyTradeName: company?.tradeName,
+        companyAddress: company?.address,
+        companyTaxId: company?.taxId,
+        companyPhone: company?.phone,
+        companyEmail: company?.email,
       });
       toast.success(`${inv.invoiceNumber} - PDF OK !`, { id: `pdf-${inv.id}` });
     } catch {
@@ -175,54 +205,75 @@ export default function InvoicesPage() {
       {/* ======================================================== */}
       {/* CARTE TABLEAU PRINCIPALE (DESIGN SYSTEM) */}
       {/* ======================================================== */}
-      <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden">
-        {/* Onglets de statuts */}
-        <div className="flex items-center gap-2 px-4 sm:px-6 pt-3 border-b border-slate-100 overflow-x-auto no-scrollbar">
-          {statusTabs.map((tab) => {
-            const active = selectedStatus === tab.value;
-            return (
-              <button
-                key={tab.value}
-                onClick={() => setSelectedStatus(tab.value)}
-                className={`pb-3 text-xs font-bold transition-all relative whitespace-nowrap cursor-pointer px-2 ${
-                  active
-                    ? "text-sky-600 font-extrabold"
-                    : "text-slate-500 hover:text-slate-800"
-                }`}
-              >
-                {tab.label}
-                {active && (
-                  <span className="absolute bottom-0 left-0 right-0 h-0.75 bg-sky-500 rounded-t-full shadow-xs" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-
-        {/* Barre de recherche */}
-        <div className="p-4 sm:px-6 border-b border-slate-100 flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-2 max-w-md w-full focus-within:border-sky-500 focus-within:ring-2 focus-within:ring-sky-100 transition-all">
-            <Search size={15} className="text-slate-400 shrink-0" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Rechercher par référence, client..."
-              className="bg-transparent text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none w-full font-medium"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery("")}
-                className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
-              >
-                <X size={13} />
-              </button>
-            )}
+      <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 shadow-sm overflow-hidden space-y-3 p-4 sm:p-6">
+        {/* Onglets de statuts en Pilules (Segmented Controls) */}
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar bg-slate-100/90 p-1 rounded-2xl border border-slate-200/70 text-xs">
+            {statusTabs.map((tab) => {
+              const active = selectedStatus === tab.value;
+              return (
+                <button
+                  key={tab.value}
+                  onClick={() => setSelectedStatus(tab.value)}
+                  className={`px-3.5 py-1.5 text-xs font-bold rounded-xl transition-all duration-200 whitespace-nowrap cursor-pointer ${
+                    active
+                      ? "bg-white text-sky-700 shadow-xs scale-102 font-black"
+                      : "text-slate-600 hover:text-slate-900 font-semibold"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
 
-          <span className="text-xs text-slate-400 hidden sm:inline">
-            {filteredInvoices.length} résultat(s)
-          </span>
+          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+            {/* Recherche */}
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-1.5 max-w-xs w-full focus-within:border-sky-500 focus-within:bg-white focus-within:ring-2 focus-within:ring-sky-100 transition-all shadow-2xs">
+              <Search size={14} className="text-slate-400 shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t.invoices.searchPlaceholder}
+                className="bg-transparent text-xs text-slate-900 placeholder:text-slate-400 focus:outline-none w-full font-medium"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery("")}
+                  className="text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                >
+                  <X size={12} />
+                </button>
+              )}
+            </div>
+
+            {/* Filtre Date avec notre nouveau calendrier Google Style */}
+            <div className="flex items-center gap-1.5 min-w-[190px]">
+              <DatePicker
+                value={selectedDate}
+                onChange={(d) => setSelectedDate(d)}
+                placeholder="Filtrer par date"
+                showPresets={false}
+                events={invoiceCalendarEvents}
+              />
+              {selectedDate && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedDate("")}
+                  className="p-2 text-rose-600 bg-rose-50 hover:bg-rose-100 rounded-xl transition-all cursor-pointer shrink-0"
+                  title="Effacer le filtre de date"
+                >
+                  <X size={13} />
+                </button>
+              )}
+            </div>
+
+            {/* Résultats count */}
+            <span className="text-xs text-slate-400 hidden sm:inline whitespace-nowrap">
+              {filteredInvoices.length} résultat(s)
+            </span>
+          </div>
         </div>
 
         {/* Tableau */}

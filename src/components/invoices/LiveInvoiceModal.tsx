@@ -10,15 +10,10 @@ import {
   Send,
   Eye,
   Edit3,
-  CheckCircle2,
-  Building2,
   FileText,
   Calendar,
   DollarSign,
-  Printer,
   Sparkles,
-  ChevronRight,
-  Globe,
   QrCode,
 } from "lucide-react";
 import toast from "react-hot-toast";
@@ -26,9 +21,9 @@ import { downloadInvoicePDF } from "@/lib/pdfGenerator";
 import { getClients, createClient } from "@/lib/services/clientService";
 import { createInvoice } from "@/lib/services/invoiceService";
 import { getCompany } from "@/lib/services/companyService";
-import { Client } from "@/lib/types";
+import { Client, Company } from "@/lib/types";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { BankilyLogo, MasrviLogo } from "@/components/ui/PaymentLogos";
+import DatePicker from "@/components/ui/DatePicker";
 
 interface InvoiceItem {
   id: string;
@@ -48,10 +43,14 @@ export default function LiveInvoiceModal({
   onClose,
   onInvoiceCreated,
 }: LiveInvoiceModalProps) {
-  const { t, formatMoney } = useTranslation();
+  const { t, formatMoney, currentLanguage } = useTranslation();
 
   // Mode mobile : bascule entre "formulaire" et "aperçu"
   const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
+
+  // Données de l'entreprise émettrice
+  const [company, setCompany] = useState<Company | null>(null);
+  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
 
   // Liste des clients réels
   const [clientsList, setClientsList] = useState<Client[]>([]);
@@ -67,30 +66,31 @@ export default function LiveInvoiceModal({
   const [dueDate, setDueDate] = useState(
     new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split("T")[0]
   );
-  const [paymentTerms, setPaymentTerms] = useState("Paiement à 30 jours nets");
-  const [taxRate, setTaxRate] = useState<number>(16); // TVA standard Mauritanie : 16%
-  const [docLang, setDocLang] = useState<"bilingual" | "fr" | "ar">("bilingual");
+  const [paymentTerms, setPaymentTerms] = useState("Paiement sous 30 jours");
+  const [taxRate, setTaxRate] = useState<number>(16); // TVA standard : 16%
   
-  // Gestion des acomptes / paiements partiels (ex: 50% à la commande)
+  // Langue de la facture : Français ou Arabe (RTL) uniquement
+  const [docLang, setDocLang] = useState<"fr" | "ar">(currentLanguage === "ar" ? "ar" : "fr");
+  
+  // Gestion des acomptes
   const [depositType, setDepositType] = useState<"none" | "30" | "50" | "70" | "custom">("none");
   const [customDepositAmount, setCustomDepositAmount] = useState<number>(0);
 
   const [notes, setNotes] = useState(
-    "Merci pour votre confiance. Règlements acceptés par virement bancaire BPM ou Mobile Money (Bankily : +222 45 12 34 56 / Masrvi / Seddap)."
+    "Paiement par Bankily, Masrvi ou virement bancaire."
   );
 
+  // Lignes de prestations (champ vide avec placeholder par défaut)
   const [items, setItems] = useState<InvoiceItem[]>([
     {
       id: "1",
-      description: "Prestation de service & ingénierie",
+      description: "",
       quantity: 1,
       unitPrice: 0,
     },
   ]);
 
-  const [companyLogo, setCompanyLogo] = useState<string | null>(null);
-
-  // Charger les clients et les infos de l'entreprise depuis Supabase à l'ouverture
+  // Charger les clients et l'entreprise émettrice
   useEffect(() => {
     if (!isOpen) return;
 
@@ -106,6 +106,7 @@ export default function LiveInvoiceModal({
 
     getCompany().then((comp) => {
       if (comp) {
+        setCompany(comp);
         const num = String(comp.nextInvoiceNumber || 1).padStart(3, "0");
         setInvoiceNumber(`${comp.invoicePrefix || "FAC-2025-"}${num}`);
         if (comp.logoUrl) {
@@ -115,9 +116,7 @@ export default function LiveInvoiceModal({
     });
 
     if (typeof window !== "undefined") {
-      const stored =
-        localStorage.getItem("facturim_company_logo") ||
-        localStorage.getItem("sen_facture_company_logo");
+      const stored = localStorage.getItem("facturim_company_logo");
       if (stored) setCompanyLogo(stored);
     }
   }, [isOpen]);
@@ -126,7 +125,7 @@ export default function LiveInvoiceModal({
   const currentClient = useMemo(() => {
     if (selectedClientId === "custom") {
       return {
-        name: customClientName || "Client Professionnel",
+        name: customClientName || (docLang === "ar" ? "العميل الكريم" : "Client Entreprise"),
         address: "Nouakchott, Mauritanie",
         email: "contact@client.mr",
         phone: "+222 45 00 00 00",
@@ -144,13 +143,13 @@ export default function LiveInvoiceModal({
       };
     }
     return {
-      name: customClientName || "Client Professionnel",
+      name: customClientName || (docLang === "ar" ? "العميل الكريم" : "Client Entreprise"),
       address: "Nouakchott, Mauritanie",
       email: "contact@client.mr",
       phone: "+222 45 00 00 00",
       taxId: "00123456-MR",
     };
-  }, [selectedClientId, customClientName, clientsList]);
+  }, [selectedClientId, customClientName, clientsList, docLang]);
 
   // Calculs financiers automatiques
   const subtotal = useMemo(() => {
@@ -183,13 +182,23 @@ export default function LiveInvoiceModal({
     return parseFloat(depositType) || 0;
   }, [depositType, depositAmount, total]);
 
+  // Formatage des dates style "06/01/25"
+  const formatDateDisplay = (dateStr: string) => {
+    if (!dateStr) return "";
+    const d = new Date(dateStr);
+    const day = String(d.getDate()).padStart(2, "0");
+    const month = String(d.getMonth() + 1).padStart(2, "0");
+    const year = String(d.getFullYear()).slice(-2);
+    return `${day}/${month}/${year}`;
+  };
+
   // Gestion des lignes de prestations
   const handleAddItem = () => {
     setItems((prev) => [
       ...prev,
       {
         id: String(Date.now()),
-        description: "Nouvelle prestation",
+        description: "",
         quantity: 1,
         unitPrice: 0,
       },
@@ -219,10 +228,10 @@ export default function LiveInvoiceModal({
     );
   };
 
-  // Enregistrer la facture dans Supabase
+  // Enregistrer la facture
   const handleSaveInvoice = async (markAsSent: boolean = false) => {
     if (items.some((it) => !it.description.trim() || it.unitPrice <= 0)) {
-      toast.error("Veuillez renseigner un intitulé et un tarif unitaire pour chaque ligne.");
+      toast.error("Veuillez renseigner un intitulé et un tarif pour chaque ligne.");
       return;
     }
 
@@ -232,7 +241,6 @@ export default function LiveInvoiceModal({
     try {
       let finalClientId = selectedClientId;
 
-      // Si le client est nouveau / personnalisé, le créer d'abord
       if (selectedClientId === "custom") {
         if (!customClientName.trim()) {
           toast.error("Veuillez renseigner le nom du client.", { id: "save-inv" });
@@ -304,10 +312,11 @@ export default function LiveInvoiceModal({
       depositAmount > 0
         ? `\n*Acompte exigible (${activeDepositPercentage}%) : ${depositAmount.toLocaleString("fr-FR")} MRU*\n*Solde restant : ${remainingAmount.toLocaleString("fr-FR")} MRU*`
         : "";
-    const message = `Bonjour ${currentClient.name},\nVoici votre facture *${invoiceNumber}* d'un montant de *${total.toLocaleString("fr-FR")} MRU* émise par Facturim.${acompteMention}\nDate d'échéance : ${dueDate}.\n\n💳 Régler en 1 clic via Bankily ou Masrvi : ${payLink}\n\nMerci de votre confiance !`;
+    const companyName = company?.name || "Notre Entreprise";
+    const message = `Bonjour ${currentClient.name},\n\nVoici votre facture *${invoiceNumber}* d'un montant de *${total.toLocaleString("fr-FR")} MRU* émise par *${companyName}*.${acompteMention}\nDate d'échéance : ${dueDate}.\n\n💳 Régler en 1 clic via Bankily ou Masrvi : ${payLink}\n\nMerci de votre confiance !`;
     const url = `https://wa.me/?text=${encodeURIComponent(message)}`;
     window.open(url, "_blank");
-    toast.success("Lien WhatsApp généré avec accès paiement Moosyl !");
+    toast.success("Lien WhatsApp généré !");
   };
 
   // Télécharger le PDF officiel de la facture
@@ -327,18 +336,23 @@ export default function LiveInvoiceModal({
       remainingAmount: depositAmount > 0 ? remainingAmount : undefined,
       paymentTerms: paymentTerms,
       documentLanguage: docLang,
+      companyName: company?.name || "Mon Entreprise",
+      companyTradeName: company?.tradeName,
+      companyAddress: company?.address,
+      companyTaxId: company?.taxId,
+      companyPhone: company?.phone,
+      companyEmail: company?.email,
       items: items.map((it) => ({
         id: it.id,
-        description: it.description,
+        description: it.description || (docLang === "ar" ? "خدمات واستشارات" : "Prestation de service"),
         quantity: it.quantity,
         unitPrice: it.unitPrice,
       })),
-      status: depositAmount > 0 ? "partially_paid" : "unpaid",
       notes: notes,
       logoUrl: companyLogo || undefined,
     };
 
-    toast.loading("Génération du document A4 certifié...", { id: "pdf-gen" });
+    toast.loading("Génération du document A4 haute définition...", { id: "pdf-gen" });
     try {
       const ok = await downloadInvoicePDF(invoiceData);
       if (ok) {
@@ -353,15 +367,18 @@ export default function LiveInvoiceModal({
 
   if (!isOpen) return null;
 
+  const isAr = docLang === "ar";
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-2 sm:p-4 lg:p-6 overflow-y-auto">
       <div className="relative w-full max-w-7xl bg-slate-50 rounded-2xl shadow-2xl border border-slate-200 flex flex-col max-h-[96vh] overflow-hidden">
+        
         {/* ======================================================== */}
         {/* EN-TÊTE DE LA MODAL */}
         {/* ======================================================== */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 bg-white border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-slate-900 flex items-center justify-center text-white font-bold text-xs">
+            <div className="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white font-black text-xs shadow-xs">
               FI
             </div>
             <div>
@@ -369,28 +386,19 @@ export default function LiveInvoiceModal({
                 {t.invoices.createModalTitle}
               </h2>
               <p className="text-[11px] text-slate-500 hidden sm:block">
-                Éditez vos prestations et visualisez instantanément le document A4 officiel (TVA 16% &amp; Moosyl).
+                Éditez vos prestations et visualisez instantanément le document A4 officiel.
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            {/* Commutateur de langue du document A4 */}
-            <div className="hidden sm:flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
-              <button
-                type="button"
-                onClick={() => setDocLang("bilingual")}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                  docLang === "bilingual" ? "bg-white text-sky-600 shadow-2xs" : "text-slate-600"
-                }`}
-              >
-                Bilingue FR/AR
-              </button>
+            {/* Commutateur de langue : Français OU Arabe */}
+            <div className="flex items-center bg-slate-100 p-0.5 rounded-lg border border-slate-200 text-xs">
               <button
                 type="button"
                 onClick={() => setDocLang("fr")}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                  docLang === "fr" ? "bg-white text-sky-600 shadow-2xs" : "text-slate-600"
+                className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                  docLang === "fr" ? "bg-white text-slate-900 shadow-2xs" : "text-slate-500 hover:text-slate-800"
                 }`}
               >
                 Français
@@ -398,8 +406,8 @@ export default function LiveInvoiceModal({
               <button
                 type="button"
                 onClick={() => setDocLang("ar")}
-                className={`px-2.5 py-1 rounded-md font-bold transition-all cursor-pointer ${
-                  docLang === "ar" ? "bg-white text-sky-600 shadow-2xs" : "text-slate-600"
+                className={`px-3 py-1 rounded-md font-bold transition-all cursor-pointer ${
+                  docLang === "ar" ? "bg-white text-slate-900 shadow-2xs" : "text-slate-500 hover:text-slate-800"
                 }`}
               >
                 العربية
@@ -449,6 +457,7 @@ export default function LiveInvoiceModal({
         {/* CORPS DE LA MODAL : DOUBLE VOLET SPLIT-SCREEN */}
         {/* ======================================================== */}
         <div className="grid grid-cols-1 lg:grid-cols-12 flex-1 overflow-hidden">
+          
           {/* PANNEAU GAUCHE : FORMULAIRE D'ÉDITION */}
           <div
             className={`lg:col-span-6 p-4 sm:p-6 overflow-y-auto space-y-5 border-r border-slate-200 bg-white ${
@@ -456,14 +465,21 @@ export default function LiveInvoiceModal({
             }`}
           >
             {/* Section Client */}
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               <div className="flex items-center justify-between">
                 <label className="font-bold text-xs uppercase tracking-wider text-slate-700">
                   {t.invoices.client}
                 </label>
-                <span className="text-[11px] text-sky-600 font-semibold cursor-pointer hover:underline" onClick={() => setSelectedClientId("custom")}>
-                  + Nouveau client libre
-                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedClientId("custom");
+                    setCustomClientName("");
+                  }}
+                  className="text-[11px] text-sky-600 font-bold hover:underline cursor-pointer"
+                >
+                  + Nouveau client
+                </button>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -478,7 +494,7 @@ export default function LiveInvoiceModal({
                         {c.name} ({c.city || "Nouakchott"})
                       </option>
                     ))}
-                    <option value="custom">✍️ Saisie libre (Nouveau client)</option>
+                    <option value="custom">Nouveau client</option>
                   </select>
                 </div>
 
@@ -486,10 +502,10 @@ export default function LiveInvoiceModal({
                   <div>
                     <input
                       type="text"
-                      placeholder="Nom de l'entreprise cliente *"
+                      placeholder="Nom de l'entreprise ou client..."
                       value={customClientName}
                       onChange={(e) => setCustomClientName(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-800 focus:outline-none focus:border-sky-500"
+                      className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-sky-500"
                     />
                   </div>
                 )}
@@ -506,31 +522,23 @@ export default function LiveInvoiceModal({
                   type="text"
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-bold focus:outline-none focus:border-sky-500"
+                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-900 font-bold focus:outline-none focus:border-sky-500"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  {t.invoices.issueDate}
-                </label>
-                <input
-                  type="date"
+                <DatePicker
+                  label={t.invoices.issueDate}
                   value={issueDate}
-                  onChange={(e) => setIssueDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
+                  onChange={(d) => setIssueDate(d)}
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  {t.invoices.dueDate}
-                </label>
-                <input
-                  type="date"
+                <DatePicker
+                  label={t.invoices.dueDate}
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
+                  onChange={(d) => setDueDate(d)}
                 />
               </div>
             </div>
@@ -552,7 +560,7 @@ export default function LiveInvoiceModal({
               </div>
 
               <div className="space-y-2.5">
-                {items.map((it, idx) => (
+                {items.map((it) => (
                   <div
                     key={it.id}
                     className="grid grid-cols-12 gap-2 p-3 bg-slate-50/80 rounded-xl border border-slate-200/80 items-center text-xs"
@@ -560,12 +568,12 @@ export default function LiveInvoiceModal({
                     <div className="col-span-12 sm:col-span-6">
                       <input
                         type="text"
-                        placeholder="Description de la prestation..."
+                        placeholder="Description (ex: Création de logo, Câblage fibre, Audit...)"
                         value={it.description}
                         onChange={(e) =>
                           handleItemChange(it.id, "description", e.target.value)
                         }
-                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
+                        className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 placeholder-slate-400 font-medium focus:outline-none focus:border-sky-500"
                       />
                     </div>
 
@@ -582,7 +590,7 @@ export default function LiveInvoiceModal({
                             parseFloat(e.target.value) || 0
                           )
                         }
-                        className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-center font-bold focus:outline-none focus:border-sky-500"
+                        className="w-full px-2.5 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 text-center font-bold focus:outline-none focus:border-sky-500"
                       />
                     </div>
 
@@ -593,17 +601,17 @@ export default function LiveInvoiceModal({
                           min="0"
                           step="100"
                           placeholder="Prix HT"
-                          value={it.unitPrice || ""}
+                          value={it.unitPrice === 0 ? "" : it.unitPrice}
                           onChange={(e) =>
                             handleItemChange(
                               it.id,
                               "unitPrice",
-                              parseFloat(e.target.value) || 0
+                              e.target.value === "" ? 0 : parseFloat(e.target.value) || 0
                             )
                           }
-                          className="w-full pl-2.5 pr-10 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-right font-bold focus:outline-none focus:border-sky-500"
+                          className="w-full pl-2.5 pr-10 py-2 bg-white border border-slate-200 rounded-lg text-slate-900 text-right font-bold placeholder-slate-300 focus:outline-none focus:border-sky-500"
                         />
-                        <span className="absolute right-2 top-1.5 text-[10px] text-slate-400 font-bold pointer-events-none">
+                        <span className="absolute right-2 top-2 text-[10px] text-slate-400 font-bold pointer-events-none">
                           MRU
                         </span>
                       </div>
@@ -624,7 +632,7 @@ export default function LiveInvoiceModal({
               </div>
             </div>
 
-            {/* Section Acompte & Modalités de Paiement */}
+            {/* Section Modalités de Paiement & Acompte */}
             <div className="p-3.5 bg-slate-50/90 rounded-xl border border-slate-200/90 space-y-3 text-xs">
               <div className="flex items-center justify-between">
                 <label className="font-bold text-slate-800 flex items-center gap-1.5">
@@ -638,7 +646,6 @@ export default function LiveInvoiceModal({
                 </span>
               </div>
 
-              {/* Boutons de sélection rapide d'acompte */}
               <div className="grid grid-cols-5 gap-1.5 bg-white p-1 rounded-lg border border-slate-200">
                 <button
                   type="button"
@@ -702,7 +709,6 @@ export default function LiveInvoiceModal({
                 </button>
               </div>
 
-              {/* Saisie montant libre si actif */}
               {depositType === "custom" && (
                 <div className="pt-1 flex items-center gap-2">
                   <div className="relative flex-1">
@@ -716,21 +722,20 @@ export default function LiveInvoiceModal({
                       onChange={(e) =>
                         setCustomDepositAmount(parseFloat(e.target.value) || 0)
                       }
-                      className="w-full pl-3 pr-12 py-1.5 bg-white border border-slate-200 rounded-lg text-slate-800 text-xs font-bold focus:outline-none focus:border-sky-500"
+                      className="w-full pl-3 pr-12 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 text-xs font-bold focus:outline-none focus:border-sky-500"
                     />
-                    <span className="absolute right-2.5 top-1.5 text-[10px] text-slate-400 font-bold pointer-events-none">
+                    <span className="absolute right-2.5 top-2 text-[10px] text-slate-400 font-bold pointer-events-none">
                       MRU
                     </span>
                   </div>
                 </div>
               )}
 
-              {/* Résumé Acompte / Solde */}
               {depositAmount > 0 && (
-                <div className="grid grid-cols-2 gap-2 p-2.5 bg-amber-50/80 rounded-lg border border-amber-200/80 text-[11px]">
+                <div className="grid grid-cols-2 gap-2 p-2.5 bg-slate-100 rounded-lg border border-slate-200 text-[11px]">
                   <div>
-                    <span className="text-amber-800 font-medium">Acompte exigible ({activeDepositPercentage}%) :</span>
-                    <p className="text-amber-950 font-black text-xs">
+                    <span className="text-slate-600 font-medium">Acompte exigible ({activeDepositPercentage}%) :</span>
+                    <p className="text-slate-900 font-black text-xs">
                       {depositAmount.toLocaleString("fr-FR")} MRU
                     </p>
                   </div>
@@ -748,21 +753,21 @@ export default function LiveInvoiceModal({
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs pt-1">
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  Régime Fiscal TVA (DGI)
+                  Régime Fiscal TVA
                 </label>
                 <select
                   value={taxRate}
                   onChange={(e) => setTaxRate(parseFloat(e.target.value))}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
                 >
-                  <option value={16}>TVA Standard Mauritanie (16%)</option>
-                  <option value={0}>Exonéré de TVA (0% Export / Spécial)</option>
+                  <option value={16}>TVA Standard (16%)</option>
+                  <option value={0}>Exonéré de TVA (0%)</option>
                 </select>
               </div>
 
               <div>
                 <label className="block font-semibold text-slate-700 mb-1">
-                  {t.invoices.paymentTerms}
+                  Conditions de paiement
                 </label>
                 <input
                   type="text"
@@ -773,10 +778,10 @@ export default function LiveInvoiceModal({
               </div>
             </div>
 
-            {/* Notes en bas de facture */}
+            {/* Coordonnées de paiement */}
             <div className="text-xs">
               <label className="block font-semibold text-slate-700 mb-1">
-                Mentions &amp; Coordonnées de paiement
+                Mentions &amp; Coordonnées bancaires
               </label>
               <textarea
                 rows={2}
@@ -787,124 +792,143 @@ export default function LiveInvoiceModal({
             </div>
           </div>
 
-          {/* PANNEAU DROIT : VRAIE FEUILLE A4 RENDUE EN TEMPS RÉEL */}
+          {/* PANNEAU DROIT : VRAIE FEUILLE A4 - MODÈLE ÉPURÉ HAUT DE GAMME AVEC BLEU SIGNATURE */}
           <div
             className={`lg:col-span-6 p-4 sm:p-6 overflow-y-auto bg-slate-200/60 flex flex-col items-center justify-start ${
               mobileTab === "preview" ? "block" : "hidden lg:block"
             }`}
           >
             <div className="w-full max-w-[560px] flex items-center justify-between pb-3 text-xs text-slate-600">
-              <span className="font-bold flex items-center gap-1.5 text-slate-700">
+              <span className="font-bold flex items-center gap-1.5 text-slate-800">
                 <Sparkles size={14} className="text-sky-600" />
-                {t.invoices.previewA4} ({docLang === "bilingual" ? "Bilingue FR/AR" : docLang === "ar" ? "العربية" : "Français"})
+                {t.invoices.previewA4} ({isAr ? "العربية" : "Français"})
               </span>
-              <span className="text-[11px] text-slate-500">Mise à jour instantanée</span>
+              <span className="text-[11px] text-slate-400">Modèle officiel Facturim</span>
             </div>
 
-            {/* La feuille A4 virtuelle Facturim */}
-            <div id="live-invoice-preview-sheet" className="w-full max-w-[560px] bg-white rounded-xl shadow-xl border border-slate-300/80 p-6 sm:p-8 space-y-5 text-slate-800 text-xs transition-all">
-              {/* En-tête de la facture A4 */}
-              <div className="flex justify-between items-start border-b border-slate-200 pb-4">
-                <div>
-                  <div className="flex items-center gap-2.5">
+            {/* Feuille A4 Virtuelle */}
+            <div
+              id="live-invoice-preview-sheet"
+              dir={isAr ? "rtl" : "ltr"}
+              className="relative w-full max-w-[560px] bg-white rounded-xl shadow-xl border border-slate-300 p-6 sm:p-8 space-y-5 text-slate-900 text-xs font-sans overflow-hidden"
+            >
+              {/* 1. EN-TÊTE ULTRA-MODERNE : IDENTITÉ ÉMETTEUR & TITRE AVEC PILULES CAPSULES */}
+              <div className="relative z-10 border-b-2 border-slate-200 pb-4">
+                <div className="flex justify-between items-start">
+                  {/* Logo & Marque */}
+                  <div className="flex items-center gap-3">
                     {companyLogo ? (
                       <img
                         src={companyLogo}
-                        alt="Logo Entreprise"
-                        className="w-10 h-10 rounded-lg object-contain border border-slate-200 bg-white shrink-0"
+                        alt="Logo"
+                        className="w-12 h-12 rounded-xl object-contain border border-slate-200 bg-white shadow-2xs"
                       />
                     ) : (
-                      <div className="w-10 h-10 rounded-lg bg-slate-900 text-white font-black text-sm flex items-center justify-center tracking-tighter shrink-0">
-                        FI
+                      <div className="w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-xs">
+                        {company?.name ? company.name.substring(0, 2).toUpperCase() : "FI"}
                       </div>
                     )}
                     <div>
-                      <span className="text-base font-black text-slate-900 tracking-tight">
-                        FACTURIM
-                      </span>
-                      <span className="text-xs font-bold text-sky-600 ml-1.5">موريتانيا</span>
+                      <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                        {company?.name || "Votre Entreprise"}
+                      </h2>
+                      <p className="text-[10.5px] text-slate-500 font-medium">
+                        {company?.tradeName || "Plateforme de Facturation & Services"}
+                      </p>
                     </div>
                   </div>
-                  <div className="mt-2 text-[11px] text-slate-500 space-y-0.5">
-                    <p className="font-medium text-slate-700">Facturim Mauritanie SARL</p>
-                    <p>Avenue du Roi Fayçal, Tevragh Zeina, Nouakchott</p>
-                    <p>NIF : 00987654-MR | RC : MR.NKTT.2025.B.1234</p>
-                    <p>Tél : +222 45 25 00 00 | contact@facturim.mr</p>
+
+                  {/* Titre FACTURE & Badges Métadonnées sur 2 lignes */}
+                  <div className={`text-${isAr ? "left" : "right"}`}>
+                    <h1 className="text-2xl font-black text-sky-600 uppercase tracking-wide">
+                      {isAr ? "فاتورة" : "FACTURE"}
+                    </h1>
+                    <div className={`flex items-center gap-1.5 mt-1.5 justify-${isAr ? "start" : "end"}`}>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-sky-50 border border-sky-200 text-sky-700 font-extrabold text-[10px] font-mono whitespace-nowrap">
+                        {isAr ? `فاتورة رقم ${invoiceNumber}` : `N° ${invoiceNumber}`}
+                      </span>
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-bold text-[10px] whitespace-nowrap">
+                        {formatDateDisplay(issueDate)}
+                      </span>
+                    </div>
+                    {dueDate && (
+                      <div className={`flex justify-${isAr ? "start" : "end"} mt-1`}>
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-500 font-medium text-[10px] whitespace-nowrap">
+                          {isAr ? `الاستحقاق : ${formatDateDisplay(dueDate)}` : `Échéance : ${formatDateDisplay(dueDate)}`}
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </div>
-
-                <div className="text-right">
-                  <span className="inline-block bg-sky-50 text-sky-700 font-extrabold text-xs px-2.5 py-1 rounded-md tracking-wider uppercase border border-sky-200">
-                    {docLang === "bilingual" ? "FACTURE / فاتورة" : docLang === "ar" ? "فاتورة" : "FACTURE"}
-                  </span>
-                  <p className="text-sm font-black text-slate-900 mt-1.5">
-                    {invoiceNumber}
-                  </p>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    Date : <span className="font-semibold text-slate-700">{issueDate}</span>
-                  </p>
-                  <p className="text-[11px] text-slate-500">
-                    Échéance : <span className="font-semibold text-slate-700">{dueDate}</span>
-                  </p>
-                </div>
               </div>
 
-              {/* Bloc Client Facturé à */}
-              <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/80 flex justify-between items-start">
-                <div>
-                  <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                    {docLang === "bilingual" ? "FACTURÉ À / الفاتورة إلى" : docLang === "ar" ? "العميل" : "FACTURÉ À"}
-                  </p>
-                  <h4 className="text-sm font-bold text-slate-900 mt-0.5">
+              {/* 2. COORDONNÉES COMPLÈTES (SANS LABELS ÉMETTEUR / DESTINATAIRE) */}
+              <div className="relative z-10 flex justify-between items-start text-[11px] leading-relaxed pt-1">
+                {/* Émetteur à gauche */}
+                <div className="text-left space-y-0.5 max-w-[48%]">
+                  <h3 className="font-black text-xs text-slate-900 uppercase">
+                    {company?.name || "Votre Entreprise"}
+                  </h3>
+                  <p className="text-slate-600">{company?.phone || "+221 77 890 12 52"}</p>
+                  <p className="text-slate-600">{company?.email || "eywamarket@gmail.com"}</p>
+                  {company?.taxId ? (
+                    <p className="text-slate-600 font-mono">NIF : {company.taxId}</p>
+                  ) : (
+                    <p className="text-slate-600 font-mono">NIF : SN-009876543-2B</p>
+                  )}
+                  <p className="text-slate-600">{company?.address || "Almadies, Zone 4"}</p>
+                </div>
+
+                {/* Destinataire complètement à droite */}
+                <div className={`space-y-0.5 max-w-[48%] ${isAr ? "text-left" : "text-right"}`}>
+                  <h4 className="font-black text-xs text-slate-900">
                     {currentClient.name}
                   </h4>
-                  <p className="text-slate-600 text-[11px] mt-0.5">{currentClient.address}</p>
-                  <p className="text-slate-600 text-[11px]">{currentClient.email} | {currentClient.phone}</p>
-                </div>
-
-                <div className="text-right text-[11px]">
-                  <p className="text-[10px] uppercase font-bold text-slate-400 tracking-wider">
-                    Statut / الحالة
-                  </p>
-                  <span
-                    className={`inline-block mt-1 font-bold px-2.5 py-0.5 rounded-full text-[10px] ${
-                      depositAmount > 0
-                        ? "bg-amber-100 text-amber-900 border border-amber-300/70"
-                        : "bg-sky-100 text-sky-800"
-                    }`}
-                  >
-                    {depositAmount > 0 ? "Acompte exigible" : "En cours d'émission"}
-                  </span>
+                  <p className="text-slate-600">{currentClient.phone}</p>
+                  <p className="text-slate-600">{currentClient.email}</p>
+                  <p className="text-slate-600">{currentClient.address}</p>
                 </div>
               </div>
 
-              {/* Tableau A4 des prestations */}
-              <div>
-                <table className="w-full text-left text-xs">
+              {/* 3. TABLEAU DES PRESTATIONS AVEC COLONNE # ET EN-TÊTE EN BLEU SIGNATURE */}
+              <div className="relative z-10 pt-1">
+                <table className="w-full border-collapse border border-sky-600 text-xs">
                   <thead>
-                    <tr className="border-b-2 border-slate-900 text-slate-900 text-[11px] font-bold">
-                      <th className="py-2">
-                        {docLang === "bilingual" ? "Désignation / البيان" : docLang === "ar" ? "البيان" : "Description"}
+                    <tr className="bg-sky-600 text-white font-extrabold text-[10px] uppercase tracking-wider">
+                      <th className="p-2 border border-sky-600 text-center w-8 whitespace-nowrap">
+                        #
                       </th>
-                      <th className="py-2 text-center">Qté</th>
-                      <th className="py-2 text-right">Prix unit.</th>
-                      <th className="py-2 text-right">Total HT</th>
+                      <th className={`p-2.5 border border-sky-600 ${isAr ? "text-right" : "text-left"}`}>
+                        {isAr ? "البيان والخدمات" : "DESCRIPTION"}
+                      </th>
+                      <th className={`p-2.5 border border-sky-600 w-28 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
+                        {isAr ? "السعر الفردي" : "PRIX UNITAIRE"}
+                      </th>
+                      <th className="p-2 border border-sky-600 text-center w-12 whitespace-nowrap">
+                        {isAr ? "الكمية" : "QTÉ"}
+                      </th>
+                      <th className={`p-2.5 border border-sky-600 w-28 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
+                        {isAr ? "الإجمالي" : "TOTAL HT"}
+                      </th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {items.map((it) => (
-                      <tr key={it.id} className="text-[11px]">
-                        <td className="py-2 pr-2 font-medium text-slate-800">
-                          {it.description}
+                  <tbody>
+                    {items.map((it, idx) => (
+                      <tr key={it.id} className={`text-[11px] ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}>
+                        <td className="p-2 border border-slate-200 text-center text-slate-500 font-bold font-mono">
+                          {String(idx + 1).padStart(2, "0")}
                         </td>
-                        <td className="py-2 text-center text-slate-600 font-semibold">
-                          {it.quantity}
+                        <td className={`p-2.5 border border-slate-200 font-semibold text-slate-900 ${isAr ? "text-right" : "text-left"}`}>
+                          {it.description.trim() || (isAr ? "خدمات مهنية" : "Prestation de service")}
                         </td>
-                        <td className="py-2 text-right text-slate-600">
+                        <td className={`p-2.5 border border-slate-200 text-slate-700 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
                           {it.unitPrice.toLocaleString("fr-FR")} MRU
                         </td>
-                        <td className="py-2 text-right font-bold text-slate-900">
-                          {(it.quantity * it.unitPrice).toLocaleString("fr-FR")} MRU
+                        <td className="p-2 border border-slate-200 text-center text-slate-700 font-mono">
+                          {String(it.quantity || 1).padStart(2, "0")}
+                        </td>
+                        <td className={`p-2.5 border border-slate-200 font-bold text-slate-950 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
+                          {((it.quantity || 1) * (it.unitPrice || 0)).toLocaleString("fr-FR")} MRU
                         </td>
                       </tr>
                     ))}
@@ -912,70 +936,104 @@ export default function LiveInvoiceModal({
                 </table>
               </div>
 
-              {/* Bloc Récapitulatif et Totaux + Cartouche Moosyl */}
-              <div className="pt-2 border-t border-slate-200 flex justify-between items-center">
-                {/* Badge Moosyl Pay avec Logos Authentiques */}
-                <div className="flex items-center gap-2.5 bg-slate-50 p-2 rounded-lg border border-slate-200/80">
-                  <div className="w-10 h-10 bg-white rounded border border-slate-200 flex items-center justify-center text-slate-700 shadow-2xs">
-                    <QrCode size={22} />
+              {/* 4. BLOC BAS : CARTOUCHE QR DE PAIEMENT & TOTAUX EN BLEU */}
+              <div className="relative z-10 flex flex-col sm:flex-row justify-between items-end gap-3 pt-1">
+                
+                {/* Cartouche QR Code conforme à la capture utilisateur */}
+                <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-2.5 flex items-center gap-3 shadow-2xs w-full sm:w-auto">
+                  <div className="w-13 h-13 bg-white rounded-lg border border-slate-200 flex items-center justify-center p-1 shrink-0 shadow-2xs">
+                    <img
+                      src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
+                        `https://facturim.mr/pay/${invoiceNumber}`
+                      )}&color=0f172a&bgcolor=ffffff`}
+                      alt="QR Paiement"
+                      className="w-11 h-11 object-contain"
+                    />
                   </div>
-                  <div className="text-[10px] text-slate-600 leading-tight space-y-1">
-                    <p className="font-bold text-slate-800">Moosyl Gateway</p>
-                    <div className="flex items-center gap-1.5">
-                      <BankilyLogo variant="badge" className="text-[9px] py-0 px-1.5" />
-                      <MasrviLogo variant="badge" className="text-[9px] py-0 px-1.5" />
-                    </div>
+                  <div className="space-y-0.5 text-left">
+                    <p className="font-extrabold text-slate-900 text-[11.5px] leading-tight">
+                      {isAr ? "الدفع المباشر" : "Paiement direct"}
+                    </p>
+                    <p className="font-bold text-slate-800 text-[11px] leading-tight">
+                      Bankily • Masrvi • Sedad
+                    </p>
+                    <p className="text-slate-400 text-[9.5px] leading-tight">
+                      {isAr ? "امسح الرمز للدفع في ثوانٍ" : "Scannez pour régler en 1 clic"}
+                    </p>
                   </div>
                 </div>
 
-                <div className="w-64 space-y-1 text-[11px]">
+                {/* Totaux Chiffrés & Bandeau Bleu */}
+                <div className="w-full sm:w-64 text-xs space-y-1">
                   <div className="flex justify-between text-slate-600">
-                    <span>Sous-total HT :</span>
-                    <span className="font-semibold text-slate-800">
-                      {subtotal.toLocaleString("fr-FR")} MRU
-                    </span>
+                    <span className="font-medium">{isAr ? "المجموع قبل الضريبة :" : "Sous-total HT :"}</span>
+                    <span className="font-bold text-slate-900">{subtotal.toLocaleString("fr-FR")} MRU</span>
                   </div>
 
                   {taxRate > 0 && (
                     <div className="flex justify-between text-slate-600">
-                      <span>TVA ({taxRate}%) :</span>
-                      <span className="font-semibold text-slate-800">
-                        {taxAmount.toLocaleString("fr-FR")} MRU
-                      </span>
+                      <span className="font-medium">{isAr ? `ضريبة القيمة المضافة (${taxRate}%) :` : `TVA légale (${taxRate}%) :`}</span>
+                      <span className="font-bold text-slate-900">{taxAmount.toLocaleString("fr-FR")} MRU</span>
                     </div>
                   )}
 
-                  <div className="flex justify-between items-baseline pt-1.5 border-t-2 border-slate-900 text-slate-900">
-                    <span className="text-xs font-bold uppercase">Total Net TTC :</span>
-                    <span className="text-sm sm:text-base font-black text-sky-600">
+                  {depositAmount > 0 && (
+                    <div className="flex justify-between text-slate-700 pt-1 border-t border-slate-200 text-[11px]">
+                      <span className="font-medium">{isAr ? `العربون (${activeDepositPercentage}%) :` : `Acompte (${activeDepositPercentage}%) :`}</span>
+                      <span className="font-bold text-slate-900">{depositAmount.toLocaleString("fr-FR")} MRU</span>
+                    </div>
+                  )}
+
+                  {depositAmount > 0 && (
+                    <div className="flex justify-between text-slate-600 text-[11px]">
+                      <span className="font-medium">{isAr ? "المتبقي للتحصيل :" : "Solde restant :"}</span>
+                      <span className="font-bold text-slate-900">{remainingAmount.toLocaleString("fr-FR")} MRU</span>
+                    </div>
+                  )}
+
+                  {/* Bandeau TOTAL Plein Bleu Signature (#0284c7) */}
+                  <div className="w-full bg-sky-600 text-white p-2.5 rounded-lg flex justify-between items-center mt-2 shadow-xs">
+                    <span className="text-[11px] font-extrabold tracking-wider uppercase whitespace-nowrap">
+                      {isAr ? "المجموع الكلي الصافي :" : "TOTAL NET TTC :"}
+                    </span>
+                    <span className="text-base font-black tracking-tight tabular-nums whitespace-nowrap">
                       {total.toLocaleString("fr-FR")} MRU
                     </span>
                   </div>
+                </div>
 
-                  {/* Lignes d'acompte et solde virtuel */}
-                  {depositAmount > 0 && (
-                    <div className="mt-1.5 pt-1.5 border-t border-dashed border-amber-300 bg-amber-50/70 p-2 rounded-lg space-y-1">
-                      <div className="flex justify-between items-center text-amber-900 font-extrabold text-[11px]">
-                        <span>Acompte ({activeDepositPercentage}%) :</span>
-                        <span className="text-xs">{depositAmount.toLocaleString("fr-FR")} MRU</span>
-                      </div>
-                      <div className="flex justify-between items-center text-slate-600 font-bold text-[10.5px]">
-                        <span>Solde restant :</span>
-                        <span className="text-slate-900">{remainingAmount.toLocaleString("fr-FR")} MRU</span>
-                      </div>
-                    </div>
-                  )}
+              </div>
+
+              {/* 5. COORDONNÉES DE PAIEMENT & CONDITIONS */}
+              <div className="relative z-10 border-t border-slate-200 pt-3 grid grid-cols-1 sm:grid-cols-12 gap-3 text-[10.5px]">
+                <div className="sm:col-span-8 space-y-0.5">
+                  <p className="font-bold text-slate-900">
+                    {isAr ? `الدفع لأمر : ${company?.name || "المؤسسة"}` : `Paiement à l'ordre de ${company?.name || "Votre Entreprise"}`}
+                  </p>
+                  <p className="text-slate-600">
+                    N° Bankily / Masrvi / Compte : <span className="font-bold text-slate-900 font-mono">{company?.phone || "+221 77 890 12 52"}</span>
+                  </p>
+                  <p className="text-slate-400 text-[9.5px]">
+                    {notes || "Paiement par Bankily, Masrvi ou virement bancaire."}
+                  </p>
+                </div>
+
+                <div className="sm:col-span-4 text-left sm:text-right space-y-0.5">
+                  <p className="font-bold text-slate-900">{isAr ? "شروط الدفع" : "Conditions de paiement"}</p>
+                  <p className="text-slate-600">{paymentTerms}</p>
                 </div>
               </div>
 
-              {/* Notes et Pied de page A4 */}
-              <div className="pt-3 border-t border-slate-200 text-[10px] text-slate-500 space-y-1">
-                <p>
-                  <strong className="text-slate-700">Modalités :</strong> {paymentTerms}
-                </p>
-                <p className="leading-snug">{notes}</p>
-                <div className="pt-1 text-center text-[9px] text-slate-400 font-medium">
-                  Facturim Mauritanie — Document officiel conforme DGI (TVA 16%)
+              {/* Mention de fin centrée & Facturim Année */}
+              <div className="relative z-10 text-center pt-2 border-t border-slate-100">
+                <div className="text-[9.5px] font-bold text-slate-500 uppercase tracking-widest">
+                  {isAr ? "شكراً لثقتكم بنا" : "MERCI DE VOTRE CONFIANCE"}
+                </div>
+                <div className="flex items-center justify-center gap-1.5 mt-1 text-[9px] font-extrabold text-slate-400 tracking-wider">
+                  <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded bg-sky-600 text-white text-[7px] font-black">FI</span>
+                  <span className="text-slate-600 font-black">FACTURIM</span>
+                  <span className="text-slate-300">•</span>
+                  <span>{new Date(issueDate).getFullYear() || 2026}</span>
                 </div>
               </div>
             </div>
@@ -986,7 +1044,7 @@ export default function LiveInvoiceModal({
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-3.5 bg-white border-t border-slate-200 shrink-0">
           <div className="flex items-center gap-2 text-xs text-slate-500">
             <span className="font-semibold text-slate-700">Montant total net :</span>
-            <span className="font-extrabold text-sm text-sky-600">
+            <span className="font-black text-sm text-sky-600 tabular-nums">
               {formatMoney(total)}
             </span>
           </div>
@@ -998,16 +1056,16 @@ export default function LiveInvoiceModal({
               className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer"
             >
               <Share2 size={14} />
-              <span>WhatsApp + Moosyl</span>
+              <span>WhatsApp</span>
             </button>
 
             <button
               type="button"
               onClick={handleDownloadPDF}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-lg text-xs font-bold transition-all shadow-md shadow-sky-500/20 cursor-pointer"
             >
               <Download size={14} />
-              <span>PDF A4 ({docLang === "bilingual" ? "FR/AR" : docLang.toUpperCase()})</span>
+              <span>Télécharger PDF A4 ({isAr ? "العربية" : "Français"})</span>
             </button>
 
             <button
@@ -1031,6 +1089,7 @@ export default function LiveInvoiceModal({
             </button>
           </div>
         </div>
+
       </div>
     </div>
   );

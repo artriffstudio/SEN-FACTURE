@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Sidebar from "@/components/layout/Sidebar";
 import Header from "@/components/layout/Header";
+import FloatingDockNav from "@/components/layout/FloatingDockNav";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function DashboardLayout({
@@ -60,16 +61,19 @@ export default function DashboardLayout({
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
-      {/* Sleek icon rail sidebar */}
+      {/* Sleek icon rail sidebar (Desktop) */}
       <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
 
       {/* Main content viewport */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         <Header onMenuClick={() => setSidebarOpen((prev) => !prev)} />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6 xl:p-7 no-scrollbar">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-5 lg:p-6 xl:p-7 pb-24 lg:pb-7 no-scrollbar">
           {children}
         </main>
       </div>
+
+      {/* Mobile Floating Pill Dock */}
+      <FloatingDockNav />
     </div>
   );
 }

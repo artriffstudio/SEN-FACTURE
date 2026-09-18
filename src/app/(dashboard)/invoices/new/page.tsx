@@ -21,6 +21,7 @@ import { getClients, createClient } from "@/lib/services/clientService";
 import { createInvoice } from "@/lib/services/invoiceService";
 import { getCompany } from "@/lib/services/companyService";
 import { Client } from "@/lib/types";
+import DatePicker from "@/components/ui/DatePicker";
 
 interface LineItem {
   id: string;
@@ -87,9 +88,7 @@ export default function NewInvoicePage() {
 
   useEffect(() => {
     if (typeof window !== "undefined") {
-      const saved =
-        localStorage.getItem("facturim_company_logo") ||
-        localStorage.getItem("sen_facture_company_logo");
+      const saved = localStorage.getItem("facturim_company_logo");
       if (saved) setCompanyLogo(saved);
     }
   }, []);
@@ -99,19 +98,19 @@ export default function NewInvoicePage() {
     if (selectedClientId === "custom") {
       return {
         name: customClientName || "Nouveau Client Entreprise",
-        email: "client@entreprise.sn",
-        phone: "+221 77 000 00 00",
-        address: "Dakar, Sénégal",
-        taxId: "NINEA-EN-COURS",
+        email: "client@entreprise.mr",
+        phone: "+222 45 00 00 00",
+        address: "Nouakchott, Mauritanie",
+        taxId: "00123456-MR",
       };
     }
     return (
       clientsList.find((c) => c.id === selectedClientId) || {
         name: "Client Inconnu",
-        email: "contact@client.sn",
-        phone: "+221 33 000 00 00",
-        address: "Dakar, Sénégal",
-        taxId: "NINEA-0000000",
+        email: "contact@client.mr",
+        phone: "+222 45 00 00 00",
+        address: "Nouakchott, Mauritanie",
+        taxId: "00123456-MR",
       }
     );
   }, [selectedClientId, customClientName, clientsList]);
@@ -167,10 +166,10 @@ export default function NewInvoicePage() {
       if (selectedClientId === "custom" || !selectedClientId) {
         const createdClient = await createClient({
           name: customClientName.trim() || "Nouveau Client Entreprise",
-          email: "contact@entreprise.sn",
-          phone: "+221 77 000 00 00",
-          address: "Dakar, Sénégal",
-          country: "Sénégal",
+          email: "contact@entreprise.mr",
+          phone: "+222 45 00 00 00",
+          address: "Nouakchott, Mauritanie",
+          country: "Mauritanie",
         });
         finalClientId = createdClient.id;
       }
@@ -361,26 +360,18 @@ export default function NewInvoicePage() {
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Date d&apos;émission
-                </label>
-                <input
-                  type="date"
+                <DatePicker
+                  label="Date d'émission"
                   value={issueDate}
-                  onChange={(e) => setIssueDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
+                  onChange={(d) => setIssueDate(d)}
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">
-                  Date d&apos;échéance
-                </label>
-                <input
-                  type="date"
+                <DatePicker
+                  label="Date d'échéance"
                   value={dueDate}
-                  onChange={(e) => setDueDate(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
+                  onChange={(d) => setDueDate(d)}
                 />
               </div>
             </div>

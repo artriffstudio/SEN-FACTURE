@@ -3,8 +3,8 @@
 > Plateforme SaaS de facturation électronique certifiée, gestion commerciale et passerelle Mobile Money (Bankily & Masrvi via Moosyl) pour les entreprises et indépendants en République Islamique de Mauritanie.
 
 ## 🚀 Accès en Ligne (Production)
-- **Application déployée** : [https://sen-facture-alpha.vercel.app](https://sen-facture-alpha.vercel.app)
-- **Dépôt GitHub** : [https://github.com/artriffstudio/SEN-FACTURE](https://github.com/artriffstudio/SEN-FACTURE)
+- **Application déployée** : [https://facturim.vercel.app](https://facturim.vercel.app)
+- **Dépôt GitHub** : [https://github.com/artriffstudio/FACTURIM](https://github.com/artriffstudio/FACTURIM)
 
 ---
 

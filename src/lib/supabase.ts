@@ -1,6 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
 
-// Identifiants publics du projet Supabase SEN FACTURE
+// Identifiants publics du projet Supabase FACTURIM
 // Note : La clé anon est une clé publique (publishable) conçue par Supabase pour être intégrée
 // au client web et sécurisée par les politiques Row Level Security (RLS) dans PostgreSQL.
 const DEFAULT_SUPABASE_URL = "https://cooamqsuvyqhhihpzyxq.supabase.co";

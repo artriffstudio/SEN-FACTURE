@@ -181,7 +181,7 @@ button, a, input, select {
   animation: gentle-pulse 2s ease-in-out infinite;
 }
 
-/* Rendu d'impression A4 officiel SEN FACTURE */
+/* Rendu d'impression A4 officiel FACTURIM */
 @media print {
   body {
     background: #ffffff !important;

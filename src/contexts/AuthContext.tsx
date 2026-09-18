@@ -46,7 +46,7 @@ async function linkOrRegisterCompany(userId: string, email: string, companyName?
         .from("companies")
         .update({
           user_id: userId,
-          name: companyName?.trim() || "SEN FACTURE Entreprise",
+          name: companyName?.trim() || "FACTURIM Entreprise",
           email: email,
           updated_at: new Date().toISOString(),
         })
@@ -61,10 +61,10 @@ async function linkOrRegisterCompany(userId: string, email: string, companyName?
         user_id: userId,
         name: companyName?.trim() || "Mon Entreprise",
         email: email,
-        city: "Dakar",
-        country: "Sénégal",
-        currency: "XOF",
-        tax_rate: 18.0,
+        city: "Nouakchott",
+        country: "Mauritanie",
+        currency: "MRU",
+        tax_rate: 16.0,
         invoice_prefix: "FAC-2025-",
         next_invoice_number: 1,
       })

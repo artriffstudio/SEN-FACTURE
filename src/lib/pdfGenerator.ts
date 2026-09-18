@@ -30,6 +30,13 @@ export interface PDFInvoiceData {
   logoUrl?: string;
   documentLanguage?: "fr" | "ar" | "bilingual";
   includePaymentQr?: boolean;
+  // Données de l'entreprise émettrice
+  companyName?: string;
+  companyTradeName?: string;
+  companyAddress?: string;
+  companyTaxId?: string;
+  companyPhone?: string;
+  companyEmail?: string;
 }
 
 const defaultPrestationsByClient: Record<string, { desc: string; qty: number }> = {
@@ -40,12 +47,21 @@ const defaultPrestationsByClient: Record<string, { desc: string; qty: number }> 
   "Mattel": { desc: "Prestation d'ingénierie Cloud, audit de sécurité & DevOps", qty: 1 },
 };
 
+function formatDateDisplay(dateStr: string) {
+  if (!dateStr) return "";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return dateStr;
+  const day = String(d.getDate()).padStart(2, "0");
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const year = String(d.getFullYear()).slice(-2);
+  return `${day}/${month}/${year}`;
+}
+
 /**
- * Construit un conteneur HTML représentant la feuille A4 officielle de Facturim (Mauritanie)
- * avec support des modes Français, Arabe (RTL) ou Bilingue FR/AR.
+ * Construit un conteneur HTML représentant la feuille A4 officielle ultra-moderne
+ * avec bleu signature Facturim (#0284c7), typographie haute lisibilité et alignements au pixel près.
  */
 function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
-  const isBilingual = invoice.documentLanguage === "bilingual" || !invoice.documentLanguage;
   const isArOnly = invoice.documentLanguage === "ar";
   const taxRate = invoice.taxRate !== undefined ? invoice.taxRate : 16;
 
@@ -59,13 +75,17 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
   container.style.backgroundColor = "#ffffff";
   container.style.padding = "44px 40px";
   container.style.boxSizing = "border-box";
-  container.style.fontFamily =
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Noto Sans Arabic', sans-serif";
+  container.style.fontFamily = isArOnly
+    ? "'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif"
+    : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+  container.style.direction = isArOnly ? "rtl" : "ltr";
   container.style.color = "#0f172a";
   container.style.display = "flex";
   container.style.flexDirection = "column";
   container.style.justifyContent = "space-between";
-  container.style.zIndex = "-99999";
+  container.style.position = "relative";
+  container.style.overflow = "hidden";
+  container.style.zIndex = "999999";
   container.style.pointerEvents = "none";
 
   // Récupération éventuelle du logo d'entreprise enregistré
@@ -75,15 +95,15 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
       ? localStorage.getItem("facturim_company_logo")
       : null);
 
+  const companyName = invoice.companyName || "Mon Entreprise SARL";
+  const initials = companyName.substring(0, 2).toUpperCase();
+
   const logoMarkup = effectiveLogoUrl
-    ? `<img src="${effectiveLogoUrl}" alt="Logo Entreprise" style="width: 44px; height: 44px; border-radius: 10px; object-fit: contain; background: #ffffff; border: 1px solid #e2e8f0; display: block; flex-shrink: 0;" />`
-    : `<svg width="42" height="42" viewBox="0 0 42 42" fill="none" xmlns="http://www.w3.org/2000/svg" style="display: block; width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;">
-        <rect width="42" height="42" rx="10" fill="#0f172a"/>
-        <text x="21" y="22.5" text-anchor="middle" dominant-baseline="central" fill="#ffffff" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" font-size="17" letter-spacing="-0.5">FI</text>
-      </svg>`;
+    ? `<img src="${effectiveLogoUrl}" alt="Logo" style="width: 52px; height: 52px; border-radius: 10px; object-fit: contain; border: 1px solid #e2e8f0; display: block;" />`
+    : `<div style="width: 48px; height: 48px; border-radius: 10px; background: #0f172a; color: #ffffff; font-size: 16px; font-weight: 900; display: flex; align-items: center; justify-content: center; font-family: sans-serif; line-height: 48px; text-align: center;">${initials}</div>`;
 
   const defaultMeta = defaultPrestationsByClient[invoice.clientName] || {
-    desc: `Prestation contractuelle et services associés — ${invoice.clientName}`,
+    desc: isArOnly ? "خدمات مهنية واستشارية" : "Prestation de service",
     qty: 1,
   };
 
@@ -101,34 +121,11 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
         ];
 
   const subtotal = items.reduce(
-    (acc, it) => acc + it.quantity * it.unitPrice,
+    (acc, it) => acc + (it.quantity || 1) * (it.unitPrice || 0),
     0
   );
   const taxAmount = Math.round(subtotal * (taxRate / 100));
   const total = invoice.total || subtotal + taxAmount;
-
-  // Configuration du badge de statut
-  let statusBg = "#f1f5f9";
-  let statusColor = "#475569";
-  let statusLabel = isBilingual ? "EN ATTENTE / في الانتظار" : isArOnly ? "في الانتظار" : "EN ATTENTE";
-
-  if (invoice.status === "paid") {
-    statusBg = "#ecfdf5";
-    statusColor = "#047857";
-    statusLabel = isBilingual ? "PAYÉE / مدفوعة ✓" : isArOnly ? "مدفوعة ✓" : "PAYÉE ✓";
-  } else if (invoice.status === "partially_paid") {
-    statusBg = "#fef3c7";
-    statusColor = "#92400e";
-    statusLabel = isBilingual ? "ACOMPTE VERSÉ / تم دفع العربون" : isArOnly ? "تم دفع العربون" : "ACOMPTE VERSÉ";
-  } else if (invoice.status === "overdue") {
-    statusBg = "#fff1f2";
-    statusColor = "#be123c";
-    statusLabel = isBilingual ? "EN RETARD / متأخرة" : isArOnly ? "متأخرة" : "EN RETARD";
-  } else if (invoice.status === "sent") {
-    statusBg = "#f0f9ff";
-    statusColor = "#0369a1";
-    statusLabel = isBilingual ? "ÉMISE / تم الإرسال" : isArOnly ? "تم الإرسال" : "ÉMISE";
-  }
 
   // Calculs d'acompte
   const effectiveDepositAmount =
@@ -141,8 +138,8 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
   const effectiveRemainingAmount =
     effectiveDepositAmount !== undefined
       ? invoice.remainingAmount !== undefined
-        ? invoice.remainingAmount
-        : total - effectiveDepositAmount
+      ? invoice.remainingAmount
+      : total - effectiveDepositAmount
       : undefined;
 
   const effectiveDepositPercentage =
@@ -152,40 +149,87 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
       ? Math.round((effectiveDepositAmount / total) * 100)
       : undefined;
 
-  // QR Code de paiement Moosyl (Bankily / Masrvi)
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=${encodeURIComponent(
-    `https://facturim.mr/pay/${invoice.reference}`
-  )}&color=0f172a&bgcolor=ffffff`;
+  // QR Code vectoriel autonome et instantané (zéro requête externe, zéro canvas taint)
+  const qrCodeSvg = `
+    <svg width="52" height="52" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" style="border-radius: 6px; background: #ffffff; flex-shrink: 0; display: block; border: 1px solid #e2e8f0;">
+      <!-- Motifs de positionnement QR -->
+      <rect x="8" y="8" width="28" height="28" rx="4" fill="#0f172a" />
+      <rect x="14" y="14" width="16" height="16" rx="2" fill="#ffffff" />
+      <rect x="18" y="18" width="8" height="8" rx="1.5" fill="#0284c7" />
+
+      <rect x="64" y="8" width="28" height="28" rx="4" fill="#0f172a" />
+      <rect x="70" y="14" width="16" height="16" rx="2" fill="#ffffff" />
+      <rect x="74" y="18" width="8" height="8" rx="1.5" fill="#0284c7" />
+
+      <rect x="8" y="64" width="28" height="28" rx="4" fill="#0f172a" />
+      <rect x="14" y="70" width="16" height="16" rx="2" fill="#ffffff" />
+      <rect x="18" y="74" width="8" height="8" rx="1.5" fill="#0284c7" />
+
+      <!-- Matrice de données vectorielle -->
+      <rect x="42" y="10" width="6" height="6" rx="1" fill="#0f172a" />
+      <rect x="52" y="10" width="6" height="6" rx="1" fill="#0f172a" />
+      <rect x="42" y="20" width="6" height="6" rx="1" fill="#0284c7" />
+      <rect x="42" y="30" width="6" height="6" rx="1" fill="#0f172a" />
+      <rect x="52" y="26" width="6" height="6" rx="1" fill="#0f172a" />
+
+      <rect x="10" y="42" width="6" height="6" rx="1" fill="#0f172a" />
+      <rect x="20" y="42" width="6" height="6" rx="1" fill="#0284c7" />
+      <rect x="30" y="42" width="6" height="6" rx="1" fill="#0f172a" />
+      <rect x="20" y="52" width="6" height="6" rx="1" fill="#0f172a" />
+
+      <!-- Monogramme central Facturim -->
+      <rect x="38" y="38" width="24" height="24" rx="4" fill="#0284c7" />
+      <text x="50" y="54" fill="#ffffff" font-size="9" font-family="sans-serif" font-weight="900" text-anchor="middle">FI</text>
+
+      <!-- Quadrillage bas droite -->
+      <rect x="68" y="42" width="6" height="6" rx="1" fill="#0f172a" />
+      <rect x="78" y="42" width="6" height="6" rx="1" fill="#0284c7" />
+      <rect x="88" y="42" width="4" height="6" rx="1" fill="#0f172a" />
+      <rect x="68" y="52" width="6" height="6" rx="1" fill="#0f172a" />
+      <rect x="78" y="52" width="6" height="6" rx="1" fill="#0f172a" />
+      <rect x="42" y="68" width="6" height="6" rx="1" fill="#0f172a" />
+      <rect x="52" y="68" width="6" height="6" rx="1" fill="#0284c7" />
+      <rect x="42" y="78" width="6" height="6" rx="1" fill="#0f172a" />
+      <rect x="52" y="86" width="6" height="6" rx="1" fill="#0f172a" />
+      <rect x="68" y="68" width="8" height="8" rx="1.5" fill="#0284c7" />
+      <rect x="80" y="68" width="8" height="8" rx="1.5" fill="#0f172a" />
+      <rect x="68" y="80" width="8" height="8" rx="1.5" fill="#0f172a" />
+      <rect x="80" y="80" width="8" height="8" rx="1.5" fill="#0284c7" />
+    </svg>
+  `;
+
+  // Récupération de l'année de la facture
+  const invoiceYear = invoice.date ? new Date(invoice.date).getFullYear() || 2026 : 2026;
 
   // Libellés selon la langue
-  const docTitle = isBilingual ? "FACTURE / فاتورة" : isArOnly ? "فاتورة رسمية" : "FACTURE OFFICIELLE";
-  const billedToLabel = isBilingual ? "FACTURÉ À / الفاتورة إلى" : isArOnly ? "بيانات العميل" : "FACTURÉ À";
-  const descLabel = isBilingual ? "DÉSIGNATION / البيان" : isArOnly ? "البيان والخدمات" : "DÉSIGNATION DES PRESTATIONS";
-  const qtyLabel = isBilingual ? "QTÉ / الكمية" : isArOnly ? "الكمية" : "QTÉ";
-  const puLabel = isBilingual ? "PRIX UNIT. / السعر" : isArOnly ? "السعر الإفرادي" : "PRIX UNIT.";
-  const totalHtLabel = isBilingual ? "TOTAL HT / الإجمالي" : isArOnly ? "المجموع قبل الضريبة" : "TOTAL HT";
-  const subtotalLabel = isBilingual ? "Sous-total HT / المجموع قبل الضريبة :" : isArOnly ? "المجموع قبل الضريبة :" : "Sous-total Hors Taxes (HT) :";
-  const vatLabel = isBilingual ? `TVA légale (${taxRate}%) / ضريبة القيمة المضافة :` : isArOnly ? `ضريبة القيمة المضافة (${taxRate}%) :` : `TVA légale (${taxRate}%) :`;
-  const netTotalLabel = isBilingual ? "TOTAL NET TTC / المجموع الصافي :" : isArOnly ? "المجموع الصافي شامل الضريبة :" : "TOTAL NET TTC :";
+  const docTitle = isArOnly ? "فاتورة" : "FACTURE";
+  const descLabel = isArOnly ? "البيان والخدمات" : "DESCRIPTION";
+  const qtyLabel = isArOnly ? "الQTÉ" : "QTÉ";
+  const puLabel = isArOnly ? "السعر الفردي" : "PRIX UNITAIRE";
+  const totalHtLabel = isArOnly ? "الإجمالي" : "TOTAL HT";
+  const subtotalLabel = isArOnly ? "Sous-total HT :" : "Sous-total HT :";
+  const vatLabel = isArOnly ? `ضريبة القيمة المضافة (${taxRate}%) :` : `TVA légale (${taxRate}%) :`;
+  const totalLabel = isArOnly ? "المجموع الكلي الصافي :" : "TOTAL NET TTC :";
 
-  // Génération des lignes du tableau
+  // Formatage des lignes avec colonne # et hauteurs de ligne fixes
   const rowsHTML = items
     .map(
       (it, idx) => `
-      <tr style="border-bottom: 1px solid #f1f5f9; font-size: 12px; ${
-        idx % 2 === 1 ? "background-color: #f8fafc;" : ""
-      }">
-        <td style="padding: 11px 8px 11px 0; color: #1e293b; font-weight: 600;">
-          ${it.description}
+      <tr style="background: ${idx % 2 === 0 ? "#ffffff" : "#fcfdfe"}; font-size: 11.5px; height: 38px;">
+        <td style="padding: 10px 8px; border: 1px solid #e2e8f0; vertical-align: middle; text-align: center; font-weight: 700; color: #64748b; font-family: monospace; line-height: 16px;">
+          ${String(idx + 1).padStart(2, "0")}
         </td>
-        <td style="padding: 11px 8px; text-align: center; color: #475569; font-weight: 700;">
-          ${it.quantity}
+        <td style="padding: 10px 14px; border: 1px solid #e2e8f0; vertical-align: middle; text-align: ${isArOnly ? "right" : "left"}; font-weight: 600; color: #0f172a; line-height: 16px;">
+          ${it.description || (isArOnly ? "خدمات مهنية" : "Prestation de service")}
         </td>
-        <td style="padding: 11px 8px; text-align: right; color: #475569; font-weight: 500;">
-          ${it.unitPrice.toLocaleString("fr-FR")} MRU
+        <td style="padding: 10px 14px; border: 1px solid #e2e8f0; vertical-align: middle; text-align: ${isArOnly ? "left" : "right"}; color: #334155; font-weight: 500; white-space: nowrap; line-height: 16px;">
+          ${(it.unitPrice || 0).toLocaleString("fr-FR")} MRU
         </td>
-        <td style="padding: 11px 0 11px 8px; text-align: right; font-weight: 800; color: #0f172a;">
-          ${(it.quantity * it.unitPrice).toLocaleString("fr-FR")} MRU
+        <td style="padding: 10px 8px; border: 1px solid #e2e8f0; vertical-align: middle; text-align: center; color: #334155; font-weight: 500; font-family: monospace; line-height: 16px;">
+          ${String(it.quantity || 1).padStart(2, "0")}
+        </td>
+        <td style="padding: 10px 14px; border: 1px solid #e2e8f0; vertical-align: middle; text-align: ${isArOnly ? "left" : "right"}; font-weight: 800; color: #0f172a; white-space: nowrap; line-height: 16px;">
+          ${((it.quantity || 1) * (it.unitPrice || 0)).toLocaleString("fr-FR")} MRU
         </td>
       </tr>
     `
@@ -193,77 +237,87 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
     .join("");
 
   container.innerHTML = `
-    <div>
-      <!-- EN-TÊTE OFFICIEL FACTURIM MAURITANIE -->
-      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px;">
-        <div>
-          <div style="display: flex; align-items: center; gap: 12px;">
-            ${logoMarkup}
-            <div>
-              <span style="font-size: 20px; font-weight: 900; color: #0f172a; letter-spacing: -0.5px;">
-                FACTURIM
-              </span>
-              <span style="font-size: 13px; font-weight: 800; color: #0284c7; margin-left: 6px;">
-                موريتانيا
-              </span>
-            </div>
-          </div>
-          <div style="margin-top: 8px; font-size: 11.5px; color: #64748b; line-height: 1.5;">
-            <p style="font-weight: 700; color: #334155; margin: 0;">Facturim Mauritanie SARL</p>
-            <p style="margin: 2px 0 0 0;">Avenue du Roi Fayçal, Tevragh Zeina, Nouakchott</p>
-            <p style="margin: 2px 0 0 0;">NIF : 00987654-MR | RC : MR.NKTT.2025.B.1234</p>
-            <p style="margin: 2px 0 0 0;">Tél : +222 45 25 00 00 | contact@facturim.mr</p>
+    <!-- CORPS DE LA FACTURE -->
+    <div style="position: relative; z-index: 10; width: 100%;">
+      
+      <!-- 1. EN-TÊTE ULTRA-MODERNE : IDENTITÉ ÉMETTEUR & TITRE AVEC PILULES CAPSULES -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 1.5px solid #e2e8f0; padding-bottom: 16px;">
+        <!-- Logo & Marque -->
+        <div style="display: flex; align-items: center; gap: 12px;">
+          ${logoMarkup}
+          <div>
+            <h2 style="font-size: 15px; font-weight: 900; color: #0f172a; margin: 0; line-height: 18px; letter-spacing: -0.2px; text-transform: uppercase;">
+              ${companyName}
+            </h2>
+            <p style="margin: 2px 0 0 0; font-size: 10.5px; color: #64748b; line-height: 14px; font-weight: 500;">
+              ${invoice.companyTradeName || "Plateforme de Facturation &amp; Services"}
+            </p>
           </div>
         </div>
 
-        <div style="text-align: right;">
-          <span style="display: inline-block; background: #f0f9ff; color: #0369a1; font-weight: 800; font-size: 12px; padding: 5px 12px; border-radius: 6px; letter-spacing: 0.8px; border: 1px solid #bae6fd; text-transform: uppercase;">
+        <!-- Titre FACTURE & Badges Métadonnées sur 2 lignes distinctes -->
+        <div style="text-align: ${isArOnly ? "left" : "right"};">
+          <h1 style="font-size: 26px; font-weight: 900; color: #0284c7; margin: 0; line-height: 28px; letter-spacing: 0.5px; text-transform: uppercase;">
             ${docTitle}
-          </span>
-          <p style="font-size: 17px; font-weight: 900; color: #0f172a; margin: 8px 0 0 0;">
-            ${invoice.reference}
-          </p>
-          <p style="font-size: 11.5px; color: #64748b; margin: 5px 0 0 0;">
-            Date : <span style="font-weight: 700; color: #334155;">${invoice.date}</span>
-          </p>
-          <p style="font-size: 11.5px; color: #64748b; margin: 2px 0 0 0;">
-            Échéance : <span style="font-weight: 700; color: #334155;">${invoice.dueDate || "30 jours nets"}</span>
-          </p>
+          </h1>
+          <!-- Ligne 1 des capsules : N° et Date -->
+          <div style="display: flex; align-items: center; justify-content: ${isArOnly ? "flex-start" : "flex-end"}; gap: 6px; margin-top: 6px;">
+            <span style="display: inline-block; border: 1px solid #bae6fd; background: #f0f9ff; border-radius: 6px; padding: 3px 8px; font-size: 10.5px; font-weight: 800; color: #0284c7; font-family: monospace; line-height: 13px;">
+              ${isArOnly ? `فاتورة رقم ${invoice.reference}` : `N° ${invoice.reference}`}
+            </span>
+            <span style="display: inline-block; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 6px; padding: 3px 8px; font-size: 10.5px; font-weight: 700; color: #334155; line-height: 13px;">
+              ${formatDateDisplay(invoice.date)}
+            </span>
+          </div>
+          <!-- Ligne 2 des capsules : Échéance alignée à droite -->
+          ${
+            invoice.dueDate
+              ? `
+          <div style="display: flex; justify-content: ${isArOnly ? "flex-start" : "flex-end"}; margin-top: 4px;">
+            <span style="display: inline-block; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 6px; padding: 3px 8px; font-size: 10px; font-weight: 600; color: #64748b; line-height: 13px;">
+              ${isArOnly ? `الاستحقاق : ${formatDateDisplay(invoice.dueDate)}` : `Échéance : ${formatDateDisplay(invoice.dueDate)}`}
+            </span>
+          </div>
+          `
+              : ""
+          }
         </div>
       </div>
 
-      <!-- BLOC DESTINATAIRE FACTURÉ À -->
-      <div style="margin-top: 20px; background: #f8fafc; padding: 16px 20px; border-radius: 12px; border: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-start;">
-        <div>
-          <p style="font-size: 10px; text-transform: uppercase; font-weight: 800; color: #94a3b8; letter-spacing: 0.6px; margin: 0;">
-            ${billedToLabel}
-          </p>
-          <h4 style="font-size: 15px; font-weight: 800; color: #0f172a; margin: 4px 0 0 0;">
+      <!-- 2. COORDONNÉES COMPLÈTES (SANS INSCRIPTION ÉMETTEUR / DESTINATAIRE) -->
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-top: 20px; font-size: 11px; line-height: 17px; width: 100%;">
+        <!-- Entreprise à gauche -->
+        <div style="text-align: ${isArOnly ? "right" : "left"}; max-width: 48%;">
+          <h3 style="font-size: 13px; font-weight: 900; color: #0f172a; margin: 0 0 3px 0; text-transform: uppercase; line-height: 17px;">
+            ${companyName}
+          </h3>
+          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.companyPhone || "+221 77 890 12 52"}</p>
+          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.companyEmail || "eywamarket@gmail.com"}</p>
+          ${invoice.companyTaxId ? `<p style="margin: 0; color: #475569; font-family: monospace; line-height: 16px;">NIF : ${invoice.companyTaxId}</p>` : `<p style="margin: 0; color: #475569; font-family: monospace; line-height: 16px;">NIF : SN-009876543-2B</p>`}
+          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.companyAddress || "Almadies, Zone 4"}</p>
+        </div>
+
+        <!-- Client complètement à droite -->
+        <div style="text-align: ${isArOnly ? "left" : "right"}; max-width: 48%;">
+          <h4 style="font-size: 13px; font-weight: 900; color: #0f172a; margin: 0 0 3px 0; line-height: 17px;">
             ${invoice.clientName}
           </h4>
-          <p style="color: #475569; font-size: 11.5px; margin: 3px 0 0 0;">${invoice.clientAddress || "Nouakchott, Mauritanie"}</p>
-          <p style="color: #475569; font-size: 11.5px; margin: 2px 0 0 0;">${invoice.clientEmail || "contact@client.mr"} | ${invoice.clientPhone || "+222 45 00 00 00"}</p>
-        </div>
-
-        <div style="text-align: right;">
-          <p style="font-size: 10px; text-transform: uppercase; font-weight: 800; color: #94a3b8; letter-spacing: 0.6px; margin: 0;">
-            STATUT / الحالة
-          </p>
-          <span style="display: inline-block; margin-top: 4px; background: ${statusBg}; color: ${statusColor}; font-weight: 800; padding: 4px 12px; border-radius: 9999px; font-size: 10.5px;">
-            ${statusLabel}
-          </span>
+          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.clientPhone || "+222 45 00 00 00"}</p>
+          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.clientEmail || "contact@client.mr"}</p>
+          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.clientAddress || "Nouakchott, Mauritanie"}</p>
         </div>
       </div>
 
-      <!-- TABLEAU DES PRESTATIONS -->
-      <div style="margin-top: 22px;">
-        <table style="width: 100%; text-align: left; border-collapse: collapse;">
+      <!-- 3. TABLEAU DES PRESTATIONS AVEC COLONNE # ET EN-TÊTE EN BLEU SIGNATURE -->
+      <div style="margin-top: 24px;">
+        <table style="width: 100%; border-collapse: collapse; border: 1px solid #0284c7; box-sizing: border-box;">
           <thead>
-            <tr style="border-bottom: 2px solid #0f172a; color: #0f172a; font-size: 11.5px; font-weight: 800;">
-              <th style="padding: 8px 0; text-align: left;">${descLabel}</th>
-              <th style="padding: 8px 0; text-align: center; width: 60px;">${qtyLabel}</th>
-              <th style="padding: 8px 0; text-align: right; width: 130px;">${puLabel}</th>
-              <th style="padding: 8px 0; text-align: right; width: 150px;">${totalHtLabel}</th>
+            <tr style="background: #0284c7; color: #ffffff; font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 0.5px; height: 38px;">
+              <th style="padding: 10px 8px; border: 1px solid #0284c7; vertical-align: middle; width: 38px; text-align: center; white-space: nowrap; line-height: 15px;">#</th>
+              <th style="padding: 10px 14px; border: 1px solid #0284c7; vertical-align: middle; text-align: ${isArOnly ? "right" : "left"}; line-height: 15px;">${descLabel}</th>
+              <th style="padding: 10px 14px; border: 1px solid #0284c7; vertical-align: middle; width: 140px; text-align: ${isArOnly ? "left" : "right"}; white-space: nowrap; line-height: 15px;">${puLabel}</th>
+              <th style="padding: 10px 8px; border: 1px solid #0284c7; vertical-align: middle; width: 50px; text-align: center; white-space: nowrap; line-height: 15px;">${qtyLabel}</th>
+              <th style="padding: 10px 14px; border: 1px solid #0284c7; vertical-align: middle; width: 140px; text-align: ${isArOnly ? "left" : "right"}; white-space: nowrap; line-height: 15px;">${totalHtLabel}</th>
             </tr>
           </thead>
           <tbody>
@@ -272,75 +326,105 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
         </table>
       </div>
 
-      <!-- BLOC TOTAUX FINANCIERS & QR CODE MOOSYL -->
-      <div style="margin-top: 20px; padding-top: 14px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: center;">
-        <!-- Cartouche Moosyl Pay & QR Code -->
-        <div style="display: flex; align-items: center; gap: 14px; background: #f8fafc; padding: 10px 14px; border-radius: 12px; border: 1px solid #e2e8f0;">
-          <img src="${qrCodeUrl}" alt="QR Code Moosyl" style="width: 64px; height: 64px; border-radius: 6px; display: block;" />
-          <div style="font-size: 10.5px; color: #475569; line-height: 1.4;">
-            <p style="font-weight: 800; color: #0f172a; margin: 0; display: flex; align-items: center; gap: 4px;">
-              <span>Paiement Direct Moosyl</span>
+      <!-- 4. BLOC BAS : CARTOUCHE QR DE PAIEMENT & TOTAUX EN BLEU -->
+      <div style="margin-top: 20px; display: flex; justify-content: space-between; align-items: flex-end;">
+        
+        <!-- Cartouche QR Code autonome -->
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 12px; padding: 10px 14px; display: flex; align-items: center; gap: 12px; box-sizing: border-box; max-width: 320px;">
+          ${qrCodeSvg}
+          <div style="font-size: 10.5px; line-height: 15px;">
+            <p style="font-weight: 800; color: #0f172a; margin: 0; line-height: 15px; font-size: 11.5px;">
+              ${isArOnly ? "الدفع المباشر" : "Paiement direct"}
             </p>
-            <p style="margin: 2px 0 0 0; color: #047857; font-weight: 700;">🟢 Bankily (BPM) • 🔵 Masrvi (BMCI)</p>
-            <p style="margin: 2px 0 0 0; color: #94a3b8;">Scannez pour régler en 1 clic</p>
+            <p style="margin: 2px 0 0 0; color: #1e293b; font-weight: 700; font-size: 10.5px; line-height: 14px;">
+              Bankily • Masrvi • Sedad
+            </p>
+            <p style="margin: 2px 0 0 0; color: #94a3b8; font-size: 9.5px; line-height: 13px;">
+              ${isArOnly ? "امسح الرمز للدفع في ثوانٍ" : "Scannez pour régler en 1 clic"}
+            </p>
           </div>
         </div>
 
-        <!-- Totaux Chiffrés -->
-        <div style="width: 320px; font-size: 11.5px;">
-          <div style="display: flex; justify-content: space-between; color: #475569; padding: 3px 0;">
-            <span>${subtotalLabel}</span>
-            <span style="font-weight: 700; color: #1e293b;">${subtotal.toLocaleString("fr-FR")} MRU</span>
+        <!-- Totaux & Bandeau Bleu -->
+        <div style="width: 290px; font-size: 11.5px; line-height: 17px;">
+          <div style="display: flex; justify-content: space-between; color: #475569; padding: 2px 0;">
+            <span style="font-weight: 600;">${subtotalLabel}</span>
+            <span style="font-weight: 800; color: #0f172a;">${subtotal.toLocaleString("fr-FR")} MRU</span>
           </div>
+
           ${
             taxRate > 0
               ? `
-          <div style="display: flex; justify-content: space-between; color: #475569; padding: 3px 0;">
-            <span>${vatLabel}</span>
-            <span style="font-weight: 700; color: #1e293b;">${taxAmount.toLocaleString("fr-FR")} MRU</span>
+          <div style="display: flex; justify-content: space-between; color: #475569; padding: 2px 0;">
+            <span style="font-weight: 600;">${vatLabel}</span>
+            <span style="font-weight: 800; color: #0f172a;">${taxAmount.toLocaleString("fr-FR")} MRU</span>
           </div>
           `
               : ""
           }
-          <div style="display: flex; justify-content: space-between; align-items: baseline; padding-top: 10px; margin-top: 4px; border-top: 2px solid #0f172a; color: #0f172a;">
-            <span style="font-size: 12px; font-weight: 800; text-transform: uppercase;">${netTotalLabel}</span>
-            <span style="font-size: 19px; font-weight: 900; color: #0284c7;">${total.toLocaleString("fr-FR")} MRU</span>
-          </div>
+
           ${
             effectiveDepositAmount !== undefined
               ? `
-          <div style="margin-top: 8px; padding: 6px 10px; background-color: #fef3c7; border: 1px solid #fde68a; border-radius: 8px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; color: #92400e; font-weight: 800; font-size: 11px;">
-              <span>${isBilingual ? `Acompte exigible (${effectiveDepositPercentage}%) / العربون :` : isArOnly ? `العربون المطلوب (${effectiveDepositPercentage}%) :` : `Acompte exigible (${effectiveDepositPercentage}%) :`}</span>
-              <span style="font-size: 12.5px; font-weight: 900;">${effectiveDepositAmount.toLocaleString("fr-FR")} MRU</span>
-            </div>
-            <div style="display: flex; justify-content: space-between; align-items: center; color: #78350f; font-weight: 700; font-size: 10.5px; margin-top: 3px; padding-top: 3px; border-top: 1px dashed #fcd34d;">
-              <span>${isBilingual ? "Solde restant dû / المبلغ المتبقي :" : isArOnly ? "المبلغ المتبقي للتحصيل :" : "Solde restant dû :"}</span>
-              <span style="font-weight: 800;">${(effectiveRemainingAmount ?? (total - effectiveDepositAmount)).toLocaleString("fr-FR")} MRU</span>
-            </div>
+          <div style="display: flex; justify-content: space-between; color: #334155; padding: 3px 0; border-top: 1px solid #e2e8f0; margin-top: 3px;">
+            <span style="font-weight: 600;">${isArOnly ? `العربون (${effectiveDepositPercentage}%) :` : `Acompte (${effectiveDepositPercentage}%) :`}</span>
+            <span style="font-weight: 800; color: #0f172a;">${effectiveDepositAmount.toLocaleString("fr-FR")} MRU</span>
+          </div>
+          <div style="display: flex; justify-content: space-between; color: #64748b; padding: 2px 0;">
+            <span style="font-weight: 600;">${isArOnly ? "المتبقي للتحصيل :" : "Solde restant :"}</span>
+            <span style="font-weight: 800; color: #0f172a;">${(effectiveRemainingAmount ?? (total - effectiveDepositAmount)).toLocaleString("fr-FR")} MRU</span>
           </div>
           `
               : ""
           }
+
+          <!-- Bandeau TOTAL Bleu Signature (#0284c7) -->
+          <div style="background: #0284c7; color: #ffffff; padding: 9px 14px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; margin-top: 6px; box-sizing: border-box; height: 40px;">
+            <span style="font-size: 11px; font-weight: 900; letter-spacing: 0.5px; text-transform: uppercase; line-height: 14px;">${totalLabel}</span>
+            <span style="font-size: 17px; font-weight: 900; letter-spacing: -0.3px; line-height: 18px;">${total.toLocaleString("fr-FR")} MRU</span>
+          </div>
         </div>
+
       </div>
+
     </div>
 
-    <!-- PIED DE PAGE ET MENTIONS DGI MAURITANIE -->
-    <div style="margin-top: 30px; padding-top: 14px; border-top: 1px solid #e2e8f0; font-size: 10.5px; color: #64748b;">
-      <p style="margin: 0;">
-        <strong style="color: #334155;">Modalités de règlement :</strong> ${
-          invoice.paymentTerms || "Paiement à 30 jours nets. Règlements acceptés par Bankily (BPM), Masrvi (BMCI), Seddap ou virement bancaire."
-        }
-      </p>
-      <p style="margin: 4px 0 0 0; line-height: 1.4;">
-        ${
-          invoice.notes ||
-          "Merci pour votre confiance. Règlements acceptés par virement bancaire (BPM Mauritanie MR12 00010 01001 12345678901 23) ou Mobile Money (Bankily / Masrvi)."
-        }
-      </p>
-      <div style="margin-top: 14px; text-align: center; font-size: 9.5px; color: #94a3b8; font-weight: 600;">
-        FACTURIM — Document certifié conforme à la législation fiscale de la République Islamique de Mauritanie (DGI)
+    <!-- 5. PIED DE PAGE AVEC COORDONNÉES BANCAIRES & MENTION CENTRÉE -->
+    <div style="position: relative; z-index: 10; width: 100%; border-top: 1.5px solid #e2e8f0; padding-top: 14px; margin-top: 22px;">
+      <div style="display: flex; justify-content: space-between; align-items: flex-start; font-size: 10.5px; line-height: 15px;">
+        <div>
+          <p style="margin: 0; font-weight: 800; color: #0f172a; line-height: 15px;">
+            ${isArOnly ? `الدفع لأمر : ${companyName}` : `Paiement à l'ordre de ${companyName}`}
+          </p>
+          <p style="margin: 2px 0 0 0; color: #475569; line-height: 15px;">
+            N° Bankily / Masrvi / Compte : <strong style="color: #0f172a; font-family: monospace;">${invoice.companyPhone || "+221  77  890  12  52"}</strong>
+          </p>
+          <p style="margin: 2px 0 0 0; color: #94a3b8; font-size: 9.5px; line-height: 13px;">
+            ${invoice.notes || "Paiement par Bankily, Masrvi ou virement bancaire."}
+          </p>
+        </div>
+
+        <div style="text-align: ${isArOnly ? "left" : "right"};">
+          <p style="margin: 0; font-weight: 800; color: #0f172a; line-height: 15px;">
+            ${isArOnly ? "شروط الدفع" : "Conditions de paiement"}
+          </p>
+          <p style="margin: 2px 0 0 0; color: #475569; line-height: 15px;">
+            ${invoice.paymentTerms || (isArOnly ? "الدفع خلال 30 يوماً." : "Paiement sous 30 jours")}
+          </p>
+        </div>
+      </div>
+
+      <!-- Mention finale de confiance & Marque FACTURIM avec Année -->
+      <div style="margin-top: 14px; padding-top: 8px; border-top: 1px solid #f1f5f9; text-align: center;">
+        <div style="font-size: 9.5px; font-weight: 800; color: #64748b; letter-spacing: 1.5px; text-transform: uppercase; line-height: 13px;">
+          ${isArOnly ? "شكراً لثقتكم بنا" : "MERCI DE VOTRE CONFIANCE"}
+        </div>
+        <div style="display: flex; align-items: center; justify-content: center; gap: 6px; margin-top: 5px; font-size: 9px; font-weight: 800; color: #94a3b8; letter-spacing: 1px;">
+          <span style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; border-radius: 4px; background: #0284c7; color: #ffffff; font-size: 7.5px; font-weight: 900; line-height: 14px; text-align: center;">FI</span>
+          <span style="text-transform: uppercase; color: #64748b;">FACTURIM</span>
+          <span style="color: #cbd5e1;">•</span>
+          <span style="color: #94a3b8;">${invoiceYear}</span>
+        </div>
       </div>
     </div>
   `;
@@ -349,28 +433,59 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
 }
 
 /**
- * Télécharge la facture officielle sous forme de vrai document PDF A4
- * Rendu 100% fidèle à l'aperçu A4 en direct.
+ * Génère et déclenche le téléchargement du fichier PDF A4 haute définition
+ * sans décalage vertical ni sauts de texte.
  */
-export async function downloadInvoicePDF(
-  invoice: PDFInvoiceData,
-  fileName?: string
-): Promise<boolean> {
-  const container = createInvoiceDOM(invoice);
-  document.body.appendChild(container);
-
+export async function downloadInvoicePDF(invoice: PDFInvoiceData): Promise<boolean> {
+  let dom: HTMLElement | null = null;
   try {
-    const canvas = await html2canvas(container, {
-      scale: 2, // Haute résolution Retina
+    dom = createInvoiceDOM(invoice);
+    document.body.appendChild(dom);
+
+    // 1. Attente du chargement complet des polices système/web
+    if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
+      await document.fonts.ready;
+    }
+
+    // 2. Attente du préchargement des éventuelles images (ex: logo local)
+    const images = Array.from(dom.querySelectorAll("img"));
+    if (images.length > 0) {
+      await Promise.all(
+        images.map(
+          (img) =>
+            new Promise<void>((resolve) => {
+              if (img.complete && img.naturalHeight !== 0) {
+                resolve();
+              } else {
+                img.onload = () => resolve();
+                img.onerror = () => resolve();
+                setTimeout(resolve, 600);
+              }
+            })
+        )
+      );
+    }
+
+    // Temporisation de stabilisation du rendu
+    await new Promise((resolve) => setTimeout(resolve, 150));
+
+    const canvas = await html2canvas(dom, {
+      scale: 2, // 2x Retina pour netteté vectorielle
       useCORS: true,
+      allowTaint: false, // Bloque la contamination du canvas pour garantir toDataURL
       logging: false,
       backgroundColor: "#ffffff",
       windowWidth: 794,
+      windowHeight: 1123,
+      width: 794,
+      height: 1123,
+      x: 0,
+      y: 0,
+      scrollX: 0,
+      scrollY: 0,
     });
 
     const imgData = canvas.toDataURL("image/png");
-
-    // Dimensions A4 en millimètres (210 x 297 mm)
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
@@ -378,127 +493,146 @@ export async function downloadInvoicePDF(
       compress: true,
     });
 
-    const pdfWidth = 210;
-    const pdfHeight = 297;
+    // 210mm x 297mm format A4 exact
+    pdf.addImage(imgData, "PNG", 0, 0, 210, 297, undefined, "FAST");
+    const cleanRef = (invoice.reference || "FACTURE").replace(/[^a-zA-Z0-9-_]/g, "_");
+    const fileName = `FACTURE_${cleanRef}.pdf`;
 
-    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight, undefined, "FAST");
+    // Double méthode de téléchargement pour garantir l'exécution sur tous les navigateurs
+    try {
+      pdf.save(fileName);
+    } catch {
+      const blob = pdf.output("blob");
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      }, 500);
+    }
 
-    const sanitizedRef = invoice.reference.replace(/[^a-zA-Z0-9-_]/g, "_");
-    const outputName =
-      fileName || `Facture_Facturim_${sanitizedRef || "Officielle"}.pdf`;
-
-    pdf.save(outputName);
     return true;
   } catch (error) {
-    console.error("Erreur lors de la génération du PDF Facturim :", error);
+    console.error("Erreur génération PDF:", error);
     return false;
   } finally {
-    if (document.body.contains(container)) {
-      document.body.removeChild(container);
+    if (dom && dom.parentNode) {
+      dom.parentNode.removeChild(dom);
     }
   }
 }
 
 /**
- * Génère et télécharge un document ou contrat officiel certifié A4
+ * Génère un document PDF d'attestation ou de mise en demeure officiel
  */
 export async function downloadAttachmentPDF(
   title: string,
   category: string,
-  fileName: string,
-  extraDetails?: {
-    partnerName?: string;
-    contractRef?: string;
-    date?: string;
+  filename: string,
+  details: {
+    partnerName: string;
+    contractRef: string;
+    date: string;
     amount?: string;
     notes?: string;
   }
 ): Promise<boolean> {
-  const container = document.createElement("div");
-  container.style.position = "fixed";
-  container.style.left = "0px";
-  container.style.top = "0px";
-  container.style.width = "794px";
-  container.style.minHeight = "1123px";
-  container.style.backgroundColor = "#ffffff";
-  container.style.padding = "44px 40px";
-  container.style.boxSizing = "border-box";
-  container.style.fontFamily =
-    "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
-  container.style.color = "#0f172a";
-  container.style.display = "flex";
-  container.style.flexDirection = "column";
-  container.style.justifyContent = "space-between";
-  container.style.zIndex = "-99999";
-  container.style.pointerEvents = "none";
+  try {
+    const container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.left = "0px";
+    container.style.top = "0px";
+    container.style.width = "794px";
+    container.style.minHeight = "1123px";
+    container.style.backgroundColor = "#ffffff";
+    container.style.padding = "48px 44px";
+    container.style.boxSizing = "border-box";
+    container.style.fontFamily = "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+    container.style.color = "#0f172a";
+    container.style.display = "flex";
+    container.style.flexDirection = "column";
+    container.style.justifyContent = "space-between";
+    container.style.zIndex = "-99999";
 
-  container.innerHTML = `
-    <div>
-      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #0f172a; padding-bottom: 18px;">
-        <div style="display: flex; align-items: center; gap: 12px;">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <rect width="40" height="40" rx="8" fill="#0f172a"/>
-            <text x="20" y="21" text-anchor="middle" dominant-baseline="central" fill="#ffffff" font-family="sans-serif" font-weight="900" font-size="16">FI</text>
-          </svg>
+    container.innerHTML = `
+      <div>
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #0284c7; padding-bottom: 20px;">
           <div>
-            <h2 style="font-size: 18px; font-weight: 900; margin: 0; color: #0f172a;">FACTURIM MAURITANIE</h2>
-            <p style="font-size: 11px; color: #64748b; margin: 2px 0 0 0;">Document &amp; Attestation Officielle • DGI</p>
+            <div style="font-size: 20px; font-weight: 900; color: #0284c7; letter-spacing: -0.5px;">
+              FACTURIM
+            </div>
+            <div style="margin-top: 6px; font-size: 11px; color: #64748b;">
+              Service de Recouvrement & Gestion Commerciale
+            </div>
+          </div>
+          <div style="text-align: right;">
+            <span style="background: #0284c7; color: #ffffff; font-weight: 900; font-size: 11px; padding: 4px 10px; border-radius: 4px; text-transform: uppercase;">
+              ${category}
+            </span>
+            <p style="font-size: 12px; color: #64748b; margin: 6px 0 0 0;">
+              Date : <strong style="color: #0f172a;">${details.date}</strong>
+            </p>
           </div>
         </div>
-        <div style="text-align: right;">
-          <span style="display: inline-block; background: #0284c7; color: #ffffff; font-weight: 800; font-size: 11px; padding: 4px 12px; border-radius: 9999px; text-transform: uppercase;">
-            ${category}
-          </span>
-          <p style="font-size: 11px; color: #64748b; margin: 4px 0 0 0;">Réf : ${extraDetails?.contractRef || "DOC-" + Date.now().toString().slice(-6)}</p>
+
+        <div style="margin-top: 36px; text-align: center;">
+          <h1 style="font-size: 18px; font-weight: 900; color: #0f172a; letter-spacing: 0.5px; text-transform: uppercase; margin: 0;">
+            ${title}
+          </h1>
+          <div style="width: 60px; height: 3px; background: #0284c7; margin: 12px auto 0 auto;"></div>
+        </div>
+
+        <div style="margin-top: 36px; background: #f8fafc; padding: 18px 22px; border-radius: 10px; border: 1px solid #e2e8f0; font-size: 12px; line-height: 1.6;">
+          <p style="margin: 0;"><strong>Destinataire :</strong> ${details.partnerName}</p>
+          <p style="margin: 4px 0 0 0;"><strong>Référence du dossier :</strong> ${details.contractRef}</p>
+          ${details.amount ? `<p style="margin: 4px 0 0 0;"><strong>Montant exigible :</strong> <span style="font-weight: 900; color: #0284c7;">${details.amount}</span></p>` : ""}
+        </div>
+
+        <div style="margin-top: 28px; font-size: 12px; line-height: 1.7; color: #334155;">
+          ${details.notes || "Le présent document constitue un acte certifié valant notification officielle."}
         </div>
       </div>
 
-      <div style="margin-top: 32px; padding: 22px; background: #f8fafc; border-radius: 16px; border: 1px solid #e2e8f0;">
-        <h1 style="font-size: 20px; font-weight: 900; color: #0f172a; margin: 0;">${title}</h1>
-        <p style="font-size: 13px; color: #475569; margin: 8px 0 0 0;">Partenaire associé : <strong>${extraDetails?.partnerName || "Entreprise Partenaire"}</strong></p>
-        <p style="font-size: 12px; color: #64748b; margin: 4px 0 0 0;">Date d'émission : ${extraDetails?.date || new Date().toLocaleDateString("fr-FR")}</p>
-        ${extraDetails?.amount ? `<p style="font-size: 14px; font-weight: 800; color: #0284c7; margin: 8px 0 0 0;">Montant concerné : ${extraDetails.amount}</p>` : ""}
+      <div style="border-top: 1px solid #e2e8f0; padding-top: 14px; font-size: 10px; color: #94a3b8; text-align: center;">
+        Document certifié conforme • Réf : ${details.contractRef} • Généré via FACTURIM
       </div>
+    `;
 
-      <div style="margin-top: 26px; font-size: 12.5px; line-height: 1.7; color: #334155;">
-        <p>Le présent document atteste de la validité de l'opération commerciale ou contractuelle référencée ci-dessus, enregistrée dans le système de facturation et de gestion commerciale <strong>Facturim Mauritanie</strong>.</p>
-        <p style="margin-top: 12px;">${extraDetails?.notes || "Ce document est généré électroniquement et revêtu du sceau numérique de conformité DGI Mauritanie."}</p>
-      </div>
-    </div>
+    document.body.appendChild(container);
+    await new Promise((resolve) => setTimeout(resolve, 300));
 
-    <div style="border-top: 1px solid #e2e8f0; padding-top: 14px; text-align: center; font-size: 10px; color: #94a3b8;">
-      FACTURIM SARL — Avenue du Roi Fayçal, Tevragh Zeina, Nouakchott, Mauritanie — Document officiel
-    </div>
-  `;
-
-  document.body.appendChild(container);
-
-  try {
     const canvas = await html2canvas(container, {
       scale: 2,
       useCORS: true,
       logging: false,
       backgroundColor: "#ffffff",
       windowWidth: 794,
+      scrollY: 0,
+      scrollX: 0,
     });
+
+    document.body.removeChild(container);
 
     const imgData = canvas.toDataURL("image/png");
     const pdf = new jsPDF({
       orientation: "portrait",
       unit: "mm",
       format: "a4",
-      compress: true,
     });
 
-    pdf.addImage(imgData, "PNG", 0, 0, 210, 297, undefined, "FAST");
-    pdf.save(fileName || "Document_Officiel_Facturim.pdf");
+    const pdfWidth = pdf.internal.pageSize.getWidth();
+    const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+
+    pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+    pdf.save(filename);
+
     return true;
   } catch (error) {
-    console.error("Erreur lors de la génération du document PDF :", error);
+    console.error("Erreur génération attestation PDF:", error);
     return false;
-  } finally {
-    if (document.body.contains(container)) {
-      document.body.removeChild(container);
-    }
   }
 }

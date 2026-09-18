@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <title>Guide Stratégique de Collaboration avec Antigravity</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap');
+
+    @page {
+      size: A4 portrait;
+      margin: 18mm 15mm 18mm 15mm;
+      @bottom-right {
+        content: "Page " counter(page);
+        font-size: 9pt;
+        color: #64748b;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+      }
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      color: #0f172a;
+      background-color: #ffffff;
+      line-height: 1.55;
+      font-size: 10.5pt;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+
+    .page {
+      page-break-after: always;
+      position: relative;
+      padding-bottom: 20px;
+    }
+
+    .page:last-child {
+      page-break-after: avoid;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 2px solid #e2e8f0;
+      padding-bottom: 14px;
+      margin-bottom: 22px;
+    }
+
+    .logo-badge {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .logo-box {
+      width: 42px;
+      height: 42px;
+      background: linear-gradient(135deg, #0284c7, #0ea5e9);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 800;
+      font-size: 16pt;
+      box-shadow: 0 4px 10px rgba(14, 165, 233, 0.25);
+    }
+
+    .header-text h1 {
+      font-size: 15pt;
+      font-weight: 800;
+      color: #0f172a;
+      letter-spacing: -0.02em;
+    }
+
+    .header-text p {
+      font-size: 8.5pt;
+      color: #64748b;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .meta-tag {
+      background-color: #f0f9ff;
+      border: 1px solid #bae6fd;
+      color: #0284c7;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 8.5pt;
+      font-weight: 700;
+    }
+
+    /* Typography */
+    h2 {
+      font-size: 13pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin-top: 18px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-left: 4px solid #0ea5e9;
+      padding-left: 10px;
+    }
+
+    h3 {
+      font-size: 11pt;
+      font-weight: 700;
+      color: #1e293b;
+      margin-top: 12px;
+      margin-bottom: 6px;
+    }
+
+    p {
+      color: #334155;
+      margin-bottom: 10px;
+      text-align: justify;
+    }
+
+    ul, ol {
+      margin-left: 20px;
+      margin-bottom: 12px;
+      color: #334155;
+    }
+
+    li {
+      margin-bottom: 5px;
+    }
+
+    li strong {
+      color: #0f172a;
+    }
+
+    /* Cards & Grids */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+      margin-bottom: 14px;
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 12px 14px;
+    }
+
+    .card.highlight {
+      background: #f0f9ff;
+      border-color: #bae6fd;
+    }
+
+    .card h4 {
+      font-size: 9.5pt;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 5px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .card p {
+      font-size: 8.5pt;
+      color: #475569;
+      margin-bottom: 0;
+      line-height: 1.45;
+    }
+
+    /* Callouts */
+    .callout {
+      border-radius: 10px;
+      padding: 12px 15px;
+      margin: 12px 0;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .callout-info {
+      background-color: #f0f9ff;
+      border: 1px solid #7dd3fc;
+      color: #0369a1;
+    }
+
+    .callout-success {
+      background-color: #ecfdf5;
+      border: 1px solid #a7f3d0;
+      color: #047857;
+    }
+
+    .callout-warning {
+      background-color: #fffbeb;
+      border: 1px solid #fde68a;
+      color: #b45309;
+    }
+
+    .callout-icon {
+      font-size: 14pt;
+      line-height: 1;
+    }
+
+    .callout-content {
+      flex: 1;
+      font-size: 9pt;
+      line-height: 1.45;
+    }
+
+    .callout-content strong {
+      color: inherit;
+    }
+
+    /* Tables */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 12px 0 16px 0;
+      font-size: 9pt;
+    }
+
+    th {
+      background-color: #f1f5f9;
+      color: #475569;
+      text-transform: uppercase;
+      font-weight: 700;
+      font-size: 8pt;
+      letter-spacing: 0.05em;
+      text-align: left;
+      padding: 8px 12px;
+      border-bottom: 2px solid #cbd5e1;
+    }
+
+    td {
+      padding: 8px 12px;
+      border-bottom: 1px solid #e2e8f0;
+      color: #334155;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f8fafc;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 8.5pt;
+      background: #e2e8f0;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0f172a;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 7.5pt;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .badge-blue { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-green { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-amber { background: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+
+    .step-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      background: #0ea5e9;
+      color: white;
+      border-radius: 50%;
+      font-size: 9pt;
+      font-weight: 700;
+      margin-right: 6px;
+    }
+
+    .footer-note {
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+      padding-top: 10px;
+      margin-top: 20px;
+      font-size: 8pt;
+      color: #94a3b8;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- PAGE 1 -->
+  <div class="page">
+    <div class="header">
+      <div class="logo-badge">
+        <div class="logo-box">AG</div>
+        <div class="header-text">
+          <h1>Guide Stratégique de Collaboration & Efficacité</h1>
+          <p>Binôme Humain + IA Antigravity • Projet FACTURIM</p>
+        </div>
+      </div>
+      <div class="meta-tag">Septembre 2026 • v1.0 Officielle</div>
+    </div>
+
+    <div class="callout callout-info">
+      <div class="callout-icon">💡</div>
+      <div class="callout-content">
+        <strong>Bienvenue dans ce guide !</strong> L'objectif de ce document est de définir précisément notre cadre de travail commun afin de maximiser la vitesse de développement, garantir une sécurité sans faille sur ton code et éliminer tout risque de régression ou de perte de données.
+      </div>
+    </div>
+
+    <h2>1. Principes Fondamentaux de Notre Collaboration</h2>
+    <p>
+      Travailler en binôme avec <strong>Antigravity</strong> repose sur un principe de <strong>complémentarité stratégique</strong> :
+    </p>
+
+    <div class="grid-2">
+      <div class="card highlight">
+        <h4>🎯 Ton Rôle (Le Visionnaire & Décideur)</h4>
+        <p>
+          • Définir les priorités métier et fonctionnelles.<br>
+          • Valider l'expérience utilisateur et les visuels.<br>
+          • Fournir le contexte et arbitrer les choix stratégiques.<br>
+          • Tester les fonctionnalités en situation réelle.
+        </p>
+      </div>
+      <div class="card highlight">
+        <h4>⚡ Mon Rôle (L'Architecte & Exécuteur IA)</h4>
+        <p>
+          • Rédiger, refactoriser et auditer le code TypeScript/React.<br>
+          • Garantir la conformité avec le Design System & DGI.<br>
+          • Diagnostiquer et réparer immédiatement les erreurs.<br>
+          • Vérifier la compilation (<code>tsc</code>, <code>next build</code>).
+        </p>
+      </div>
+    </div>
+
+    <h2>2. Vitesse & Sécurité : Les 5 Règles d'Or Zéro-Risque</h2>
+    <p>Pour avancer rapidement sans jamais casser l'existant, nous appliquons cette routine rigoureuse :</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width: 25%;">Pilier</th>
+          <th style="width: 45%;">Bonne Pratique</th>
+          <th style="width: 30%;">Bénéfice Clé</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>1. Micro-étapes</strong></td>
+          <td>Traiter une seule fonctionnalité ou écran à la fois plutôt que 5 chantiers en parallèle.</td>
+          <td><span class="badge badge-green">Contrôle total</span> Réduction des bugs à 0%.</td>
+        </tr>
+        <tr>
+          <td><strong>2. Git Milestones</strong></td>
+          <td>Effectuer des commits réguliers après chaque fonctionnalité stable et validée.</td>
+          <td><span class="badge badge-green">Filet de sécurité</span> Retour en arrière en 1 clic.</td>
+        </tr>
+        <tr>
+          <td><strong>3. Validation Continue</strong></td>
+          <td>Exécution automatique de <code>npx tsc --noEmit</code> et <code>npm run build</code> avant validation.</td>
+          <td><span class="badge badge-blue">Zéro régression</span> Détection des erreurs à chaud.</td>
+        </tr>
+        <tr>
+          <td><strong>4. Règles Métier</strong></td>
+          <td>Respect strict des fichiers <code>GEMINI.md</code> et <code>AGENTS.md</code> (Mauritanie, DGI, MRU, Bankily).</td>
+          <td><span class="badge badge-blue">Intégrité locale</span> Cohérence comptable parfaite.</td>
+        </tr>
+        <tr>
+          <td><strong>5. Données Secrètes</strong></td>
+          <td>Secrets dans <code>.env.local</code> (non commité), données factices pour les tests.</td>
+          <td><span class="badge badge-amber">Sécurité max</span> Clés API et Supabase protégées.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="callout callout-success">
+      <div class="callout-icon">🛡️</div>
+      <div class="callout-content">
+        <strong>Règle de sécurité absolue :</strong> Je ne supprime jamais de code ou de fichiers sans avoir une sauvegarde ou une version fonctionnelle de remplacement. Tes modifications sont systématiquement validées en amont.
+      </div>
+    </div>
+  </div>
+
+  <!-- PAGE 2 -->
+  <div class="page">
+    <div class="header">
+      <div class="logo-badge">
+        <div class="logo-box">AG</div>
+        <div class="header-text">
+          <h1>Guide Stratégique de Collaboration & Efficacité</h1>
+          <p>Outils, Méthodologie & Travail Autonome en Loop</p>
+        </div>
+      </div>
+      <div class="meta-tag">Page 2 sur 3</div>
+    </div>
+
+    <h2>3. Ce qu'il Nous Faut Installer (Outils & Extensions)</h2>
+    <p>Pour un confort de travail optimal sur VS Code / Antigravity, voici notre boîte à outils recommandée :</p>
+
+    <div class="grid-3">
+      <div class="card">
+        <h4>🌈 Rainbow CSV</h4>
+        <p><strong>Statut : Déjà installé !</strong><br>Coloration immédiate des colonnes pour inspecter les exports de factures et comptabilité sans tableur externe.</p>
+      </div>
+      <div class="card">
+        <h4>✨ Tailwind CSS IntelliSense</h4>
+        <p><strong>Recommandé</strong><br>Auto-complétion et aperçu direct des couleurs et classes CSS de notre Design System Facturim.</p>
+      </div>
+      <div class="card">
+        <h4>🔍 Pretty TypeScript Errors</h4>
+        <p><strong>Recommandé</strong><br>Traduit les erreurs TypeScript en explications visuelles claires et limpides.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <h4>🗄️ Supabase VS Code Extension / Studio</h4>
+        <p>Permet d'inspecter visuellement les tables de données PostgreSQL (factures, clients, devis) et tester les requêtes SQL en local.</p>
+      </div>
+      <div class="card">
+        <h4>⚡ GitLens ou Git Graph</h4>
+        <p>Visualisation claire de l'historique des commits, des branches et des modifications de code ligne par ligne.</p>
+      </div>
+    </div>
+
+    <h2>4. Méthodologie de Travail Recommandée (Cycle en 4 Temps)</h2>
+    <p>Chaque session de travail suit ce cycle éprouvé pour une efficacité maximale :</p>
+
+    <div style="margin-top: 10px;">
+      <p><span class="step-pill">1</span> <strong>Cadrage & Intention :</strong> Tu m'exprimes ce que tu souhaites accomplir (ex: <em>« Ajoutons un filtre par date sur les factures »</em>).</p>
+      <p><span class="step-pill">2</span> <strong>Proposition & Plan :</strong> Je t'explique en 2 lignes l'approche technique retenue et les fichiers touchés.</p>
+      <p><span class="step-pill">3</span> <strong>Exécution de Précision :</strong> Je modifie ou crée les composants selon le Design System (Sky/Cyan, Clean Light, multilingue AR/FR/EN/ZH).</p>
+      <p><span class="step-pill">4</span> <strong>Vérification & Validation :</strong> On teste visuellement le rendu et je m'assure qu'aucune erreur de compilation n'existe.</p>
+    </div>
+
+    <h2>5. Le Travail en « Loop » (Mode Autonome & Itératif)</h2>
+    <div class="callout callout-warning">
+      <div class="callout-icon">🔄</div>
+      <div class="callout-content">
+        <strong>Réponse claire : OUI, je peux travailler en boucle autonome !</strong><br>
+        Je peux exécuter des séquences complexes d'actions de façon autonome pour te faire gagner un temps précieux.
+      </div>
+    </div>
+
+    <p>Voici comment fonctionne le travail en loop avec Antigravity :</p>
+    <ul>
+      <li><strong>Commande <code>/goal</code> :</strong> Tu me donnes un objectif complexe (ex: <em>« Développe l'ensemble du module de relance automatique et vérifie avec un test complet »</em>), et je vais boucler en écrivant le code, exécutant les tests, corrigeant les éventuels bugs et ré-exécutant jusqu'à ce que tout soit parfait.</li>
+      <li><strong>Boucle d'auto-correction (Self-Healing Loop) :</strong> Si une commande échoue ou qu'un composant a une erreur de typage, je détecte l'erreur tout seul, j'analyse la cause, je corrige le code et je relance sans avoir besoin de te déranger.</li>
+      <li><strong>Planification <code>/schedule</code> :</strong> Possibilité de programmer des tâches de surveillance ou des vérifications périodiques en arrière-plan.</li>
+      <li><strong>Garde-fous de sécurité :</strong> Même en mode loop, je m'arrête toujours pour te demander validation avant toute opération sensible (suppression de données, migration irréversible).</li>
+    </ul>
+  </div>
+
+  <!-- PAGE 3 -->
+  <div class="page">
+    <div class="header">
+      <div class="logo-badge">
+        <div class="logo-box">AG</div>
+        <div class="header-text">
+          <h1>Guide Stratégique de Collaboration & Efficacité</h1>
+          <p>Checklist Pratique & Commandes Rapides pour le Quotidien</p>
+        </div>
+      </div>
+      <div class="meta-tag">Page 3 sur 3</div>
+    </div>
+
+    <h2>6. Les Slash Commands Essentielles à Connaître</h2>
+    <p>Dans l'interface de discussion, tu peux utiliser ces raccourcis puissants :</p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Commande</th>
+          <th>Quand l'utiliser ?</th>
+          <th>Action Déclenchée</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>/goal</code></td>
+          <td>Pour les tâches complexes ou longues.</td>
+          <td>Lance un mode d'exécution autonome jusqu'à réussite totale de l'objectif.</td>
+        </tr>
+        <tr>
+          <td><code>/grill-me</code></td>
+          <td>Avant de démarrer un gros module.</td>
+          <td>Je te pose des questions ciblées pour affiner le besoin avant d'écrire une ligne de code.</td>
+        </tr>
+        <tr>
+          <td><code>/learn</code></td>
+          <td>Quand tu souhaites que je retienne une préférence spécifique.</td>
+          <td>Enregistre une règle personnalisée persistante pour toutes les prochaines sessions.</td>
+        </tr>
+        <tr>
+          <td><code>/schedule</code></td>
+          <td>Pour des rappels ou vérifications différées.</td>
+          <td>Programme un minuteur ou une tâche récurrente en arrière-plan.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>7. Checklist Quotidienne de Productivité (Cheat Sheet)</h2>
+
+    <div class="grid-2">
+      <div class="card">
+        <h4>🚀 Au Démarrage d'une Session</h4>
+        <p>
+          [ ] Vérifier que le serveur local tourne (<code>npm run dev</code>).<br>
+          [ ] Préciser l'objectif prioritaire du jour.<br>
+          [ ] Travailler sur une branche propre ou un commit à jour.
+        </p>
+      </div>
+      <div class="card">
+        <h4>✅ En Fin de Session</h4>
+        <p>
+          [ ] Vérification globale : <code>npx tsc --noEmit</code>.<br>
+          [ ] Test visuel rapide sur les écrans modifiés.<br>
+          [ ] Commit Git récapitulatif avec message explicite.
+        </p>
+      </div>
+    </div>
+
+    <h2>8. Résumé de nos Engagements Mutuels</h2>
+    <div class="callout callout-success">
+      <div class="callout-icon">🤝</div>
+      <div class="callout-content">
+        <strong>Notre Contrat de Collaboration :</strong><br>
+        1. <strong>Zéro perte de temps :</strong> Explications concises, code direct et sans détour.<br>
+        2. <strong>Zéro régression :</strong> Tout code touché est testé et validé avant de passer à la suite.<br>
+        3. <strong>Qualité Design 100% :</strong> Respect absolu de la charte Facturim (Sky/Slate, Typographie soignée, localisation Mauritanie MRU / 16% TVA).<br>
+        4. <strong>Autonomie maîtrisée :</strong> Prêt à enchaîner les tâches en mode loop dès que tu donnes le feu vert !
+      </div>
+    </div>
+
+    <div class="footer-note">
+      Document généré pour la suite logicielle FACTURIM • Conçu avec Antigravity • Version téléchargeable
+    </div>
+  </div>
+
+</body>
+</html>
