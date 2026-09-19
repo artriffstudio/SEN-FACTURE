@@ -39,7 +39,7 @@ export default function DunningModal({
   const penaltyAmount = Math.round(invoice.total * (penaltyRate / 100));
   const totalWithPenalties = invoice.total + penaltyAmount;
 
-  const paymentLink = `https://facturim.mr/pay/${invoice.id}`;
+  const paymentLink = `https://facturim.net/pay/${invoice.id}`;
 
   // Messages pré-rédigés pour les 4 niveaux
   const messages = {

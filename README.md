@@ -3,7 +3,8 @@
 > Plateforme SaaS de facturation électronique certifiée, gestion commerciale et passerelle Mobile Money (Bankily & Masrvi via Moosyl) pour les entreprises et indépendants en République Islamique de Mauritanie.
 
 ## 🚀 Accès en Ligne (Production)
-- **Application déployée** : [https://facturim.vercel.app](https://facturim.vercel.app)
+- **Domaine officiel** : [https://facturim.net](https://facturim.net) (et [https://www.facturim.net](https://www.facturim.net))
+- **Miroir Vercel** : [https://facturim.vercel.app](https://facturim.vercel.app)
 - **Dépôt GitHub** : [https://github.com/artriffstudio/FACTURIM](https://github.com/artriffstudio/FACTURIM)
 
 ---

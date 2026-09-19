@@ -97,7 +97,7 @@ export default function ContactSection() {
                   <div className="w-9 h-9 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center text-sky-400 shrink-0">
                     <Mail size={16} />
                   </div>
-                  <span className="font-medium">contact@facturim.mr</span>
+                  <span className="font-medium">contact@facturim.net</span>
                 </div>
               </div>
             </div>

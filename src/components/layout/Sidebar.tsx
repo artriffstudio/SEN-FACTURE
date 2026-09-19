@@ -116,7 +116,7 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
     user?.user_metadata?.company_name ||
     user?.user_metadata?.full_name ||
     t.brandName;
-  const displayEmail = user?.email || "contact@facturim.mr";
+  const displayEmail = user?.email || "contact@facturim.net";
   const initials = displayName
     ? displayName
         .split(" ")

@@ -105,7 +105,7 @@ export async function createMoosylPaymentSession(
   preferredMethod: "bankily" | "masrvi" | "all" = "all"
 ): Promise<MoosylPaymentSessionResponse> {
   const config = getMoosylConfig();
-  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://facturim.mr";
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "https://facturim.net";
 
   // Dans un environnement réel avec clé active, nous appelons l'API Moosyl :
   // POST https://api.moosyl.com/v1/checkout/sessions

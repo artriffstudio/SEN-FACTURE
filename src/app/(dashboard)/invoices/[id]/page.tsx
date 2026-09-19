@@ -418,7 +418,7 @@ export default function InvoiceDetailPage({
             <div className="w-13 h-13 bg-white rounded-lg border border-slate-200 flex items-center justify-center p-1 shrink-0 shadow-2xs">
               <img
                 src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
-                  `https://facturim.mr/pay/${invoice.invoiceNumber}`
+                  `https://facturim.net/pay/${invoice.invoiceNumber}`
                 )}&color=0f172a&bgcolor=ffffff`}
                 alt="QR Paiement"
                 className="w-11 h-11 object-contain"

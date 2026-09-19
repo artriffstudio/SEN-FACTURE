@@ -43,7 +43,7 @@ export async function getCompany(): Promise<Company> {
       id: companyId,
       userId: "",
       name: "FACTURIM",
-      email: "contact@facturim.mr",
+      email: "contact@facturim.net",
       phone: "+222 45 00 00 00",
       address: "Avenue Moktar Ould Daddah, Tevragh-Zeina",
       city: "Nouakchott",

@@ -307,7 +307,7 @@ export default function LiveInvoiceModal({
 
   // Partager sur WhatsApp
   const handleWhatsAppShare = () => {
-    const payLink = `https://facturim.mr/pay/${invoiceNumber}`;
+    const payLink = `https://facturim.net/pay/${invoiceNumber}`;
     const acompteMention =
       depositAmount > 0
         ? `\n*Acompte exigible (${activeDepositPercentage}%) : ${depositAmount.toLocaleString("fr-FR")} MRU*\n*Solde restant : ${remainingAmount.toLocaleString("fr-FR")} MRU*`
@@ -944,7 +944,7 @@ export default function LiveInvoiceModal({
                   <div className="w-13 h-13 bg-white rounded-lg border border-slate-200 flex items-center justify-center p-1 shrink-0 shadow-2xs">
                     <img
                       src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
-                        `https://facturim.mr/pay/${invoiceNumber}`
+                        `https://facturim.net/pay/${invoiceNumber}`
                       )}&color=0f172a&bgcolor=ffffff`}
                       alt="QR Paiement"
                       className="w-11 h-11 object-contain"

@@ -73,7 +73,7 @@ L'application couvre l'ensemble du cycle de vie financier d'une entreprise :
 - **Grand Livre Comptable** : Journal exhaustif des écritures comptables (débit/crédit), statut d'encaissement et boutons d'export CSV et d'impression.
 
 ### 2.10 Assistance & Support Client (`/support`)
-- **3 Canaux d'assistance directs** : WhatsApp Business direct (+222 36 00 00 00), Hotline téléphonique Nouakchott (+222 45 00 00 00) et Email support officiel (support@facturim.mr).
+- **3 Canaux d'assistance directs** : WhatsApp Business direct (+222 36 00 00 00), Hotline téléphonique Nouakchott (+222 45 00 00 00) et Email support officiel (support@facturim.net).
 - **Formulaire de création de ticket** : Choix de la catégorie, niveau de priorité, objet, description, avec horodatage certifié et confirmation par toast réactif.
 - **Foire Aux Questions (FAQ)** : 5 accordéons traitant de la conformité DGI Mauritanie, des paiements Bankily & Seddap et de la TVA 16%.
 

@@ -152,7 +152,7 @@ export const NAV_ITEMS = [
 export const DEFAULT_COMPANY = {
   name: "Teranga Tech Mauritanie SARL",
   tradeName: "Facturim Entreprise",
-  email: "contact@facturim.mr",
+  email: "contact@facturim.net",
   phone: "+222 45 25 00 00",
   address: "Avenue du Roi Fayçal, Tevragh Zeina",
   city: "Nouakchott",

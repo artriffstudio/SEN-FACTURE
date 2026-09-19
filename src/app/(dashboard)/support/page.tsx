@@ -228,14 +228,14 @@ export default function SupportPage() {
               </p>
             </div>
             <p className="font-mono text-sm font-bold text-slate-800">
-              support@facturim.mr
+              support@facturim.net
             </p>
           </div>
 
           <Tooltip content="Envoyer un email" icon={Mail}>
             <button
               onClick={() => {
-                window.location.href = "mailto:support@facturim.mr?subject=Demande d'assistance Facturim";
+                window.location.href = "mailto:support@facturim.net?subject=Demande d'assistance Facturim";
               }}
               className="w-full flex items-center justify-center gap-2 bg-sky-50 hover:bg-sky-100 text-sky-700 border border-sky-200/80 font-bold text-xs py-2.5 px-4 rounded-xl shadow-2xs transition-all hover:scale-102 active:scale-98 cursor-pointer"
             >

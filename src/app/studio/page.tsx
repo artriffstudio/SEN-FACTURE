@@ -1469,7 +1469,7 @@ export default function StudioDashboardPage() {
             <button
               onClick={() => {
                 navigator.clipboard.writeText(
-                  `https://facturim.mr/pay/${qrInvoice.invoiceNumber}?gw=${selectedGatewayForQR}&amt=${qrInvoice.total}`
+                  `https://facturim.net/pay/${qrInvoice.invoiceNumber}?gw=${selectedGatewayForQR}&amt=${qrInvoice.total}`
                 );
                 toast.success("Lien de paiement copié !");
               }}

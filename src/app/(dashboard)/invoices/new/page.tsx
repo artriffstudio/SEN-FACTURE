@@ -554,7 +554,7 @@ export default function NewInvoicePage() {
                   <p className="font-medium text-slate-700">Facturim Mauritanie SARL</p>
                   <p>Avenue du Roi Fayçal, Tevragh Zeina, Nouakchott</p>
                   <p>NIF : 00987654-MR | RC : MR.NKTT.2025.B.1234</p>
-                  <p>Tél : +222 45 25 00 00 | contact@facturim.mr</p>
+                  <p>Tél : +222 45 25 00 00 | contact@facturim.net</p>
                 </div>
               </div>
 

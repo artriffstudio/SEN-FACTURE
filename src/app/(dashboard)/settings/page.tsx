@@ -37,7 +37,7 @@ export default function SettingsPage() {
 
   const [companyName, setCompanyName] = useState("Facturim Mauritanie SARL");
   const [tradeName, setTradeName] = useState("Facturim");
-  const [email, setEmail] = useState("contact@facturim.mr");
+  const [email, setEmail] = useState("contact@facturim.net");
   const [phone, setPhone] = useState("+222 45 25 00 00");
   const [address, setAddress] = useState("Avenue du Roi Fayçal, Tevragh Zeina");
   const [city, setCity] = useState("Nouakchott");
