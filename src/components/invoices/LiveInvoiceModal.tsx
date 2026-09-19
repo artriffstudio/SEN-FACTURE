@@ -15,9 +15,20 @@ import {
   DollarSign,
   Sparkles,
   QrCode,
+  ExternalLink,
+  Maximize2,
+  ZoomIn,
+  ZoomOut,
+  Smartphone,
 } from "lucide-react";
 import toast from "react-hot-toast";
-import { downloadInvoicePDF } from "@/lib/pdfGenerator";
+import {
+  downloadInvoicePDF,
+  shareInvoicePDF,
+  openInvoicePDF,
+  isMobileUser,
+  PDFInvoiceData,
+} from "@/lib/pdfGenerator";
 import { getClients, createClient } from "@/lib/services/clientService";
 import { createInvoice } from "@/lib/services/invoiceService";
 import { getCompany } from "@/lib/services/companyService";
@@ -47,6 +58,23 @@ export default function LiveInvoiceModal({
 
   // Mode mobile : bascule entre "formulaire" et "aperçu"
   const [mobileTab, setMobileTab] = useState<"form" | "preview">("form");
+  const [previewZoom, setPreviewZoom] = useState<"fit" | "full">("fit");
+  const [viewportWidth, setViewportWidth] = useState(
+    typeof window !== "undefined" ? window.innerWidth : 1200
+  );
+
+  useEffect(() => {
+    const handleResize = () => setViewportWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  // Calcul du facteur d'échelle A4 sur mobile
+  const mobileScale = useMemo(() => {
+    if (viewportWidth >= 1024) return 1;
+    const availableWidth = Math.max(300, viewportWidth - 36);
+    return Math.max(0.48, Math.min(1, availableWidth / 560));
+  }, [viewportWidth]);
 
   // Données de l'entreprise émettrice
   const [company, setCompany] = useState<Company | null>(null);
@@ -55,6 +83,7 @@ export default function LiveInvoiceModal({
   // Liste des clients réels
   const [clientsList, setClientsList] = useState<Client[]>([]);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   // Données de la facture en cours d'édition
   const [selectedClientId, setSelectedClientId] = useState<string>("");
@@ -319,9 +348,9 @@ export default function LiveInvoiceModal({
     toast.success("Lien WhatsApp généré !");
   };
 
-  // Télécharger le PDF officiel de la facture
-  const handleDownloadPDF = async () => {
-    const invoiceData = {
+  // Préparer les données pour le moteur PDF
+  const getInvoicePayloadForPDF = (): PDFInvoiceData => {
+    return {
       reference: invoiceNumber,
       clientName: currentClient.name,
       clientAddress: currentClient.address,
@@ -336,12 +365,12 @@ export default function LiveInvoiceModal({
       remainingAmount: depositAmount > 0 ? remainingAmount : undefined,
       paymentTerms: paymentTerms,
       documentLanguage: docLang,
-      companyName: company?.name || "Mon Entreprise",
-      companyTradeName: company?.tradeName,
-      companyAddress: company?.address,
-      companyTaxId: company?.taxId,
-      companyPhone: company?.phone,
-      companyEmail: company?.email,
+      companyName: company?.name || "Facturim Mauritanie SARL",
+      companyTradeName: company?.tradeName || "Facturim Entreprise",
+      companyAddress: company?.address || "Avenue du Roi Fayçal, Tevragh Zeina, Nouakchott",
+      companyTaxId: company?.taxId || "00987654-MR",
+      companyPhone: company?.phone || "+222 45 25 00 00",
+      companyEmail: company?.email || "contact@facturim.net",
       items: items.map((it) => ({
         id: it.id,
         description: it.description || (docLang === "ar" ? "خدمات واستشارات" : "Prestation de service"),
@@ -351,17 +380,62 @@ export default function LiveInvoiceModal({
       notes: notes,
       logoUrl: companyLogo || undefined,
     };
+  };
 
+  // Télécharger le PDF officiel de la facture
+  const handleDownloadPDF = async () => {
+    setIsGeneratingPDF(true);
     toast.loading("Génération du document A4 haute définition...", { id: "pdf-gen" });
     try {
+      const invoiceData = getInvoicePayloadForPDF();
       const ok = await downloadInvoicePDF(invoiceData);
       if (ok) {
         toast.success(`Facture ${invoiceNumber} téléchargée en PDF !`, { id: "pdf-gen" });
       } else {
-        toast.error("Erreur lors de la création du fichier PDF", { id: "pdf-gen" });
+        toast.error("Erreur lors du téléchargement du PDF", { id: "pdf-gen" });
       }
     } catch {
       toast.error("Erreur lors de la création du fichier PDF", { id: "pdf-gen" });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  // Partage direct du fichier PDF (WhatsApp / Fichiers / Mail sur mobile)
+  const handleSharePDF = async () => {
+    setIsGeneratingPDF(true);
+    toast.loading("Préparation du partage...", { id: "pdf-share" });
+    try {
+      const invoiceData = getInvoicePayloadForPDF();
+      const ok = await shareInvoicePDF(invoiceData);
+      if (ok) {
+        toast.success("Document prêt au partage !", { id: "pdf-share" });
+      } else {
+        toast.error("Partage non disponible sur ce navigateur", { id: "pdf-share" });
+      }
+    } catch {
+      toast.error("Erreur lors du partage du document", { id: "pdf-share" });
+    } finally {
+      setIsGeneratingPDF(false);
+    }
+  };
+
+  // Ouvrir le PDF dans un nouvel onglet (prévisualisation plein écran)
+  const handleOpenPDF = async () => {
+    setIsGeneratingPDF(true);
+    toast.loading("Ouverture du document PDF...", { id: "pdf-open" });
+    try {
+      const invoiceData = getInvoicePayloadForPDF();
+      const ok = await openInvoicePDF(invoiceData);
+      if (ok) {
+        toast.success("PDF ouvert !", { id: "pdf-open" });
+      } else {
+        toast.error("Impossible d'ouvrir le document", { id: "pdf-open" });
+      }
+    } catch {
+      toast.error("Erreur d'ouverture", { id: "pdf-open" });
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -581,6 +655,7 @@ export default function LiveInvoiceModal({
                       <input
                         type="number"
                         min="1"
+                        inputMode="numeric"
                         placeholder="Qté"
                         value={it.quantity}
                         onChange={(e) =>
@@ -600,6 +675,7 @@ export default function LiveInvoiceModal({
                           type="number"
                           min="0"
                           step="100"
+                          inputMode="decimal"
                           placeholder="Prix HT"
                           value={it.unitPrice === 0 ? "" : it.unitPrice}
                           onChange={(e) =>
@@ -717,6 +793,7 @@ export default function LiveInvoiceModal({
                       min="0"
                       max={total}
                       step="500"
+                      inputMode="decimal"
                       placeholder="Montant d'acompte personnalisé en MRU"
                       value={customDepositAmount || ""}
                       onChange={(e) =>
@@ -794,290 +871,350 @@ export default function LiveInvoiceModal({
 
           {/* PANNEAU DROIT : VRAIE FEUILLE A4 - MODÈLE ÉPURÉ HAUT DE GAMME AVEC BLEU SIGNATURE */}
           <div
-            className={`lg:col-span-6 p-4 sm:p-6 overflow-y-auto bg-slate-200/60 flex flex-col items-center justify-start ${
+            className={`lg:col-span-6 p-3 sm:p-6 overflow-y-auto bg-slate-200/70 flex flex-col items-center justify-start ${
               mobileTab === "preview" ? "block" : "hidden lg:block"
             }`}
           >
-            <div className="w-full max-w-[560px] flex items-center justify-between pb-3 text-xs text-slate-600">
+            {/* Barre de contrôle de l'aperçu */}
+            <div className="w-full max-w-[560px] flex items-center justify-between pb-2.5 text-xs text-slate-600">
               <span className="font-bold flex items-center gap-1.5 text-slate-800">
                 <Sparkles size={14} className="text-sky-600" />
                 {t.invoices.previewA4} ({isAr ? "العربية" : "Français"})
               </span>
-              <span className="text-[11px] text-slate-400">Modèle officiel Facturim</span>
+
+              {/* Contrôles d'échelle sur mobile */}
+              <div className="flex items-center gap-1.5">
+                <div className="lg:hidden flex bg-white/90 p-0.5 rounded-lg border border-slate-300 shadow-2xs text-[11px]">
+                  <button
+                    type="button"
+                    onClick={() => setPreviewZoom("fit")}
+                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                      previewZoom === "fit" ? "bg-sky-500 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Ajuster
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setPreviewZoom("full")}
+                    className={`px-2 py-0.5 rounded-md font-bold transition-all ${
+                      previewZoom === "full" ? "bg-sky-500 text-white shadow-2xs" : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    100%
+                  </button>
+                </div>
+                <span className="hidden sm:inline-block text-[11px] text-slate-500 font-medium">Modèle officiel Facturim</span>
+              </div>
             </div>
 
-            {/* Feuille A4 Virtuelle */}
-            <div
-              id="live-invoice-preview-sheet"
-              dir={isAr ? "rtl" : "ltr"}
-              className="relative w-full max-w-[560px] bg-white rounded-xl shadow-xl border border-slate-300 p-6 sm:p-8 space-y-5 text-slate-900 text-xs font-sans overflow-hidden"
-            >
-              {/* 1. EN-TÊTE ULTRA-MODERNE : IDENTITÉ ÉMETTEUR & TITRE AVEC PILULES CAPSULES */}
-              <div className="relative z-10 border-b-2 border-slate-200 pb-4">
-                <div className="flex justify-between items-start">
-                  {/* Logo & Marque */}
-                  <div className="flex items-center gap-3">
-                    {companyLogo ? (
-                      <img
-                        src={companyLogo}
-                        alt="Logo"
-                        className="w-12 h-12 rounded-xl object-contain border border-slate-200 bg-white shadow-2xs"
-                      />
-                    ) : (
-                      <div className="w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-xs">
-                        {company?.name ? company.name.substring(0, 2).toUpperCase() : "FI"}
+            {/* Conteneur auto-scale responsive pour Mobile */}
+            <div className="w-full flex justify-center overflow-x-auto py-1">
+              <div
+                style={
+                  viewportWidth < 1024 && previewZoom === "fit"
+                    ? {
+                        transform: `scale(${mobileScale})`,
+                        transformOrigin: "top center",
+                        width: "560px",
+                        marginBottom: `-${(1 - mobileScale) * 880}px`,
+                      }
+                    : { width: "100%", maxWidth: "560px" }
+                }
+                className="transition-transform duration-200 origin-top shrink-0"
+              >
+                {/* Feuille A4 Virtuelle */}
+                <div
+                  id="live-invoice-preview-sheet"
+                  dir={isAr ? "rtl" : "ltr"}
+                  className="relative w-full bg-white rounded-xl shadow-xl border border-slate-300 p-6 sm:p-8 space-y-5 text-slate-900 text-xs font-sans overflow-hidden"
+                >
+                  {/* 1. EN-TÊTE ULTRA-MODERNE : IDENTITÉ ÉMETTEUR & TITRE AVEC PILULES CAPSULES */}
+                  <div className="relative z-10 border-b-2 border-slate-200 pb-4">
+                    <div className="flex justify-between items-start">
+                      {/* Logo & Marque */}
+                      <div className="flex items-center gap-3">
+                        {companyLogo ? (
+                          <img
+                            src={companyLogo}
+                            alt="Logo"
+                            className="w-12 h-12 rounded-xl object-contain border border-slate-200 bg-white shadow-2xs"
+                          />
+                        ) : (
+                          <div className="w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-xs">
+                            {company?.name ? company.name.substring(0, 2).toUpperCase() : "FI"}
+                          </div>
+                        )}
+                        <div>
+                          <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">
+                            {company?.name || "Facturim Mauritanie SARL"}
+                          </h2>
+                          <p className="text-[10.5px] text-slate-500 font-medium">
+                            {company?.tradeName || "Plateforme de Facturation & Services"}
+                          </p>
+                        </div>
                       </div>
-                    )}
-                    <div>
-                      <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">
-                        {company?.name || "Votre Entreprise"}
-                      </h2>
-                      <p className="text-[10.5px] text-slate-500 font-medium">
-                        {company?.tradeName || "Plateforme de Facturation & Services"}
-                      </p>
+
+                      {/* Titre FACTURE & Badges Métadonnées sur 2 lignes */}
+                      <div className={`text-${isAr ? "left" : "right"}`}>
+                        <h1 className="text-2xl font-black text-sky-600 uppercase tracking-wide">
+                          {isAr ? "فاتورة" : "FACTURE"}
+                        </h1>
+                        <div className={`flex items-center gap-1.5 mt-1.5 justify-${isAr ? "start" : "end"}`}>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-sky-50 border border-sky-200 text-sky-700 font-extrabold text-[10px] font-mono whitespace-nowrap">
+                            {isAr ? `فاتورة رقم ${invoiceNumber}` : `N° ${invoiceNumber}`}
+                          </span>
+                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-bold text-[10px] whitespace-nowrap">
+                            {formatDateDisplay(issueDate)}
+                          </span>
+                        </div>
+                        {dueDate && (
+                          <div className={`flex justify-${isAr ? "start" : "end"} mt-1`}>
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-500 font-medium text-[10px] whitespace-nowrap">
+                              {isAr ? `الاستحقاق : ${formatDateDisplay(dueDate)}` : `Échéance : ${formatDateDisplay(dueDate)}`}
+                            </span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  {/* Titre FACTURE & Badges Métadonnées sur 2 lignes */}
-                  <div className={`text-${isAr ? "left" : "right"}`}>
-                    <h1 className="text-2xl font-black text-sky-600 uppercase tracking-wide">
-                      {isAr ? "فاتورة" : "FACTURE"}
-                    </h1>
-                    <div className={`flex items-center gap-1.5 mt-1.5 justify-${isAr ? "start" : "end"}`}>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-sky-50 border border-sky-200 text-sky-700 font-extrabold text-[10px] font-mono whitespace-nowrap">
-                        {isAr ? `فاتورة رقم ${invoiceNumber}` : `N° ${invoiceNumber}`}
-                      </span>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-bold text-[10px] whitespace-nowrap">
-                        {formatDateDisplay(issueDate)}
-                      </span>
+                  {/* 2. COORDONNÉES COMPLÈTES */}
+                  <div className="relative z-10 flex justify-between items-start text-[11px] leading-relaxed pt-1">
+                    {/* Émetteur à gauche */}
+                    <div className="text-left space-y-0.5 max-w-[48%]">
+                      <h3 className="font-black text-xs text-slate-900 uppercase">
+                        {company?.name || "Facturim Mauritanie SARL"}
+                      </h3>
+                      <p className="text-slate-600">{company?.phone || "+222 45 25 00 00"}</p>
+                      <p className="text-slate-600">{company?.email || "contact@facturim.net"}</p>
+                      {company?.taxId ? (
+                        <p className="text-slate-600 font-mono">NIF : {company.taxId}</p>
+                      ) : (
+                        <p className="text-slate-600 font-mono">NIF : 00987654-MR</p>
+                      )}
+                      <p className="text-slate-600">{company?.address || "Avenue du Roi Fayçal, Tevragh Zeina, Nouakchott"}</p>
                     </div>
-                    {dueDate && (
-                      <div className={`flex justify-${isAr ? "start" : "end"} mt-1`}>
-                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-500 font-medium text-[10px] whitespace-nowrap">
-                          {isAr ? `الاستحقاق : ${formatDateDisplay(dueDate)}` : `Échéance : ${formatDateDisplay(dueDate)}`}
+
+                    {/* Destinataire complètement à droite */}
+                    <div className={`space-y-0.5 max-w-[48%] ${isAr ? "text-left" : "text-right"}`}>
+                      <h4 className="font-black text-xs text-slate-900">
+                        {currentClient.name}
+                      </h4>
+                      <p className="text-slate-600">{currentClient.phone}</p>
+                      <p className="text-slate-600">{currentClient.email}</p>
+                      <p className="text-slate-600">{currentClient.address}</p>
+                    </div>
+                  </div>
+
+                  {/* 3. TABLEAU DES PRESTATIONS AVEC COLONNE # ET EN-TÊTE EN BLEU SIGNATURE */}
+                  <div className="relative z-10 pt-1">
+                    <table className="w-full border-collapse border border-sky-600 text-xs">
+                      <thead>
+                        <tr className="bg-sky-600 text-white font-extrabold text-[10px] uppercase tracking-wider">
+                          <th className="p-2 border border-sky-600 text-center w-8 whitespace-nowrap">
+                            #
+                          </th>
+                          <th className={`p-2.5 border border-sky-600 ${isAr ? "text-right" : "text-left"}`}>
+                            {isAr ? "البيان والخدمات" : "DESCRIPTION"}
+                          </th>
+                          <th className={`p-2.5 border border-sky-600 w-28 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
+                            {isAr ? "السعر الفردي" : "PRIX UNITAIRE"}
+                          </th>
+                          <th className="p-2 border border-sky-600 text-center w-12 whitespace-nowrap">
+                            {isAr ? "الكمية" : "QTÉ"}
+                          </th>
+                          <th className={`p-2.5 border border-sky-600 w-28 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
+                            {isAr ? "الإجمالي" : "TOTAL HT"}
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {items.map((it, idx) => (
+                          <tr key={it.id} className={`text-[11px] ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}>
+                            <td className="p-2 border border-slate-200 text-center text-slate-500 font-bold font-mono">
+                              {String(idx + 1).padStart(2, "0")}
+                            </td>
+                            <td className={`p-2.5 border border-slate-200 font-semibold text-slate-900 ${isAr ? "text-right" : "text-left"}`}>
+                              {it.description.trim() || (isAr ? "خدمات مهنية" : "Prestation de service")}
+                            </td>
+                            <td className={`p-2.5 border border-slate-200 text-slate-700 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
+                              {it.unitPrice.toLocaleString("fr-FR")} MRU
+                            </td>
+                            <td className="p-2 border border-slate-200 text-center text-slate-700 font-mono">
+                              {String(it.quantity || 1).padStart(2, "0")}
+                            </td>
+                            <td className={`p-2.5 border border-slate-200 font-bold text-slate-950 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
+                              {((it.quantity || 1) * (it.unitPrice || 0)).toLocaleString("fr-FR")} MRU
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* 4. BLOC BAS : CARTOUCHE QR DE PAIEMENT & TOTAUX EN BLEU */}
+                  <div className="relative z-10 flex flex-col sm:flex-row justify-between items-end gap-3 pt-1">
+                    
+                    {/* Cartouche QR Code autonome */}
+                    <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-2.5 flex items-center gap-3 shadow-2xs w-full sm:w-auto">
+                      <div className="w-13 h-13 bg-white rounded-lg border border-slate-200 flex items-center justify-center p-1 shrink-0 shadow-2xs">
+                        <img
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
+                            `https://facturim.net/pay/${invoiceNumber}`
+                          )}&color=0f172a&bgcolor=ffffff`}
+                          alt="QR Paiement"
+                          className="w-11 h-11 object-contain"
+                        />
+                      </div>
+                      <div className="space-y-0.5 text-left">
+                        <p className="font-extrabold text-slate-900 text-[11.5px] leading-tight">
+                          {isAr ? "الدفع المباشر" : "Paiement direct"}
+                        </p>
+                        <p className="text-[10px] font-bold text-slate-700">
+                          Bankily • Masrvi • Sedad
+                        </p>
+                        <p className="text-[9.5px] text-slate-400">
+                          {isAr ? "امسح الرمز للدفع في ثوانٍ" : "Scannez pour régler en 1 clic"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Totaux Chiffrés & Bandeau Bleu */}
+                    <div className="w-full sm:w-64 text-xs space-y-1">
+                      <div className="flex justify-between text-slate-600">
+                        <span className="font-medium">{isAr ? "المجموع قبل الضريبة :" : "Sous-total HT :"}</span>
+                        <span className="font-bold text-slate-900">{subtotal.toLocaleString("fr-FR")} MRU</span>
+                      </div>
+
+                      {taxRate > 0 && (
+                        <div className="flex justify-between text-slate-600">
+                          <span className="font-medium">{isAr ? `ضريبة القيمة المضافة (${taxRate}%) :` : `TVA légale (${taxRate}%) :`}</span>
+                          <span className="font-bold text-slate-900">{taxAmount.toLocaleString("fr-FR")} MRU</span>
+                        </div>
+                      )}
+
+                      {depositAmount > 0 && (
+                        <div className="flex justify-between text-slate-700 pt-1 border-t border-slate-200 text-[11px]">
+                          <span className="font-medium">{isAr ? `العربون (${activeDepositPercentage}%) :` : `Acompte (${activeDepositPercentage}%) :`}</span>
+                          <span className="font-bold text-slate-900">{depositAmount.toLocaleString("fr-FR")} MRU</span>
+                        </div>
+                      )}
+
+                      {depositAmount > 0 && (
+                        <div className="flex justify-between text-slate-600 text-[11px]">
+                          <span className="font-medium">{isAr ? "المتبقي للتحصيل :" : "Solde restant :"}</span>
+                          <span className="font-bold text-slate-900">{remainingAmount.toLocaleString("fr-FR")} MRU</span>
+                        </div>
+                      )}
+
+                      {/* Bandeau TOTAL Plein Bleu Signature (#0284c7) */}
+                      <div className="w-full bg-sky-600 text-white p-2.5 rounded-lg flex justify-between items-center mt-2 shadow-xs">
+                        <span className="text-[11px] font-extrabold tracking-wider uppercase whitespace-nowrap">
+                          {isAr ? "المجموع الكلي الصافي :" : "TOTAL NET TTC :"}
+                        </span>
+                        <span className="text-base font-black tracking-tight tabular-nums whitespace-nowrap">
+                          {total.toLocaleString("fr-FR")} MRU
                         </span>
                       </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* 2. COORDONNÉES COMPLÈTES (SANS LABELS ÉMETTEUR / DESTINATAIRE) */}
-              <div className="relative z-10 flex justify-between items-start text-[11px] leading-relaxed pt-1">
-                {/* Émetteur à gauche */}
-                <div className="text-left space-y-0.5 max-w-[48%]">
-                  <h3 className="font-black text-xs text-slate-900 uppercase">
-                    {company?.name || "Votre Entreprise"}
-                  </h3>
-                  <p className="text-slate-600">{company?.phone || "+221 77 890 12 52"}</p>
-                  <p className="text-slate-600">{company?.email || "eywamarket@gmail.com"}</p>
-                  {company?.taxId ? (
-                    <p className="text-slate-600 font-mono">NIF : {company.taxId}</p>
-                  ) : (
-                    <p className="text-slate-600 font-mono">NIF : SN-009876543-2B</p>
-                  )}
-                  <p className="text-slate-600">{company?.address || "Almadies, Zone 4"}</p>
-                </div>
-
-                {/* Destinataire complètement à droite */}
-                <div className={`space-y-0.5 max-w-[48%] ${isAr ? "text-left" : "text-right"}`}>
-                  <h4 className="font-black text-xs text-slate-900">
-                    {currentClient.name}
-                  </h4>
-                  <p className="text-slate-600">{currentClient.phone}</p>
-                  <p className="text-slate-600">{currentClient.email}</p>
-                  <p className="text-slate-600">{currentClient.address}</p>
-                </div>
-              </div>
-
-              {/* 3. TABLEAU DES PRESTATIONS AVEC COLONNE # ET EN-TÊTE EN BLEU SIGNATURE */}
-              <div className="relative z-10 pt-1">
-                <table className="w-full border-collapse border border-sky-600 text-xs">
-                  <thead>
-                    <tr className="bg-sky-600 text-white font-extrabold text-[10px] uppercase tracking-wider">
-                      <th className="p-2 border border-sky-600 text-center w-8 whitespace-nowrap">
-                        #
-                      </th>
-                      <th className={`p-2.5 border border-sky-600 ${isAr ? "text-right" : "text-left"}`}>
-                        {isAr ? "البيان والخدمات" : "DESCRIPTION"}
-                      </th>
-                      <th className={`p-2.5 border border-sky-600 w-28 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
-                        {isAr ? "السعر الفردي" : "PRIX UNITAIRE"}
-                      </th>
-                      <th className="p-2 border border-sky-600 text-center w-12 whitespace-nowrap">
-                        {isAr ? "الكمية" : "QTÉ"}
-                      </th>
-                      <th className={`p-2.5 border border-sky-600 w-28 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
-                        {isAr ? "الإجمالي" : "TOTAL HT"}
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {items.map((it, idx) => (
-                      <tr key={it.id} className={`text-[11px] ${idx % 2 === 0 ? "bg-white" : "bg-slate-50/50"}`}>
-                        <td className="p-2 border border-slate-200 text-center text-slate-500 font-bold font-mono">
-                          {String(idx + 1).padStart(2, "0")}
-                        </td>
-                        <td className={`p-2.5 border border-slate-200 font-semibold text-slate-900 ${isAr ? "text-right" : "text-left"}`}>
-                          {it.description.trim() || (isAr ? "خدمات مهنية" : "Prestation de service")}
-                        </td>
-                        <td className={`p-2.5 border border-slate-200 text-slate-700 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
-                          {it.unitPrice.toLocaleString("fr-FR")} MRU
-                        </td>
-                        <td className="p-2 border border-slate-200 text-center text-slate-700 font-mono">
-                          {String(it.quantity || 1).padStart(2, "0")}
-                        </td>
-                        <td className={`p-2.5 border border-slate-200 font-bold text-slate-950 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
-                          {((it.quantity || 1) * (it.unitPrice || 0)).toLocaleString("fr-FR")} MRU
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* 4. BLOC BAS : CARTOUCHE QR DE PAIEMENT & TOTAUX EN BLEU */}
-              <div className="relative z-10 flex flex-col sm:flex-row justify-between items-end gap-3 pt-1">
-                
-                {/* Cartouche QR Code conforme à la capture utilisateur */}
-                <div className="bg-slate-50 border border-slate-200/90 rounded-xl p-2.5 flex items-center gap-3 shadow-2xs w-full sm:w-auto">
-                  <div className="w-13 h-13 bg-white rounded-lg border border-slate-200 flex items-center justify-center p-1 shrink-0 shadow-2xs">
-                    <img
-                      src={`https://api.qrserver.com/v1/create-qr-code/?size=120x120&data=${encodeURIComponent(
-                        `https://facturim.net/pay/${invoiceNumber}`
-                      )}&color=0f172a&bgcolor=ffffff`}
-                      alt="QR Paiement"
-                      className="w-11 h-11 object-contain"
-                    />
-                  </div>
-                  <div className="space-y-0.5 text-left">
-                    <p className="font-extrabold text-slate-900 text-[11.5px] leading-tight">
-                      {isAr ? "الدفع المباشر" : "Paiement direct"}
-                    </p>
-                    <p className="font-bold text-slate-800 text-[11px] leading-tight">
-                      Bankily • Masrvi • Sedad
-                    </p>
-                    <p className="text-slate-400 text-[9.5px] leading-tight">
-                      {isAr ? "امسح الرمز للدفع في ثوانٍ" : "Scannez pour régler en 1 clic"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Totaux Chiffrés & Bandeau Bleu */}
-                <div className="w-full sm:w-64 text-xs space-y-1">
-                  <div className="flex justify-between text-slate-600">
-                    <span className="font-medium">{isAr ? "المجموع قبل الضريبة :" : "Sous-total HT :"}</span>
-                    <span className="font-bold text-slate-900">{subtotal.toLocaleString("fr-FR")} MRU</span>
-                  </div>
-
-                  {taxRate > 0 && (
-                    <div className="flex justify-between text-slate-600">
-                      <span className="font-medium">{isAr ? `ضريبة القيمة المضافة (${taxRate}%) :` : `TVA légale (${taxRate}%) :`}</span>
-                      <span className="font-bold text-slate-900">{taxAmount.toLocaleString("fr-FR")} MRU</span>
                     </div>
-                  )}
 
-                  {depositAmount > 0 && (
-                    <div className="flex justify-between text-slate-700 pt-1 border-t border-slate-200 text-[11px]">
-                      <span className="font-medium">{isAr ? `العربون (${activeDepositPercentage}%) :` : `Acompte (${activeDepositPercentage}%) :`}</span>
-                      <span className="font-bold text-slate-900">{depositAmount.toLocaleString("fr-FR")} MRU</span>
-                    </div>
-                  )}
-
-                  {depositAmount > 0 && (
-                    <div className="flex justify-between text-slate-600 text-[11px]">
-                      <span className="font-medium">{isAr ? "المتبقي للتحصيل :" : "Solde restant :"}</span>
-                      <span className="font-bold text-slate-900">{remainingAmount.toLocaleString("fr-FR")} MRU</span>
-                    </div>
-                  )}
-
-                  {/* Bandeau TOTAL Plein Bleu Signature (#0284c7) */}
-                  <div className="w-full bg-sky-600 text-white p-2.5 rounded-lg flex justify-between items-center mt-2 shadow-xs">
-                    <span className="text-[11px] font-extrabold tracking-wider uppercase whitespace-nowrap">
-                      {isAr ? "المجموع الكلي الصافي :" : "TOTAL NET TTC :"}
-                    </span>
-                    <span className="text-base font-black tracking-tight tabular-nums whitespace-nowrap">
-                      {total.toLocaleString("fr-FR")} MRU
-                    </span>
                   </div>
-                </div>
 
-              </div>
+                  {/* 5. COORDONNÉES DE PAIEMENT & CONDITIONS */}
+                  <div className="relative z-10 border-t border-slate-200 pt-3 grid grid-cols-1 sm:grid-cols-12 gap-3 text-[10.5px]">
+                    <div className="sm:col-span-8 space-y-0.5">
+                      <p className="font-bold text-slate-900">
+                        {isAr ? `الدفع لأمر : ${company?.name || "المؤسسة"}` : `Paiement à l'ordre de ${company?.name || "Facturim Mauritanie SARL"}`}
+                      </p>
+                      <p className="text-slate-600">
+                        N° Bankily / Masrvi / Compte : <span className="font-bold text-slate-900 font-mono">{company?.phone || "+222 45 25 00 00"}</span>
+                      </p>
+                      <p className="text-slate-400 text-[9.5px]">
+                        {notes || "Paiement par Bankily, Masrvi ou virement bancaire."}
+                      </p>
+                    </div>
 
-              {/* 5. COORDONNÉES DE PAIEMENT & CONDITIONS */}
-              <div className="relative z-10 border-t border-slate-200 pt-3 grid grid-cols-1 sm:grid-cols-12 gap-3 text-[10.5px]">
-                <div className="sm:col-span-8 space-y-0.5">
-                  <p className="font-bold text-slate-900">
-                    {isAr ? `الدفع لأمر : ${company?.name || "المؤسسة"}` : `Paiement à l'ordre de ${company?.name || "Votre Entreprise"}`}
-                  </p>
-                  <p className="text-slate-600">
-                    N° Bankily / Masrvi / Compte : <span className="font-bold text-slate-900 font-mono">{company?.phone || "+221 77 890 12 52"}</span>
-                  </p>
-                  <p className="text-slate-400 text-[9.5px]">
-                    {notes || "Paiement par Bankily, Masrvi ou virement bancaire."}
-                  </p>
-                </div>
+                    <div className="sm:col-span-4 text-left sm:text-right space-y-0.5">
+                      <p className="font-bold text-slate-900">{isAr ? "شروط الدفع" : "Conditions de paiement"}</p>
+                      <p className="text-slate-600">{paymentTerms}</p>
+                    </div>
+                  </div>
 
-                <div className="sm:col-span-4 text-left sm:text-right space-y-0.5">
-                  <p className="font-bold text-slate-900">{isAr ? "شروط الدفع" : "Conditions de paiement"}</p>
-                  <p className="text-slate-600">{paymentTerms}</p>
-                </div>
-              </div>
-
-              {/* Mention de fin centrée & Facturim Année */}
-              <div className="relative z-10 text-center pt-2 border-t border-slate-100">
-                <div className="text-[9.5px] font-bold text-slate-500 uppercase tracking-widest">
-                  {isAr ? "شكراً لثقتكم بنا" : "MERCI DE VOTRE CONFIANCE"}
-                </div>
-                <div className="flex items-center justify-center gap-1.5 mt-1 text-[9px] font-extrabold text-slate-400 tracking-wider">
-                  <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded bg-sky-600 text-white text-[7px] font-black">FI</span>
-                  <span className="text-slate-600 font-black">FACTURIM</span>
-                  <span className="text-slate-300">•</span>
-                  <span>{new Date(issueDate).getFullYear() || 2026}</span>
+                  {/* Mention de fin centrée & Facturim Année */}
+                  <div className="relative z-10 text-center pt-2 border-t border-slate-100">
+                    <div className="text-[9.5px] font-bold text-slate-500 uppercase tracking-widest">
+                      {isAr ? "شكراً لثقتكم بنا" : "MERCI DE VOTRE CONFIANCE"}
+                    </div>
+                    <div className="flex items-center justify-center gap-1.5 mt-1 text-[9px] font-extrabold text-slate-400 tracking-wider">
+                      <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded bg-sky-600 text-white text-[7px] font-black">FI</span>
+                      <span className="text-slate-600 font-black">FACTURIM</span>
+                      <span className="text-slate-300">•</span>
+                      <span>{new Date(issueDate).getFullYear() || 2026}</span>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* PIED DE LA MODAL : ACTIONS GLOBALES */}
+        {/* PIED DE LA MODAL : ACTIONS GLOBALES & MOBILE RESPONSIVE */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 sm:px-6 py-3.5 bg-white border-t border-slate-200 shrink-0">
-          <div className="flex items-center gap-2 text-xs text-slate-500">
-            <span className="font-semibold text-slate-700">Montant total net :</span>
+          <div className="flex items-center justify-between w-full sm:w-auto gap-2 text-xs text-slate-500">
+            <span className="font-semibold text-slate-700">Total net :</span>
             <span className="font-black text-sm text-sky-600 tabular-nums">
               {formatMoney(total)}
             </span>
           </div>
 
           <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-end">
+            {/* Bouton Partager PDF universel (Mobile / Desktop) */}
             <button
               type="button"
-              onClick={handleWhatsAppShare}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer"
+              disabled={isGeneratingPDF}
+              onClick={handleSharePDF}
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer disabled:opacity-60"
+              title="Partager le PDF via WhatsApp / Fichiers"
             >
               <Share2 size={14} />
-              <span>WhatsApp</span>
+              <span>Partager PDF</span>
             </button>
 
+            {/* Bouton Télécharger PDF */}
             <button
               type="button"
+              disabled={isGeneratingPDF}
               onClick={handleDownloadPDF}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-lg text-xs font-bold transition-all shadow-md shadow-sky-500/20 cursor-pointer"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-gradient-to-r from-sky-600 to-sky-700 hover:from-sky-700 hover:to-sky-800 text-white rounded-lg text-xs font-bold transition-all shadow-md shadow-sky-500/20 cursor-pointer disabled:opacity-60"
             >
               <Download size={14} />
-              <span>Télécharger PDF A4 ({isAr ? "العربية" : "Français"})</span>
+              <span>Télécharger PDF ({isAr ? "العربية" : "FR"})</span>
             </button>
 
+            {/* Bouton Voir / Ouvrir PDF (Fallback navigateur) */}
+            <button
+              type="button"
+              disabled={isGeneratingPDF}
+              onClick={handleOpenPDF}
+              className="hidden md:inline-flex items-center justify-center gap-1.5 px-2.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 rounded-lg text-xs font-bold transition-colors cursor-pointer"
+              title="Ouvrir dans un nouvel onglet"
+            >
+              <ExternalLink size={13} />
+            </button>
+
+            {/* Bouton Enregistrer Brouillon */}
             <button
               type="button"
               disabled={isSaving}
               onClick={() => handleSaveInvoice(false)}
-              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-4 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer disabled:opacity-60"
+              className="flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3.5 py-2 bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 rounded-lg text-xs font-bold transition-colors shadow-2xs cursor-pointer disabled:opacity-60"
             >
               <FileText size={14} />
-              <span>Enregistrer Brouillon</span>
+              <span>Brouillon</span>
             </button>
 
+            {/* Bouton Émettre Facture */}
             <button
               type="button"
               disabled={isSaving}

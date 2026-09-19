@@ -68,7 +68,7 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
   const container = document.createElement("div");
   container.id = "facturim-pdf-render-sheet";
   container.style.position = "fixed";
-  container.style.left = "0px";
+  container.style.left = "-9999px";
   container.style.top = "0px";
   container.style.width = "794px"; // Format A4 à 96 DPI (210mm)
   container.style.minHeight = "1123px"; // Hauteur A4 standard (297mm)
@@ -291,10 +291,10 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
           <h3 style="font-size: 13px; font-weight: 900; color: #0f172a; margin: 0 0 3px 0; text-transform: uppercase; line-height: 17px;">
             ${companyName}
           </h3>
-          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.companyPhone || "+221 77 890 12 52"}</p>
-          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.companyEmail || "eywamarket@gmail.com"}</p>
-          ${invoice.companyTaxId ? `<p style="margin: 0; color: #475569; font-family: monospace; line-height: 16px;">NIF : ${invoice.companyTaxId}</p>` : `<p style="margin: 0; color: #475569; font-family: monospace; line-height: 16px;">NIF : SN-009876543-2B</p>`}
-          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.companyAddress || "Almadies, Zone 4"}</p>
+          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.companyPhone || "+222 45 25 00 00"}</p>
+          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.companyEmail || "contact@facturim.net"}</p>
+          ${invoice.companyTaxId ? `<p style="margin: 0; color: #475569; font-family: monospace; line-height: 16px;">NIF : ${invoice.companyTaxId}</p>` : `<p style="margin: 0; color: #475569; font-family: monospace; line-height: 16px;">NIF : 00987654-MR</p>`}
+          <p style="margin: 0; color: #475569; line-height: 16px;">${invoice.companyAddress || "Avenue du Roi Fayçal, Tevragh Zeina, Nouakchott"}</p>
         </div>
 
         <!-- Client complètement à droite -->
@@ -397,7 +397,7 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
             ${isArOnly ? `الدفع لأمر : ${companyName}` : `Paiement à l'ordre de ${companyName}`}
           </p>
           <p style="margin: 2px 0 0 0; color: #475569; line-height: 15px;">
-            N° Bankily / Masrvi / Compte : <strong style="color: #0f172a; font-family: monospace;">${invoice.companyPhone || "+221  77  890  12  52"}</strong>
+            N° Bankily / Masrvi / Compte : <strong style="color: #0f172a; font-family: monospace;">${invoice.companyPhone || "+222 45 25 00 00"}</strong>
           </p>
           <p style="margin: 2px 0 0 0; color: #94a3b8; font-size: 9.5px; line-height: 13px;">
             ${invoice.notes || "Paiement par Bankily, Masrvi ou virement bancaire."}
@@ -433,21 +433,33 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
 }
 
 /**
- * Génère et déclenche le téléchargement du fichier PDF A4 haute définition
- * sans décalage vertical ni sauts de texte.
+ * Détecte si l'appareil actuel est un mobile/tablette (iOS, Android)
  */
-export async function downloadInvoicePDF(invoice: PDFInvoiceData): Promise<boolean> {
+export function isMobileUser(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return false;
+  return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+    (navigator.maxTouchPoints !== undefined && navigator.maxTouchPoints > 1);
+}
+
+/**
+ * Génère le document jsPDF et son Blob binaire de manière isolée et optimisée
+ */
+export async function generateInvoicePDFBlob(invoice: PDFInvoiceData): Promise<{
+  blob: Blob;
+  fileName: string;
+  pdf: jsPDF;
+} | null> {
   let dom: HTMLElement | null = null;
   try {
     dom = createInvoiceDOM(invoice);
     document.body.appendChild(dom);
 
-    // 1. Attente du chargement complet des polices système/web
+    // 1. Attente du chargement complet des polices
     if (typeof document !== "undefined" && document.fonts && document.fonts.ready) {
       await document.fonts.ready;
     }
 
-    // 2. Attente du préchargement des éventuelles images (ex: logo local)
+    // 2. Attente du préchargement des images éventuelles
     const images = Array.from(dom.querySelectorAll("img"));
     if (images.length > 0) {
       await Promise.all(
@@ -466,13 +478,17 @@ export async function downloadInvoicePDF(invoice: PDFInvoiceData): Promise<boole
       );
     }
 
-    // Temporisation de stabilisation du rendu
+    // Stabilisation du layout DOM
     await new Promise((resolve) => setTimeout(resolve, 150));
 
+    // Détection de l'échelle optimale pour éviter la saturation mémoire sur Safari iOS
+    const isMobile = isMobileUser();
+    const scale = isMobile ? 2 : 2;
+
     const canvas = await html2canvas(dom, {
-      scale: 2, // 2x Retina pour netteté vectorielle
+      scale,
       useCORS: true,
-      allowTaint: false, // Bloque la contamination du canvas pour garantir toDataURL
+      allowTaint: false,
       logging: false,
       backgroundColor: "#ffffff",
       windowWidth: 794,
@@ -497,32 +513,110 @@ export async function downloadInvoicePDF(invoice: PDFInvoiceData): Promise<boole
     pdf.addImage(imgData, "PNG", 0, 0, 210, 297, undefined, "FAST");
     const cleanRef = (invoice.reference || "FACTURE").replace(/[^a-zA-Z0-9-_]/g, "_");
     const fileName = `FACTURE_${cleanRef}.pdf`;
+    const blob = pdf.output("blob");
 
-    // Double méthode de téléchargement pour garantir l'exécution sur tous les navigateurs
-    try {
-      pdf.save(fileName);
-    } catch {
-      const blob = pdf.output("blob");
-      const blobUrl = URL.createObjectURL(blob);
-      const link = document.createElement("a");
-      link.href = blobUrl;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      setTimeout(() => {
-        document.body.removeChild(link);
-        URL.revokeObjectURL(blobUrl);
-      }, 500);
-    }
-
-    return true;
+    return { blob, fileName, pdf };
   } catch (error) {
     console.error("Erreur génération PDF:", error);
-    return false;
+    return null;
   } finally {
     if (dom && dom.parentNode) {
       dom.parentNode.removeChild(dom);
     }
+  }
+}
+
+/**
+ * Partage directement le PDF de la facture via la Web Share API native (WhatsApp, Fichiers, Mail, etc.)
+ * Idéal pour smartphones (iOS / Android).
+ */
+export async function shareInvoicePDF(invoice: PDFInvoiceData): Promise<boolean> {
+  try {
+    const result = await generateInvoicePDFBlob(invoice);
+    if (!result) return false;
+
+    const { blob, fileName } = result;
+    const file = new File([blob], fileName, { type: "application/pdf" });
+
+    if (
+      typeof navigator !== "undefined" &&
+      navigator.canShare &&
+      navigator.canShare({ files: [file] })
+    ) {
+      await navigator.share({
+        files: [file],
+        title: `Facture ${invoice.reference}`,
+        text: `Voici la facture officielle ${invoice.reference} d'un montant de ${invoice.total.toLocaleString("fr-FR")} MRU.`,
+      });
+      return true;
+    }
+
+    // Fallback : ouverture dans un nouvel onglet ou téléchargement standard
+    return await downloadInvoicePDF(invoice);
+  } catch (error: any) {
+    // Si l'utilisateur annule le menu de partage natif (AbortError), ne pas considérer comme échec
+    if (error?.name === "AbortError") {
+      return true;
+    }
+    console.warn("Erreur partage natif Web Share:", error);
+    return await downloadInvoicePDF(invoice);
+  }
+}
+
+/**
+ * Ouvre le PDF dans un nouvel onglet du navigateur (idéal pour prévisualisation plein écran mobile ou impression)
+ */
+export async function openInvoicePDF(invoice: PDFInvoiceData): Promise<boolean> {
+  try {
+    const result = await generateInvoicePDFBlob(invoice);
+    if (!result) return false;
+
+    const blobUrl = URL.createObjectURL(result.blob);
+    const win = window.open(blobUrl, "_blank");
+    if (!win) {
+      // Si le popup est bloqué, on télécharge
+      return await downloadInvoicePDF(invoice);
+    }
+    return true;
+  } catch (error) {
+    console.error("Erreur ouverture PDF:", error);
+    return false;
+  }
+}
+
+/**
+ * Génère et déclenche le téléchargement du fichier PDF A4 haute définition
+ * avec compatibilité universelle (iOS, Android, Chrome, Safari, Firefox, Edge).
+ */
+export async function downloadInvoicePDF(invoice: PDFInvoiceData): Promise<boolean> {
+  try {
+    const result = await generateInvoicePDFBlob(invoice);
+    if (!result) return false;
+
+    const { blob, fileName, pdf } = result;
+
+    // 1. Essai de téléchargement direct via jsPDF save
+    try {
+      pdf.save(fileName);
+      return true;
+    } catch {
+      // 2. Fallback via élément <a> avec blob URL
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = fileName;
+      link.style.display = "none";
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        if (link.parentNode) document.body.removeChild(link);
+        URL.revokeObjectURL(blobUrl);
+      }, 1000);
+      return true;
+    }
+  } catch (error) {
+    console.error("Erreur téléchargement PDF:", error);
+    return false;
   }
 }
 
