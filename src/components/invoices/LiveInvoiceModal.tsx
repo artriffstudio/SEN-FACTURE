@@ -35,6 +35,8 @@ import { getCompany } from "@/lib/services/companyService";
 import { Client, Company } from "@/lib/types";
 import { useTranslation } from "@/contexts/LanguageContext";
 import DatePicker from "@/components/ui/DatePicker";
+import { getLegalAmountInWords } from "@/lib/utils/numberToWords";
+import FacturimLogo from "@/components/ui/FacturimLogo";
 
 interface InvoiceItem {
   id: string;
@@ -295,6 +297,7 @@ export default function LiveInvoiceModal({
         issueDate,
         dueDate,
         taxRate,
+        paymentTerms,
         depositAmount: depositAmount > 0 ? depositAmount : undefined,
         depositPercentage: activeDepositPercentage > 0 ? activeDepositPercentage : undefined,
         remainingAmount: depositAmount > 0 ? remainingAmount : undefined,
@@ -452,9 +455,7 @@ export default function LiveInvoiceModal({
         {/* ======================================================== */}
         <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 bg-white border-b border-slate-200 shrink-0">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-sky-600 flex items-center justify-center text-white font-black text-xs shadow-xs">
-              FI
-            </div>
+            <FacturimLogo variant="squircle" size={24} className="w-9 h-9" />
             <div>
               <h2 className="text-sm sm:text-base font-extrabold text-slate-900">
                 {t.invoices.createModalTitle}
@@ -837,8 +838,9 @@ export default function LiveInvoiceModal({
                   onChange={(e) => setTaxRate(parseFloat(e.target.value))}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
                 >
-                  <option value={16}>TVA Standard (16%)</option>
-                  <option value={0}>Exonéré de TVA (0%)</option>
+                  <option value={16}>TVA Standard DGI (16%)</option>
+                  <option value={18}>TVA Télécoms &amp; Réseaux (18%)</option>
+                  <option value={0}>Exonéré de TVA / Export (0%)</option>
                 </select>
               </div>
 
@@ -846,12 +848,19 @@ export default function LiveInvoiceModal({
                 <label className="block font-semibold text-slate-700 mb-1">
                   Conditions de paiement
                 </label>
-                <input
-                  type="text"
+                <select
                   value={paymentTerms}
                   onChange={(e) => setPaymentTerms(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
-                />
+                >
+                  <option value="Paiement à réception">Paiement à réception / Comptant</option>
+                  <option value="Paiement sous 5 jours">Paiement sous 5 jours</option>
+                  <option value="Paiement sous 10 jours">Paiement sous 10 jours</option>
+                  <option value="Paiement sous 15 jours">Paiement sous 15 jours</option>
+                  <option value="Paiement sous 30 jours">Paiement sous 30 jours</option>
+                  <option value="Paiement sous 45 jours">Paiement sous 45 jours</option>
+                  <option value="Paiement sous 60 jours">Paiement sous 60 jours</option>
+                </select>
               </div>
             </div>
 
@@ -941,9 +950,7 @@ export default function LiveInvoiceModal({
                             className="w-12 h-12 rounded-xl object-contain border border-slate-200 bg-white shadow-2xs"
                           />
                         ) : (
-                          <div className="w-11 h-11 rounded-xl bg-slate-900 text-white flex items-center justify-center font-black text-sm shadow-xs">
-                            {company?.name ? company.name.substring(0, 2).toUpperCase() : "FI"}
-                          </div>
+                          <FacturimLogo variant="squircle" size={28} className="w-12 h-12" />
                         )}
                         <div>
                           <h2 className="text-sm font-black text-slate-900 uppercase tracking-tight">
@@ -958,11 +965,11 @@ export default function LiveInvoiceModal({
                       {/* Titre FACTURE & Badges Métadonnées sur 2 lignes */}
                       <div className={`text-${isAr ? "left" : "right"}`}>
                         <h1 className="text-2xl font-black text-sky-600 uppercase tracking-wide">
-                          {isAr ? "فاتورة" : "FACTURE"}
+                          {isAr ? "فاتورة" : currentLanguage === "zh" ? "电子发票" : currentLanguage === "en" ? "INVOICE" : "FACTURE"}
                         </h1>
                         <div className={`flex items-center gap-1.5 mt-1.5 justify-${isAr ? "start" : "end"}`}>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-sky-50 border border-sky-200 text-sky-700 font-extrabold text-[10px] font-mono whitespace-nowrap">
-                            {isAr ? `فاتورة رقم ${invoiceNumber}` : `N° ${invoiceNumber}`}
+                            {isAr ? `فاتورة رقم ${invoiceNumber}` : currentLanguage === "zh" ? `发票编号 ${invoiceNumber}` : currentLanguage === "en" ? `Invoice #${invoiceNumber}` : `N° ${invoiceNumber}`}
                           </span>
                           <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-700 font-bold text-[10px] whitespace-nowrap">
                             {formatDateDisplay(issueDate)}
@@ -971,7 +978,7 @@ export default function LiveInvoiceModal({
                         {dueDate && (
                           <div className={`flex justify-${isAr ? "start" : "end"} mt-1`}>
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-md bg-slate-50 border border-slate-200 text-slate-500 font-medium text-[10px] whitespace-nowrap">
-                              {isAr ? `الاستحقاق : ${formatDateDisplay(dueDate)}` : `Échéance : ${formatDateDisplay(dueDate)}`}
+                              {isAr ? `الاستحقاق : ${formatDateDisplay(dueDate)}` : currentLanguage === "zh" ? `到期日 : ${formatDateDisplay(dueDate)}` : currentLanguage === "en" ? `Due : ${formatDateDisplay(dueDate)}` : `Échéance : ${formatDateDisplay(dueDate)}`}
                             </span>
                           </div>
                         )}
@@ -1016,16 +1023,16 @@ export default function LiveInvoiceModal({
                             #
                           </th>
                           <th className={`p-2.5 border border-sky-600 ${isAr ? "text-right" : "text-left"}`}>
-                            {isAr ? "البيان والخدمات" : "DESCRIPTION"}
+                            {isAr ? "البيان والخدمات" : currentLanguage === "zh" ? "服务与产品项目" : currentLanguage === "en" ? "DESCRIPTION" : "DESCRIPTION"}
                           </th>
                           <th className={`p-2.5 border border-sky-600 w-28 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
-                            {isAr ? "السعر الفردي" : "PRIX UNITAIRE"}
+                            {isAr ? "السعر الفردي" : currentLanguage === "zh" ? "单价 (HT)" : currentLanguage === "en" ? "UNIT PRICE" : "PRIX UNITAIRE"}
                           </th>
                           <th className="p-2 border border-sky-600 text-center w-12 whitespace-nowrap">
-                            {isAr ? "الكمية" : "QTÉ"}
+                            {isAr ? "الكمية" : currentLanguage === "zh" ? "数量" : currentLanguage === "en" ? "QTY" : "QTÉ"}
                           </th>
                           <th className={`p-2.5 border border-sky-600 w-28 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
-                            {isAr ? "الإجمالي" : "TOTAL HT"}
+                            {isAr ? "الإجمالي" : currentLanguage === "zh" ? "小计 (HT)" : currentLanguage === "en" ? "TOTAL HT" : "TOTAL HT"}
                           </th>
                         </tr>
                       </thead>
@@ -1036,7 +1043,7 @@ export default function LiveInvoiceModal({
                               {String(idx + 1).padStart(2, "0")}
                             </td>
                             <td className={`p-2.5 border border-slate-200 font-semibold text-slate-900 ${isAr ? "text-right" : "text-left"}`}>
-                              {it.description.trim() || (isAr ? "خدمات مهنية" : "Prestation de service")}
+                              {it.description.trim() || (isAr ? "خدمات مهنية" : currentLanguage === "zh" ? "专业技术服务" : currentLanguage === "en" ? "Professional Services" : "Prestation de service")}
                             </td>
                             <td className={`p-2.5 border border-slate-200 text-slate-700 whitespace-nowrap ${isAr ? "text-left" : "text-right"}`}>
                               {it.unitPrice.toLocaleString("fr-FR")} MRU
@@ -1069,13 +1076,13 @@ export default function LiveInvoiceModal({
                       </div>
                       <div className="space-y-0.5 text-left">
                         <p className="font-extrabold text-slate-900 text-[11.5px] leading-tight">
-                          {isAr ? "الدفع المباشر" : "Paiement direct"}
+                          {isAr ? "الدفع المباشر" : currentLanguage === "zh" ? "扫码直连支付" : currentLanguage === "en" ? "Direct Payment" : "Paiement direct"}
                         </p>
                         <p className="text-[10px] font-bold text-slate-700">
                           Bankily • Masrvi • Sedad
                         </p>
                         <p className="text-[9.5px] text-slate-400">
-                          {isAr ? "امسح الرمز للدفع في ثوانٍ" : "Scannez pour régler en 1 clic"}
+                          {isAr ? "امسح الرمز للدفع في ثوانٍ" : currentLanguage === "zh" ? "支持移动钱包一键扫码支付" : currentLanguage === "en" ? "Scan to pay in seconds" : "Scannez pour régler en 1 clic"}
                         </p>
                       </div>
                     </div>
@@ -1083,27 +1090,27 @@ export default function LiveInvoiceModal({
                     {/* Totaux Chiffrés & Bandeau Bleu */}
                     <div className="w-full sm:w-64 text-xs space-y-1">
                       <div className="flex justify-between text-slate-600">
-                        <span className="font-medium">{isAr ? "المجموع قبل الضريبة :" : "Sous-total HT :"}</span>
+                        <span className="font-medium">{isAr ? "المجموع قبل الضريبة :" : currentLanguage === "zh" ? "不含税总计 :" : currentLanguage === "en" ? "Subtotal (Excl. Tax) :" : "Sous-total HT :"}</span>
                         <span className="font-bold text-slate-900">{subtotal.toLocaleString("fr-FR")} MRU</span>
                       </div>
 
                       {taxRate > 0 && (
                         <div className="flex justify-between text-slate-600">
-                          <span className="font-medium">{isAr ? `ضريبة القيمة المضافة (${taxRate}%) :` : `TVA légale (${taxRate}%) :`}</span>
+                          <span className="font-medium">{isAr ? `ضريبة القيمة المضافة (${taxRate}%) :` : currentLanguage === "zh" ? `增值税 (${taxRate}%) :` : currentLanguage === "en" ? `VAT (${taxRate}%) :` : `TVA légale (${taxRate}%) :`}</span>
                           <span className="font-bold text-slate-900">{taxAmount.toLocaleString("fr-FR")} MRU</span>
                         </div>
                       )}
 
                       {depositAmount > 0 && (
                         <div className="flex justify-between text-slate-700 pt-1 border-t border-slate-200 text-[11px]">
-                          <span className="font-medium">{isAr ? `العربون (${activeDepositPercentage}%) :` : `Acompte (${activeDepositPercentage}%) :`}</span>
+                          <span className="font-medium">{isAr ? `العربون (${activeDepositPercentage}%) :` : currentLanguage === "zh" ? `定金 (${activeDepositPercentage}%) :` : currentLanguage === "en" ? `Deposit (${activeDepositPercentage}%) :` : `Acompte (${activeDepositPercentage}%) :`}</span>
                           <span className="font-bold text-slate-900">{depositAmount.toLocaleString("fr-FR")} MRU</span>
                         </div>
                       )}
 
                       {depositAmount > 0 && (
                         <div className="flex justify-between text-slate-600 text-[11px]">
-                          <span className="font-medium">{isAr ? "المتبقي للتحصيل :" : "Solde restant :"}</span>
+                          <span className="font-medium">{isAr ? "المتبقي للتحصيل :" : currentLanguage === "zh" ? "应收尾款 :" : currentLanguage === "en" ? "Remaining balance :" : "Solde restant :"}</span>
                           <span className="font-bold text-slate-900">{remainingAmount.toLocaleString("fr-FR")} MRU</span>
                         </div>
                       )}
@@ -1111,7 +1118,7 @@ export default function LiveInvoiceModal({
                       {/* Bandeau TOTAL Plein Bleu Signature (#0284c7) */}
                       <div className="w-full bg-sky-600 text-white p-2.5 rounded-lg flex justify-between items-center mt-2 shadow-xs">
                         <span className="text-[11px] font-extrabold tracking-wider uppercase whitespace-nowrap">
-                          {isAr ? "المجموع الكلي الصافي :" : "TOTAL NET TTC :"}
+                          {isAr ? "المجموع الكلي الصافي :" : currentLanguage === "zh" ? "含税结算总计 :" : currentLanguage === "en" ? "TOTAL NET (INCL. TAX) :" : "TOTAL NET TTC :"}
                         </span>
                         <span className="text-base font-black tracking-tight tabular-nums whitespace-nowrap">
                           {total.toLocaleString("fr-FR")} MRU
@@ -1121,11 +1128,16 @@ export default function LiveInvoiceModal({
 
                   </div>
 
+                  {/* 4bis. MENTION LÉGALE DE LA SOMME EN TOUTES LETTRES (MAURITANIE) */}
+                  <div className="relative z-10 my-2 px-3 py-1.5 bg-slate-50 border-l-2 border-sky-600 rounded text-[10px] font-semibold text-slate-700 italic">
+                    {getLegalAmountInWords(total, currentLanguage)}
+                  </div>
+
                   {/* 5. COORDONNÉES DE PAIEMENT & CONDITIONS */}
                   <div className="relative z-10 border-t border-slate-200 pt-3 grid grid-cols-1 sm:grid-cols-12 gap-3 text-[10.5px]">
                     <div className="sm:col-span-8 space-y-0.5">
                       <p className="font-bold text-slate-900">
-                        {isAr ? `الدفع لأمر : ${company?.name || "المؤسسة"}` : `Paiement à l'ordre de ${company?.name || "Facturim Mauritanie SARL"}`}
+                        {t.invoices.paymentToOrderOf} {company?.name || "Facturim Mauritanie SARL"}
                       </p>
                       <p className="text-slate-600">
                         N° Bankily / Masrvi / Compte : <span className="font-bold text-slate-900 font-mono">{company?.phone || "+222 45 25 00 00"}</span>
@@ -1136,7 +1148,7 @@ export default function LiveInvoiceModal({
                     </div>
 
                     <div className="sm:col-span-4 text-left sm:text-right space-y-0.5">
-                      <p className="font-bold text-slate-900">{isAr ? "شروط الدفع" : "Conditions de paiement"}</p>
+                      <p className="font-bold text-slate-900">{t.invoices.paymentTerms}</p>
                       <p className="text-slate-600">{paymentTerms}</p>
                     </div>
                   </div>
@@ -1144,7 +1156,7 @@ export default function LiveInvoiceModal({
                   {/* Mention de fin centrée & Facturim Année */}
                   <div className="relative z-10 text-center pt-2 border-t border-slate-100">
                     <div className="text-[9.5px] font-bold text-slate-500 uppercase tracking-widest">
-                      {isAr ? "شكراً لثقتكم بنا" : "MERCI DE VOTRE CONFIANCE"}
+                      {t.invoices.thankYou}
                     </div>
                     <div className="flex items-center justify-center gap-1.5 mt-1 text-[9px] font-extrabold text-slate-400 tracking-wider">
                       <span className="inline-flex items-center justify-center w-3.5 h-3.5 rounded bg-sky-600 text-white text-[7px] font-black">FI</span>

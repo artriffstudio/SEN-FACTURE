@@ -3,6 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useLanguage } from "@/contexts/LanguageContext";
+import FacturimLogo from "@/components/ui/FacturimLogo";
 
 export default function LandingFooter() {
   const { currentLanguage } = useLanguage();
@@ -14,34 +15,7 @@ export default function LandingFooter() {
         <div className="grid grid-cols-1 md:grid-cols-5 gap-10 mb-12">
           {/* Colonne 1 : Marque & Mission */}
           <div className="space-y-4 md:col-span-2">
-            <div className="flex items-center space-x-2.5">
-              <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center border border-slate-800 shadow-md shrink-0">
-                <svg
-                  className="w-full h-full p-1.5"
-                  viewBox="0 0 40 40"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <rect width="40" height="40" rx="8" fill="#0f172a" />
-                  <text
-                    x="20"
-                    y="20"
-                    dominantBaseline="central"
-                    textAnchor="middle"
-                    fill="#ffffff"
-                    fontSize="18"
-                    fontWeight="900"
-                    fontFamily="system-ui, -apple-system, sans-serif"
-                    letterSpacing="-0.5px"
-                  >
-                    FI
-                  </text>
-                </svg>
-              </div>
-              <span className="font-extrabold text-xl text-white tracking-tight">
-                FACTU<span className="text-sky-500">RIM</span>
-              </span>
-            </div>
+            <FacturimLogo variant="dark" size="md" />
 
             <p className="text-sm text-slate-400 max-w-sm leading-relaxed">
               {isAr

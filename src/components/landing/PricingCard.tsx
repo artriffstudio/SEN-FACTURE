@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { Check } from "lucide-react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export interface PricingCardProps {
   name: string;
@@ -13,6 +13,7 @@ export interface PricingCardProps {
   features: Array<{ text: string; isBold?: boolean }>;
   ctaText: string;
   ctaHref: string;
+  badgeGuarantee?: string;
   isPopular?: boolean;
 }
 
@@ -24,10 +25,10 @@ export default function PricingCard({
   features,
   ctaText,
   ctaHref,
+  badgeGuarantee,
   isPopular = false,
 }: PricingCardProps) {
-  const { currentLanguage } = useLanguage();
-  const isAr = currentLanguage === "ar";
+  const { t, currentLanguage } = useTranslation();
 
   // Calcul avec 20% de remise si facturation annuelle
   const displayPrice = isYearly
@@ -45,23 +46,23 @@ export default function PricingCard({
       {/* Badge Top Hype si Populaire */}
       {isPopular && (
         <div className="absolute -top-3.5 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full bg-gradient-to-r from-sky-600 to-sky-500 text-white text-[11px] font-bold uppercase tracking-wider shadow-md whitespace-nowrap">
-          ⭐ {isAr ? "الأكثر طلباً" : "Plus Populaire"}
+          ⭐ {t.landing.popular}
         </div>
       )}
 
       <div>
-        {/* En-tête de la carte avec micro-animation */}
+        {/* En-tête de la carte */}
         <div className="flex justify-between items-center mb-1">
           <h3 className="text-xl font-bold text-slate-900 group-hover:text-sky-600 transition-colors duration-200">
             {name}
           </h3>
           {isPopular ? (
             <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700">
-              {isAr ? "موصى به" : "Recommandé"}
+              {t.landing.recommended}
             </span>
           ) : (
             <span className="text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-600 group-hover:bg-sky-50 group-hover:text-sky-700 transition-colors duration-200">
-              {name === "Starter" || name === "البداية" ? (isAr ? "مستقل" : "Freelance") : (isAr ? "شركات" : "Grand Compte")}
+              {name.includes("Starter") || name.includes("البداية") || name.includes("初创") ? t.landing.freelance : t.landing.corporate}
             </span>
           )}
         </div>
@@ -77,17 +78,17 @@ export default function PricingCard({
               {displayPrice.toLocaleString("fr-FR")}
             </span>
             <span className="text-sm font-semibold text-slate-500 ml-2">
-              {isAr ? "أوقية / شهرياً" : "MRU / mois"}
+              {t.landing.perMonth}
             </span>
           </div>
           <div className="mt-2 flex items-center gap-2 flex-wrap">
             <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200/70">
               <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
-              {isAr ? "سعر مضمون 60 يوماً" : "Tarif garanti 60 jours"}
+              {badgeGuarantee || t.landing.plans.starter.badge}
             </span>
             {isYearly && (
               <span className="text-[11px] text-emerald-700 font-extrabold px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200/70">
-                {isAr ? "خصم 20%" : "-20% annuel"}
+                {t.landing.discount20}
               </span>
             )}
           </div>

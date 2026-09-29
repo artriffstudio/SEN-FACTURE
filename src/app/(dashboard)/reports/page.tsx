@@ -112,7 +112,7 @@ export default function ReportsPage() {
       { code: "443100", label: "État, TVA facturée sur ventes (16%)", credit: tvaTotal, debit: 0, status: "En règle" },
       { code: "411100", label: "Clients locaux (Créances exigibles)", credit: 0, debit: pendingTTC, status: "À recouvrer" },
       { code: "521100", label: "Banque BPM Mauritanie (Virements)", credit: 0, debit: Math.round(paidTTC * 0.75), status: "Disponible" },
-      { code: "521200", label: "Comptes Bankily & Seddap", credit: 0, debit: Math.round(paidTTC * 0.25), status: "Disponible" },
+      { code: "521200", label: "Comptes Mobile Money (Bankily, SEDAD, Masrvi)", credit: 0, debit: Math.round(paidTTC * 0.25), status: "Disponible" },
     ];
   }, [dbInvoices]);
 

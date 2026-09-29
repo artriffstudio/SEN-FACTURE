@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
+import FacturimLogo from "@/components/ui/FacturimLogo";
 
 interface NavItemConfig {
   id: string;
@@ -183,16 +184,9 @@ export default function Sidebar({ isOpen, onClose }: SidebarProps) {
                 onClick={onClose}
                 className="flex items-center gap-3 shrink-0"
               >
-                <div className="w-11 h-11 rounded-xl bg-gradient-to-tr from-slate-900 via-slate-800 to-sky-700 shadow-md shadow-slate-900/10 group-hover:shadow-sky-500/20 flex items-center justify-center text-white font-extrabold text-sm tracking-tighter shrink-0 transition-transform group-hover:scale-105">
-                  FI
-                </div>
+                <FacturimLogo variant="squircle" size={28} className="w-11 h-11" />
                 <div className="flex flex-col lg:hidden">
-                  <span className="font-extrabold text-slate-900 text-sm tracking-tight leading-none">
-                    {t.brandName.toUpperCase()}
-                  </span>
-                  <span className="text-[10px] text-sky-600 font-bold uppercase tracking-wider mt-1">
-                    {t.countryName} Pro
-                  </span>
+                  <FacturimLogo variant="full" size={24} showText={true} />
                 </div>
               </Link>
 

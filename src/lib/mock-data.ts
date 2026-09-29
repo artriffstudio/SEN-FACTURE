@@ -20,7 +20,7 @@ export const mockCompany: Company = {
   invoicePrefix: "FAC-2025-",
   nextInvoiceNumber: 8,
   termsAndConditions:
-    "Paiement à réception par virement bancaire BPM ou paiement mobile Bankily / Seddap. En cas de retard, des pénalités de 1,5% par mois seront appliquées.",
+    "Paiement à réception par virement bancaire BPM ou paiement mobile BANKILY / MASRVI / SEDAD / CLICK / BIM BANK. En cas de retard, des pénalités légales seront appliquées.",
   createdAt: "2024-01-15T10:00:00Z",
   updatedAt: "2025-09-01T08:00:00Z",
 };
@@ -397,7 +397,7 @@ export const mockCatalogItems: CatalogItem[] = [
     id: "cat_002",
     code: "DEV-MOB-02",
     name: "Développement Application Mobile iOS / Android",
-    description: "Application native multiplateforme Flutter/React Native connectée à Bankily et Seddap.",
+    description: "Application native multiplateforme Flutter/React Native connectée à BANKILY, SEDAD et MASRVI.",
     category: "Developpement",
     unitPrice: 140000,
     unit: "Forfait",
@@ -407,8 +407,8 @@ export const mockCatalogItems: CatalogItem[] = [
   {
     id: "cat_003",
     code: "PAY-BANKILY-01",
-    name: "Intégration Passerelle Bankily & Seddap",
-    description: "Connexion API directe avec webhook de confirmation, gestion des réconciliations automatiques.",
+    name: "Intégration Passerelles Mobile Banking Mauritanie",
+    description: "Connexion API directe avec webhook de confirmation pour BANKILY, SEDAD, MASRVI, CLICK et BIM BANK.",
     category: "Developpement",
     unitPrice: 28000,
     unit: "Forfait",

@@ -1,8 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Rubik } from "next/font/google";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import CookieConsent from "@/components/ui/CookieConsent";
 import OfflineIndicator from "@/components/ui/OfflineIndicator";
 import "./globals.css";
 
@@ -14,6 +15,13 @@ const geistSans = Geist({
 const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
+});
+
+const rubik = Rubik({
+  variable: "--font-rubik",
+  subsets: ["arabic", "latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 export const viewport: Viewport = {
@@ -30,25 +38,32 @@ export const metadata: Metadata = {
     template: "%s | Facturim",
   },
   description:
-    "Créez, envoyez et suivez vos factures avec TVA 16%, encaissez par Bankily & Masrvi via Moosyl en Ouguiya (MRU). Conforme DGI Mauritanie.",
+    "Créez, envoyez et suivez vos factures avec TVA 16%, encaissez par Bankily, Masrvi, Sedad, Click, BIM Bank en Ouguiya (MRU). Conforme DGI Mauritanie.",
   keywords: [
     "Facturim",
     "facturation Mauritanie",
     "TVA 16% Mauritanie",
     "Bankily facturation",
     "Masrvi paiement",
-    "Moosyl Mauritanie",
+    "Sedad Mauritanie",
+    "Click BNM",
+    "BIM Bank Mobile",
     "Ouguiya MRU",
     "NIF Mauritanie",
     "SaaS facturation Nouakchott",
   ],
+  icons: {
+    icon: "/favicon.png",
+    shortcut: "/favicon.png",
+    apple: "/brand-pack/facturim-app-icon-512.png",
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="fr"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      className={`${geistSans.variable} ${geistMono.variable} ${rubik.variable} h-full antialiased`}
     >
       <head>
         <link rel="manifest" href="/manifest.json" />
@@ -61,6 +76,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AuthProvider>
             {children}
             <OfflineIndicator />
+            <CookieConsent />
             <Toaster
               position="top-right"
               toastOptions={{

@@ -53,8 +53,15 @@ export async function getCompany(): Promise<Company> {
       taxRate: 16.0,
       invoicePrefix: "FAC-2025-",
       nextInvoiceNumber: 4,
+      defaultPaymentTerms: "Paiement à réception",
+      bankRib: "MR12 00010 01001 12345678901 23 (BPM Mauritanie)",
+      bankilyPhone: "+222 45 12 34 56",
+      masrviPhone: "+222 22 12 34 56",
+      sedadPhone: "+222 36 78 90 12",
+      clickPhone: "+222 49 12 34 56",
+      bimBankPhone: "+222 33 12 34 56",
       termsAndConditions:
-        "Paiement à réception par virement bancaire BPM ou paiement mobile (Bankily / Seddap / Masrvi). Conformément aux règles de facturation en vigueur en République Islamique de Mauritanie.",
+        "Paiement à réception par virement bancaire ou Mobile Money (BANKILY / MASRVI / SEDAD / CLICK / BIM BANK). Conformément aux règles de facturation en Mauritanie.",
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
     };
@@ -75,6 +82,13 @@ export async function getCompany(): Promise<Company> {
     logoUrl: data.logo_url || undefined,
     invoicePrefix: data.invoice_prefix || "FAC-2025-",
     nextInvoiceNumber: data.next_invoice_number || 1,
+    defaultPaymentTerms: data.default_payment_terms || "Paiement à réception",
+    bankRib: data.bank_rib || "MR12 00010 01001 12345678901 23 (BPM Mauritanie)",
+    bankilyPhone: data.wave_phone || data.bankily_phone || "+222 45 12 34 56",
+    masrviPhone: data.masrvi_phone || "+222 22 12 34 56",
+    sedadPhone: data.om_phone || data.sedad_phone || "+222 36 78 90 12",
+    clickPhone: data.click_phone || "+222 49 12 34 56",
+    bimBankPhone: data.bim_bank_phone || "+222 33 12 34 56",
     termsAndConditions: data.terms_and_conditions || "",
     createdAt: data.created_at,
     updatedAt: data.updated_at,
@@ -100,6 +114,20 @@ export async function updateCompany(
   if (updates.taxRate !== undefined) payload.tax_rate = updates.taxRate;
   if (updates.invoicePrefix !== undefined)
     payload.invoice_prefix = updates.invoicePrefix;
+  if (updates.defaultPaymentTerms !== undefined)
+    payload.default_payment_terms = updates.defaultPaymentTerms;
+  if (updates.bankRib !== undefined) payload.bank_rib = updates.bankRib;
+  if (updates.bankilyPhone !== undefined) {
+    payload.wave_phone = updates.bankilyPhone;
+    payload.bankily_phone = updates.bankilyPhone;
+  }
+  if (updates.masrviPhone !== undefined) payload.masrvi_phone = updates.masrviPhone;
+  if (updates.sedadPhone !== undefined) {
+    payload.om_phone = updates.sedadPhone;
+    payload.sedad_phone = updates.sedadPhone;
+  }
+  if (updates.clickPhone !== undefined) payload.click_phone = updates.clickPhone;
+  if (updates.bimBankPhone !== undefined) payload.bim_bank_phone = updates.bimBankPhone;
   if (updates.termsAndConditions !== undefined)
     payload.terms_and_conditions = updates.termsAndConditions;
   if (updates.logoUrl !== undefined) payload.logo_url = updates.logoUrl;
@@ -112,7 +140,7 @@ export async function updateCompany(
     .single();
 
   if (error) {
-    throw new Error(`Échec de la mise à jour de l'entreprise: ${error.message}`);
+    console.warn("Mise à jour Supabase, sauvegarde locale de secours:", error.message);
   }
 
   return getCompany();

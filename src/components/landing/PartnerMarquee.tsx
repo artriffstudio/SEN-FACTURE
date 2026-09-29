@@ -1,19 +1,20 @@
 "use client";
 
 import React from "react";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/contexts/LanguageContext";
 import {
   BankilyLogo,
   MasrviLogo,
   SedadLogo,
+  ClickLogo,
+  BimBankLogo,
   EywaLogo,
   BPMLogo,
   BMCILogo,
 } from "@/components/ui/PaymentLogos";
 
 export default function PartnerMarquee() {
-  const { currentLanguage } = useLanguage();
-  const isAr = currentLanguage === "ar";
+  const { t } = useTranslation();
 
   const partners = [
     {
@@ -27,6 +28,14 @@ export default function PartnerMarquee() {
     {
       id: "sedad",
       component: <SedadLogo variant="badge" height={28} />,
+    },
+    {
+      id: "click",
+      component: <ClickLogo variant="badge" height={28} />,
+    },
+    {
+      id: "bimbank",
+      component: <BimBankLogo variant="badge" height={28} />,
     },
     {
       id: "eywa",
@@ -107,9 +116,7 @@ export default function PartnerMarquee() {
     },
   ];
 
-  const badgeText = isAr
-    ? "ربط مباشر مع حلول الدفع والمحافظ الإلكترونية"
-    : "Intégrations bancaires directes & Mobile Money";
+  const badgeText = t.landing.partnerBadge;
 
   return (
     <section
@@ -117,10 +124,9 @@ export default function PartnerMarquee() {
       id="partenaires"
       aria-label="Partenaires et intégrations bancaires"
     >
-      {/* Conteneur de défilement continu avec texte intégré directement dans le flux */}
       <div className="mask-fade-edges relative w-full overflow-hidden py-1">
         <div className="animate-marquee-track flex items-center space-x-12 sm:space-x-16">
-          {/* Jeu 1 de Partenaires avec badge introductif intégré */}
+          {/* Jeu 1 de Partenaires */}
           <div className="flex items-center space-x-10 sm:space-x-14 shrink-0">
             <span className="text-[11px] sm:text-xs font-bold uppercase tracking-wider text-slate-700 bg-slate-50 border border-slate-200/90 px-4 py-1.5 rounded-full flex items-center gap-2 shrink-0 shadow-2xs">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
@@ -137,7 +143,7 @@ export default function PartnerMarquee() {
             ))}
           </div>
 
-          {/* Jeu 2 pour boucle infinie sans saccade avec badge introductif */}
+          {/* Jeu 2 pour boucle infinie */}
           <div
             aria-hidden="true"
             className="flex items-center space-x-10 sm:space-x-14 shrink-0"

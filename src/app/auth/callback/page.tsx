@@ -37,6 +37,16 @@ function AuthCallbackInner() {
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         if (sessionError) throw sessionError;
 
+        if (type === "recovery") {
+          setStatus("success");
+          setMessage("Lien de récupération validé ! Redirection vers la création de votre nouveau mot de passe...");
+          toast.success("Validation réussie !");
+          setTimeout(() => {
+            router.push("/reset-password");
+          }, 1200);
+          return;
+        }
+
         setStatus("success");
         setMessage("Votre adresse email a été confirmée avec succès !");
         toast.success("Compte activé ! Redirection vers votre espace...");

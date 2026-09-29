@@ -4,11 +4,10 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { MapPin, Phone, Mail, Send, CheckCircle2 } from "lucide-react";
 import { createContactLead } from "@/lib/services/supportService";
-import { useLanguage } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function ContactSection() {
-  const { currentLanguage } = useLanguage();
-  const isAr = currentLanguage === "ar";
+  const { t } = useTranslation();
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -22,7 +21,7 @@ export default function ContactSection() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.fullName.trim() || !formData.email.trim() || !formData.phone.trim()) {
-      toast.error(isAr ? "يرجى ملء جميع الحقول المطلوبة." : "Veuillez remplir tous les champs obligatoires.");
+      toast.error(t.landing.contact.errorRequired);
       return;
     }
 
@@ -30,14 +29,10 @@ export default function ContactSection() {
     try {
       await createContactLead(formData);
       setIsSubmitted(true);
-      toast.success(
-        isAr
-          ? "تم استلام طلبكم بنجاح! سيتواصل معكم فريقنا خلال ساعتين."
-          : "Demande reçue ! Notre équipe commerciale vous contacte sous 2h."
-      );
+      toast.success(t.landing.contact.successDesc);
       setFormData({ fullName: "", email: "", phone: "", need: "" });
-    } catch (err: any) {
-      toast.error(isAr ? "حدث خطأ أثناء الإرسال." : "Une erreur est survenue lors de l'envoi.");
+    } catch {
+      toast.error(t.landing.contact.errorGeneral);
     } finally {
       setIsSubmitting(false);
     }
@@ -61,17 +56,15 @@ export default function ContactSection() {
             {/* Informations de contact à gauche */}
             <div className="lg:col-span-6 space-y-6">
               <span className="px-3.5 py-1.5 rounded-full bg-slate-800 text-sky-400 text-xs font-bold uppercase tracking-wider border border-slate-700 inline-block">
-                {isAr ? "تواصل سريع" : "Prise de contact rapide"}
+                {t.landing.contact.badge}
               </span>
 
-              <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-white leading-tight">
-                {isAr ? "جاهز لتبسيط فواتيرك وتنمية أعمالك؟" : "Prêt à simplifier votre facturation ?"}
+              <h2 className="text-3xl sm:5xl font-extrabold tracking-tight text-white leading-tight">
+                {t.landing.contact.title}
               </h2>
 
               <p className="text-slate-300 text-base leading-relaxed">
-                {isAr
-                  ? "اطلب عرضاً تجريبياً مخصصاً أو اطرح استفساراتك على خبرائنا في نواكشوط. نضمن الرد خلال ساعتي عمل."
-                  : "Demandez une démonstration personnalisée ou posez vos questions à nos experts basés à Nouakchott. Réponse garantie sous 2 heures ouvrées."}
+                {t.landing.contact.subtitle}
               </p>
 
               <div className="pt-4 space-y-4 text-sm text-slate-300">
@@ -80,7 +73,7 @@ export default function ContactSection() {
                     <MapPin size={16} />
                   </div>
                   <span className="font-medium">
-                    {isAr ? "تفرغ زينة، نواكشوط، موريتانيا" : "Tevragh-Zeina & Ksar, Nouakchott, Mauritanie"}
+                    {t.landing.contact.address}
                   </span>
                 </div>
 
@@ -110,18 +103,16 @@ export default function ContactSection() {
                     <CheckCircle2 size={32} />
                   </div>
                   <h3 className="text-2xl font-bold text-white">
-                    {isAr ? "شكراً لطلبكم!" : "Merci pour votre demande !"}
+                    {t.landing.contact.successTitle}
                   </h3>
                   <p className="text-slate-300 text-sm leading-relaxed">
-                    {isAr
-                      ? "سيتواصل معكم مستشار FACTURIM المخصص في أقرب وقت عبر الهاتف أو واتساب."
-                      : "Un conseiller FACTURIM dédié prendra contact avec vous dans les plus brefs délais par téléphone ou WhatsApp."}
+                    {t.landing.contact.successDesc}
                   </p>
                   <button
                     onClick={() => setIsSubmitted(false)}
                     className="mt-4 px-6 py-2.5 bg-slate-800 hover:bg-slate-700 text-white rounded-full text-xs font-semibold transition-all cursor-pointer"
                   >
-                    {isAr ? "إرسال رسالة أخرى" : "Envoyer un autre message"}
+                    {t.landing.contact.anotherMessage}
                   </button>
                 </div>
               ) : (
@@ -131,7 +122,7 @@ export default function ContactSection() {
                 >
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                      {isAr ? "الاسم الكامل *" : "Nom complet *"}
+                      {t.landing.contact.fullNameLabel}
                     </label>
                     <input
                       type="text"
@@ -140,7 +131,7 @@ export default function ContactSection() {
                       onChange={(e) =>
                         setFormData({ ...formData, fullName: e.target.value })
                       }
-                      placeholder={isAr ? "مثال: أحمد ولد محمد" : "Ex: Mohamed Lemine"}
+                      placeholder={t.landing.contact.fullNamePlaceholder}
                       className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 text-sm"
                     />
                   </div>
@@ -148,7 +139,7 @@ export default function ContactSection() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                        {isAr ? "البريد المهني *" : "Email professionnel *"}
+                        {t.landing.contact.emailLabel}
                       </label>
                       <input
                         type="email"
@@ -163,7 +154,7 @@ export default function ContactSection() {
                     </div>
                     <div>
                       <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                        {isAr ? "الهاتف (Bankily/WhatsApp) *" : "Téléphone (Bankily/WhatsApp) *"}
+                        {t.landing.contact.phoneLabel}
                       </label>
                       <input
                         type="tel"
@@ -180,7 +171,7 @@ export default function ContactSection() {
 
                   <div>
                     <label className="block text-xs font-semibold text-slate-300 mb-1.5 uppercase tracking-wider">
-                      {isAr ? "احتياجاتكم" : "Votre besoin"}
+                      {t.landing.contact.needLabel}
                     </label>
                     <textarea
                       rows={3}
@@ -188,11 +179,7 @@ export default function ContactSection() {
                       onChange={(e) =>
                         setFormData({ ...formData, need: e.target.value })
                       }
-                      placeholder={
-                        isAr
-                          ? "أخبرنا عن نشاط شركتك ومتطلبات الفوترة الخاصة بك..."
-                          : "Parlez-nous de votre entreprise et de vos besoins de facturation..."
-                      }
+                      placeholder={t.landing.contact.needPlaceholder}
                       className="w-full px-4 py-3 bg-white/5 border border-white/20 rounded-xl text-white placeholder-slate-400 focus:outline-none focus:border-sky-400 focus:ring-1 focus:ring-sky-400 text-sm"
                     />
                   </div>
@@ -205,8 +192,8 @@ export default function ContactSection() {
                     <Send size={16} />
                     <span>
                       {isSubmitting
-                        ? (isAr ? "جاري الإرسال..." : "Envoi en cours...")
-                        : (isAr ? "طلب عرض تجريبي مجاني" : "Demander une démo gratuite")}
+                        ? t.landing.contact.submitting
+                        : t.landing.contact.submitBtn}
                     </span>
                   </button>
                 </form>

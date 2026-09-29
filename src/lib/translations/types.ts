@@ -91,7 +91,11 @@ export interface TranslationDictionary {
     notes: string;
     paymentTerms: string;
     bankilyInfo: string;
-    seddapInfo: string;
+    sedadInfo: string;
+    seddapInfo?: string;
+    masrviInfo?: string;
+    clickInfo?: string;
+    bimBankInfo?: string;
     saveInvoice: string;
     previewA4: string;
     formTab: string;
@@ -108,6 +112,10 @@ export interface TranslationDictionary {
     filterPartiallyPaid: string;
     collectDeposit: string;
     collectBalance: string;
+    amountInWordsPrefix: string;
+    legalNoticeDGI: string;
+    thankYou: string;
+    paymentToOrderOf: string;
   };
 
   // Statuses
@@ -195,7 +203,11 @@ export interface TranslationDictionary {
     uploadHint: string;
     bankDetails: string;
     bankilyNumber: string;
-    seddapNumber: string;
+    sedadNumber: string;
+    seddapNumber?: string;
+    masrviNumber?: string;
+    clickNumber?: string;
+    bimBankNumber?: string;
     bankRib: string;
     saveChanges: string;
     saveSuccess: string;
@@ -255,13 +267,100 @@ export interface TranslationDictionary {
     statsUptime: string;
     featuresTitle: string;
     featuresSubtitle: string;
+    featuresBadge: string;
+    featuresList: {
+      dgi: { badge: string; title: string; desc: string };
+      devis: { badge: string; title: string; desc: string };
+      mobileMoney: { badge: string; title: string; desc: string };
+      tresorerie: { badge: string; title: string; desc: string };
+      relances: { badge: string; title: string; desc: string };
+      expertComptable: { badge: string; title: string; desc: string };
+    };
     pricingTitle: string;
     pricingSubtitle: string;
     monthly: string;
     yearly: string;
     perMonth: string;
     popular: string;
+    recommended: string;
+    freelance: string;
+    corporate: string;
     choosePlan: string;
+    discount20: string;
+    plans: {
+      starter: {
+        name: string;
+        subtitle: string;
+        badge: string;
+        cta: string;
+        features: string[];
+      };
+      pro: {
+        name: string;
+        subtitle: string;
+        badge: string;
+        cta: string;
+        features: string[];
+      };
+      enterprise: {
+        name: string;
+        subtitle: string;
+        badge: string;
+        cta: string;
+        features: string[];
+      };
+    };
+    settingsShowcase: {
+      badge: string;
+      title: string;
+      subtitle: string;
+      highlights: string[];
+      companyNameLabel: string;
+      nifLabel: string;
+      currencyLabel: string;
+      currencyDesc: string;
+      vatLabel: string;
+      vatDesc: string;
+      bankilyTitle: string;
+      bankilyDesc: string;
+      connected: string;
+    };
+    contact: {
+      badge: string;
+      title: string;
+      subtitle: string;
+      address: string;
+      fullNameLabel: string;
+      fullNamePlaceholder: string;
+      emailLabel: string;
+      phoneLabel: string;
+      needLabel: string;
+      needPlaceholder: string;
+      submitBtn: string;
+      submitting: string;
+      successTitle: string;
+      successDesc: string;
+      anotherMessage: string;
+      errorRequired: string;
+      errorGeneral: string;
+    };
+    footer: {
+      tagline: string;
+      product: string;
+      legal: string;
+      offices: string;
+      rightsReserved: string;
+      privacy: string;
+      terms: string;
+      security: string;
+      statusLive: string;
+      sla: string;
+      dgiCompliance: string;
+      securityTls: string;
+      privacyLaw: string;
+      cgu: string;
+    };
+    partnerBadge: string;
     promoBadge: string;
     promoNotice: string;
     promoSubtext: string;

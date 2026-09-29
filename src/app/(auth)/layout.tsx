@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ShieldCheck, CheckCircle2 } from "lucide-react";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useTranslation } from "@/contexts/LanguageContext";
+import FacturimLogo from "@/components/ui/FacturimLogo";
 
 export default function AuthLayout({
   children,
@@ -21,42 +22,7 @@ export default function AuthLayout({
       {/* Barre supérieure discrète */}
       <header className="px-6 py-4 flex items-center justify-between border-b border-slate-200/60 bg-white/70 backdrop-blur-md">
         <Link href="/" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-md group-hover:scale-105 transition-transform shrink-0">
-            <svg
-              className="w-full h-full p-1.5"
-              viewBox="0 0 40 40"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <rect width="40" height="40" rx="8" fill="#0f172a" />
-              <text
-                x="20"
-                y="20"
-                dominantBaseline="central"
-                textAnchor="middle"
-                fill="#ffffff"
-                fontSize="18"
-                fontWeight="900"
-                fontFamily="system-ui, -apple-system, sans-serif"
-                letterSpacing="-0.5px"
-              >
-                FI
-              </text>
-            </svg>
-          </div>
-          <div>
-            <div className="flex items-center gap-1.5">
-              <span className="font-black text-slate-900 text-sm tracking-tight">
-                {t.brandName.toUpperCase()}
-              </span>
-              <span className="bg-sky-100 text-sky-700 text-[9px] font-bold px-1.5 py-0.2 rounded-full uppercase">
-                {t.countryName}
-              </span>
-            </div>
-            <p className="text-[10px] text-slate-400 font-medium">
-              {t.brandTagline}
-            </p>
-          </div>
+          <FacturimLogo variant="full" size="sm" />
         </Link>
 
         <div className="flex items-center gap-3">

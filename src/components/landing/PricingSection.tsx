@@ -2,121 +2,58 @@
 
 import { useState } from "react";
 import PricingCard from "./PricingCard";
-import { useLanguage, useTranslation } from "@/contexts/LanguageContext";
+import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function PricingSection() {
   const [isYearly, setIsYearly] = useState(false);
-  const { currentLanguage } = useLanguage();
   const { t } = useTranslation();
-  const isAr = currentLanguage === "ar";
 
-  const plans = isAr
-    ? [
-        {
-          id: "starter",
-          name: "البداية",
-          subtitle: "مثالي للمستقلين والأنشطة الفردية في بداية انطلاقها.",
-          monthlyPrice: 590,
-          features: [
-            { text: "حتى 30 فاتورة شهرياً" },
-            { text: "عروض أسعار وتحويل فوري" },
-            { text: "مستخدم واحد" },
-            { text: "تصدير PDF رسمي معتمد" },
-            { text: "إدارة الأقساط والعربون (50%)" },
-          ],
-          ctaText: "اختيار البداية",
-          ctaHref: "/register?plan=starter",
-          isPopular: false,
-        },
-        {
-          id: "pro",
-          name: "برو للشركات",
-          subtitle: "للشركات الصغيرة والمتوسطة التي ترغب في أتمتة الفوترة.",
-          monthlyPrice: 1490,
-          features: [
-            { text: "فواتير وعروض أسعار غير محدودة", isBold: true },
-            { text: "دفع مباشر عبر بنكيلي ومصرفي", isBold: true },
-            { text: "تذكير تلقائي عبر واتساب والرسائل" },
-            { text: "حتى 5 مستخدمين متعاونين" },
-            { text: "إدارة دفعات العقود وإقرارات الضريبة" },
-          ],
-          ctaText: "بدء التجربة المجانية 14 يوماً ←",
-          ctaHref: "/register?plan=pro",
-          isPopular: true,
-        },
-        {
-          id: "enterprise",
-          name: "المؤسسات الكبرى",
-          subtitle: "للشركات الكبرى متعددة الفروع وحجم المعاملات المرتفع.",
-          monthlyPrice: 3490,
-          features: [
-            { text: "إدارة شركات متعددة وفروع" },
-            { text: "مستخدمون غير محدودين" },
-            { text: "واجهة برمجية API وربط مع ERP" },
-            { text: "مدير حسابات ودعم مخصص" },
-          ],
-          ctaText: "تواصل مع المبيعات",
-          ctaHref: "#contact",
-          isPopular: false,
-        },
-      ]
-    : [
-        {
-          id: "starter",
-          name: "Starter",
-          subtitle: "Idéal pour les indépendants et freelances qui débutent.",
-          monthlyPrice: 590,
-          features: [
-            { text: "Jusqu'à 30 factures / mois" },
-            { text: "Devis & conversion 1-clic" },
-            { text: "1 utilisateur" },
-            { text: "Export PDF certifié & conformité DGI" },
-            { text: "Gestion des acomptes (30%, 50%, 70%)" },
-          ],
-          ctaText: "Choisir Starter",
-          ctaHref: "/register?plan=starter",
-          isPopular: false,
-        },
-        {
-          id: "pro",
-          name: "Pro PME",
-          subtitle: "Pour les PME en pleine croissance qui veulent automatiser.",
-          monthlyPrice: 1490,
-          features: [
-            { text: "Facturation & Devis ILLIMITÉS", isBold: true },
-            { text: "Paiements Bankily & Masrvi en direct", isBold: true },
-            { text: "Relances automatiques SMS / WhatsApp" },
-            { text: "Jusqu'à 5 utilisateurs collaborateurs" },
-            { text: "Acomptes de marchés & Grand Livre" },
-          ],
-          ctaText: "Démarrer l'essai 14 jours →",
-          ctaHref: "/register?plan=pro",
-          isPopular: true,
-        },
-        {
-          id: "enterprise",
-          name: "Entreprise",
-          subtitle: "Grandes structures, multi-filiales et volume élevé.",
-          monthlyPrice: 3490,
-          features: [
-            { text: "Multi-sociétés & filiales" },
-            { text: "Utilisateurs illimités" },
-            { text: "API complète & intégration ERP" },
-            { text: "Account Manager & support prioritaire" },
-          ],
-          ctaText: "Contacter les ventes",
-          ctaHref: "#contact",
-          isPopular: false,
-        },
-      ];
+  const plans = [
+    {
+      id: "starter",
+      name: t.landing.plans.starter.name,
+      subtitle: t.landing.plans.starter.subtitle,
+      monthlyPrice: 590,
+      badgeGuarantee: t.landing.plans.starter.badge,
+      features: t.landing.plans.starter.features.map((f) => ({ text: f })),
+      ctaText: t.landing.plans.starter.cta,
+      ctaHref: "/register?plan=starter",
+      isPopular: false,
+    },
+    {
+      id: "pro",
+      name: t.landing.plans.pro.name,
+      subtitle: t.landing.plans.pro.subtitle,
+      monthlyPrice: 1490,
+      badgeGuarantee: t.landing.plans.pro.badge,
+      features: t.landing.plans.pro.features.map((f, i) => ({
+        text: f,
+        isBold: i < 2,
+      })),
+      ctaText: t.landing.plans.pro.cta,
+      ctaHref: "/register?plan=pro",
+      isPopular: true,
+    },
+    {
+      id: "enterprise",
+      name: t.landing.plans.enterprise.name,
+      subtitle: t.landing.plans.enterprise.subtitle,
+      monthlyPrice: 3490,
+      badgeGuarantee: t.landing.plans.enterprise.badge,
+      features: t.landing.plans.enterprise.features.map((f) => ({ text: f })),
+      ctaText: t.landing.plans.enterprise.cta,
+      ctaHref: "#contact",
+      isPopular: false,
+    },
+  ];
 
   return (
     <section className="py-20 lg:py-28 bg-slate-50/60" id="tarifs">
       <div className="max-w-[1600px] mx-auto px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20">
-        {/* En-tête épuré : Juste le Titre "Tarifs" + Commutateur Mensuel / Annuel (-20%) */}
+        {/* En-tête : Titre Tarifs + Commutateur Mensuel / Annuel */}
         <div className="text-center max-w-3xl mx-auto mb-12 sm:mb-14">
           <h2 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-950 tracking-tight mb-6 leading-tight">
-            {isAr ? "الأسعار" : "Tarifs"}
+            {t.landing.pricingTitle}
           </h2>
 
           {/* Commutateur Mensuel / Annuel (-20%) */}
@@ -159,6 +96,7 @@ export default function PricingSection() {
               features={plan.features}
               ctaText={plan.ctaText}
               ctaHref={plan.ctaHref}
+              badgeGuarantee={plan.badgeGuarantee}
               isPopular={plan.isPopular}
             />
           ))}

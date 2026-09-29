@@ -1,5 +1,6 @@
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
+import { getLegalAmountInWords } from "@/lib/utils/numberToWords";
 
 export interface PDFInvoiceItem {
   id?: string;
@@ -76,8 +77,8 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
   container.style.padding = "44px 40px";
   container.style.boxSizing = "border-box";
   container.style.fontFamily = isArOnly
-    ? "'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif"
-    : "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+    ? "var(--font-rubik), 'Rubik', 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif"
+    : "var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
   container.style.direction = isArOnly ? "rtl" : "ltr";
   container.style.color = "#0f172a";
   container.style.display = "flex";
@@ -100,7 +101,7 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
 
   const logoMarkup = effectiveLogoUrl
     ? `<img src="${effectiveLogoUrl}" alt="Logo" style="width: 52px; height: 52px; border-radius: 10px; object-fit: contain; border: 1px solid #e2e8f0; display: block;" />`
-    : `<div style="width: 48px; height: 48px; border-radius: 10px; background: #0f172a; color: #ffffff; font-size: 16px; font-weight: 900; display: flex; align-items: center; justify-content: center; font-family: sans-serif; line-height: 48px; text-align: center;">${initials}</div>`;
+    : `<img src="/images/logo/facturim-symbole-couleur.png" alt="Logo" style="width: 48px; height: 48px; border-radius: 10px; object-fit: contain; border: 1px solid #e2e8f0; background: #ffffff; padding: 2px; display: block;" />`;
 
   const defaultMeta = defaultPrestationsByClient[invoice.clientName] || {
     desc: isArOnly ? "خدمات مهنية واستشارية" : "Prestation de service",
@@ -334,13 +335,13 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
           ${qrCodeSvg}
           <div style="font-size: 10.5px; line-height: 15px;">
             <p style="font-weight: 800; color: #0f172a; margin: 0; line-height: 15px; font-size: 11.5px;">
-              ${isArOnly ? "الدفع المباشر" : "Paiement direct"}
+              ${isArOnly ? "الدفع الإلكتروني المباشر" : "Paiement direct"}
             </p>
-            <p style="margin: 2px 0 0 0; color: #1e293b; font-weight: 700; font-size: 10.5px; line-height: 14px;">
-              Bankily • Masrvi • Sedad
+            <p style="margin: 2px 0 0 0; color: #0284c7; font-weight: 800; font-size: 10px; line-height: 14px;">
+              Bankily • Masrvi • Sedad • Click • BIM Bank
             </p>
-            <p style="margin: 2px 0 0 0; color: #94a3b8; font-size: 9.5px; line-height: 13px;">
-              ${isArOnly ? "امسح الرمز للدفع في ثوانٍ" : "Scannez pour régler en 1 clic"}
+            <p style="margin: 2px 0 0 0; color: #64748b; font-size: 9.5px; line-height: 13px;">
+              ${isArOnly ? "امسح الرمز للتحقق والدفع" : "Scannez pour vérifier ou régler en 1 clic"}
             </p>
           </div>
         </div>
@@ -385,6 +386,11 @@ function createInvoiceDOM(invoice: PDFInvoiceData): HTMLElement {
           </div>
         </div>
 
+      </div>
+
+      <!-- 4bis. MENTION DE LA SOMME EN TOUTES LETTRES (RÈGLE MAURITANIE) -->
+      <div style="margin-top: 14px; padding: 8px 12px; background: #f8fafc; border-left: 3px solid #0284c7; border-radius: 6px; font-size: 10px; font-weight: 700; color: #334155; font-style: italic;">
+        ${getLegalAmountInWords(total, isArOnly ? "ar" : "fr")}
       </div>
 
     </div>

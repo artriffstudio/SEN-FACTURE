@@ -164,7 +164,7 @@ export default function InvoicePaymentPage({ params }: PageProps) {
             {/* Badge Sécurisé */}
             <span className="hidden sm:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-semibold border border-emerald-500/20">
               <ShieldCheck size={14} />
-              <span>Moosyl Pay 256-bit SSL</span>
+              <span>Chiffrement TLS 1.3 & AES-256</span>
             </span>
 
             {/* Commutateur de langue FR / AR */}

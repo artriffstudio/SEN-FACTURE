@@ -58,8 +58,8 @@ export default function Header({
     },
     {
       id: "notif-2",
-      title: "Passerelle Mobile Money",
-      desc: "Bankily (BPM) & Seddap connectés et prêts pour les encaissements.",
+      title: "Passerelles Mobile Money",
+      desc: "BANKILY, MASRVI, SEDAD, CLICK & BIM BANK connectés.",
       time: "Il y a 10 min",
       type: "info",
       read: false,

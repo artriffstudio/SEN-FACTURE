@@ -29,6 +29,7 @@ import { createInvoice } from "@/lib/services/invoiceService";
 import { getCompany } from "@/lib/services/companyService";
 import { Client, Company } from "@/lib/types";
 import DatePicker from "@/components/ui/DatePicker";
+import { getLegalAmountInWords } from "@/lib/utils/numberToWords";
 
 interface LineItem {
   id: string;
@@ -75,7 +76,7 @@ export default function NewInvoicePage() {
   const [taxRate, setTaxRate] = useState<number>(16);
   const [paymentTerms, setPaymentTerms] = useState("Paiement à 30 jours nets");
   const [notes, setNotes] = useState(
-    "Merci pour votre confiance. Règlements acceptés par virement bancaire BPM ou Mobile Money (Bankily / Masrvi / Seddap)."
+    "Merci pour votre confiance. Règlements acceptés par virement bancaire BPM ou Mobile Money (BANKILY, MASRVI, SEDAD, CLICK, BIM BANK)."
   );
 
   const [items, setItems] = useState<LineItem[]>([
@@ -576,20 +577,29 @@ export default function NewInvoicePage() {
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
               >
                 <option value={16}>TVA Standard Mauritanie (16%)</option>
-                <option value={0}>Exonéré de TVA (0%)</option>
+                <option value={18}>TVA Spécifique Télécoms/Prestations (18%)</option>
+                <option value={0}>Exonéré de TVA (0% - Article 15 CGI)</option>
               </select>
             </div>
 
             <div>
               <label className="block font-semibold text-slate-700 mb-1">
-                Modalités de paiement
+                Conditions de règlement
               </label>
-              <input
-                type="text"
+              <select
                 value={paymentTerms}
                 onChange={(e) => setPaymentTerms(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg text-slate-800 font-medium focus:outline-none focus:border-sky-500"
-              />
+              >
+                <option value="Paiement comptant à réception">Paiement comptant à réception</option>
+                <option value="Paiement à 5 jours">Paiement à 5 jours</option>
+                <option value="Paiement à 10 jours">Paiement à 10 jours</option>
+                <option value="Paiement à 15 jours">Paiement à 15 jours</option>
+                <option value="Paiement à 30 jours nets">Paiement à 30 jours nets</option>
+                <option value="Paiement à 45 jours fin de mois">Paiement à 45 jours fin de mois</option>
+                <option value="Paiement à 60 jours">Paiement à 60 jours</option>
+                <option value="Acompte 50% à la commande, solde à livraison">Acompte 50% à la commande</option>
+              </select>
             </div>
           </div>
 
@@ -792,6 +802,12 @@ export default function NewInvoicePage() {
                   </div>
                 </div>
 
+                {/* Formule légale obligatoire en lettres */}
+                <div className="p-2.5 bg-slate-50 border border-slate-200/80 rounded-lg text-slate-800 italic text-[10px] leading-relaxed">
+                  <span className="font-semibold text-slate-900 not-italic">Montant légal certifié : </span>
+                  {getLegalAmountInWords(total, "fr")}
+                </div>
+
                 {/* Pied de page */}
                 <div className="pt-4 border-t border-slate-200 text-[10px] text-slate-500 space-y-1.5">
                   <p>
@@ -799,7 +815,7 @@ export default function NewInvoicePage() {
                   </p>
                   <p className="leading-snug">{notes}</p>
                   <div className="pt-2 text-center text-[9px] text-slate-400 font-medium">
-                    FACTURIM — Document conforme aux normes fiscales de Mauritanie (DGI)
+                    FACTURIM — Document conforme aux normes fiscales de Mauritanie (DGI & Code Général des Impôts)
                   </div>
                 </div>
               </div>

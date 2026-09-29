@@ -385,7 +385,7 @@ export default function InventoryPage() {
                   required
                   value={newItemName}
                   onChange={(e) => setNewItemName(e.target.value)}
-                  placeholder="Ex: Développement API Passerelle Bankily / Seddap"
+                  placeholder="Ex: Intégration API Mobile Banking (Bankily, SEDAD, Masrvi)"
                   className="w-full bg-white border border-slate-200 rounded-lg text-slate-800 text-xs font-medium px-3 py-2 focus:border-sky-500 focus:ring-2 focus:ring-sky-100"
                 />
               </div>

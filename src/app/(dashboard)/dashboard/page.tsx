@@ -48,6 +48,7 @@ import { getInvoices, updateInvoiceStatus } from "@/lib/services/invoiceService"
 import { getCompany } from "@/lib/services/companyService";
 import { Company } from "@/lib/types";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface AddressItem {
   id: string;
@@ -74,6 +75,7 @@ type PeriodFilter = "7d" | "30d" | "month" | "year" | "all";
 export default function DashboardPage() {
   const { t, currentLanguage } = useTranslation();
   const isAr = currentLanguage === "ar";
+  const { role, canViewGlobalRevenue, setRole } = useAuth();
 
   // Mode de devise (MRU par défaut)
   const [currencyMode, setCurrencyMode] = useState<"MRU" | "USD" | "EUR">("MRU");
@@ -471,12 +473,20 @@ export default function DashboardPage() {
                   <ShieldCheck size={13} className="text-sky-400" />
                   <span>Certifié DGI Mauritanie ✓</span>
                 </span>
+                
+                {/* Rôle Actif Pilule */}
+                <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-slate-800 text-[11px] font-bold text-slate-300 border border-slate-700">
+                  <span>Rôle :</span>
+                  <span className="text-sky-400 uppercase font-black">
+                    {role === "owner" ? "Dirigeant" : role === "admin" ? "Admin" : role === "accountant" ? "Comptable" : "Guichet Facturier"}
+                  </span>
+                </span>
               </div>
 
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-slate-300">
-                <span className="text-slate-400">NIF : <strong className="text-slate-200">{company?.taxId || "00987654-MR"}</strong></span>
+                <span className="text-slate-400">NIF : <strong className="text-slate-200">{company?.taxId ? company.taxId : "Non assujetti (Optionnel)"}</strong></span>
                 <span className="text-slate-600">•</span>
-                <span className="text-slate-400">Passerelle : <strong className="text-emerald-400">Bankily &amp; Seddap</strong></span>
+                <span className="text-slate-400">Passerelles : <strong className="text-emerald-400">Bankily • Masrvi • Sedad • Click • BIM Bank</strong></span>
                 <span className="text-slate-600">•</span>
                 <span className="text-slate-400">TVA Légale : <strong className="text-sky-300">16%</strong></span>
               </div>
@@ -531,106 +541,155 @@ export default function DashboardPage() {
       </div>
 
       {/* ======================================================== */}
-      {/* 2. GRILLE KPI STATISTIQUES (« Role Statistics » Style) */}
+      {/* 2. GRILLE KPI STATISTIQUES (Adaptée selon Confidentialité Dirigeant vs Facturier) */}
       {/* ======================================================== */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* KPI 1 : CA Encaissé */}
-        <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-lg hover:border-sky-300 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.dashboard.kpiRevenue}</span>
-            <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shadow-2xs group-hover:scale-110 transition-transform">
-              <TrendingUp size={16} />
+      {canViewGlobalRevenue() ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* KPI 1 : CA Encaissé (Visible par le Dirigeant / Admin / Comptable) */}
+          <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-lg hover:border-sky-300 transition-all duration-300 group">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.dashboard.kpiRevenue}</span>
+              <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center font-bold text-xs shadow-2xs group-hover:scale-110 transition-transform">
+                <TrendingUp size={16} />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
+              {formatMoney(stats.encaisse)}
+            </div>
+            <div className="flex items-center justify-between mt-3 text-xs">
+              <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">
+                {stats.pctEncaisse}% Recouvré
+              </span>
+              <span className="text-slate-400 font-medium">
+                {stats.countPayees} {t.status.paid.toLowerCase()}
+              </span>
+            </div>
+            <div className="relative w-full h-1.5 rounded-full bg-slate-100 overflow-hidden mt-2.5">
+              <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${stats.pctEncaisse}%` }} />
+              <div className="absolute inset-0 animate-shimmer pointer-events-none" />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-            {formatMoney(stats.encaisse)}
-          </div>
-          <div className="flex items-center justify-between mt-3 text-xs">
-            <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">
-              {stats.pctEncaisse}% Recouvré
-            </span>
-            <span className="text-slate-400 font-medium">
-              {stats.countPayees} {t.status.paid.toLowerCase()}
-            </span>
-          </div>
-          <div className="relative w-full h-1.5 rounded-full bg-slate-100 overflow-hidden mt-2.5">
-            <div className="h-full bg-emerald-500 rounded-full transition-all duration-500" style={{ width: `${stats.pctEncaisse}%` }} />
-            <div className="absolute inset-0 animate-shimmer pointer-events-none" />
-          </div>
-        </div>
 
-        {/* KPI 2 : En Attente */}
-        <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-lg hover:border-amber-300 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.dashboard.kpiPending}</span>
-            <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-xs shadow-2xs group-hover:scale-110 transition-transform">
-              <Clock size={16} />
+          {/* KPI 2 : En Attente */}
+          <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-lg hover:border-amber-300 transition-all duration-300 group">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.dashboard.kpiPending}</span>
+              <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center font-bold text-xs shadow-2xs group-hover:scale-110 transition-transform">
+                <Clock size={16} />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-amber-900 tracking-tight">
+              {formatMoney(stats.attente)}
+            </div>
+            <div className="flex items-center justify-between mt-3 text-xs">
+              <span className="text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded-md">
+                {stats.pctAttente}% En cours
+              </span>
+              <span className="text-slate-400 font-medium">
+                {stats.countAttente} {t.status.sent.toLowerCase()}
+              </span>
+            </div>
+            <div className="relative w-full h-1.5 rounded-full bg-slate-100 overflow-hidden mt-2.5">
+              <div className="h-full bg-amber-400 rounded-full transition-all duration-500" style={{ width: `${stats.pctAttente}%` }} />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-amber-900 tracking-tight">
-            {formatMoney(stats.attente)}
-          </div>
-          <div className="flex items-center justify-between mt-3 text-xs">
-            <span className="text-amber-800 font-bold bg-amber-50 px-2 py-0.5 rounded-md">
-              {stats.pctAttente}% En cours
-            </span>
-            <span className="text-slate-400 font-medium">
-              {stats.countAttente} {t.status.sent.toLowerCase()}
-            </span>
-          </div>
-          <div className="relative w-full h-1.5 rounded-full bg-slate-100 overflow-hidden mt-2.5">
-            <div className="h-full bg-amber-400 rounded-full transition-all duration-500" style={{ width: `${stats.pctAttente}%` }} />
-          </div>
-        </div>
 
-        {/* KPI 3 : En Retard */}
-        <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-lg hover:border-rose-300 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.dashboard.kpiOverdue}</span>
-            <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center font-bold text-xs shadow-2xs group-hover:scale-110 transition-transform">
-              <ShieldCheck size={16} />
+          {/* KPI 3 : En Retard */}
+          <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-lg hover:border-rose-300 transition-all duration-300 group">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.dashboard.kpiOverdue}</span>
+              <div className="w-8 h-8 rounded-xl bg-rose-50 text-rose-700 flex items-center justify-center font-bold text-xs shadow-2xs group-hover:scale-110 transition-transform">
+                <ShieldCheck size={16} />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-rose-900 tracking-tight">
+              {formatMoney(stats.retard)}
+            </div>
+            <div className="flex items-center justify-between mt-3 text-xs">
+              <span className="text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded-md">
+                {stats.pctRetard}% Échu
+              </span>
+              <span className="text-slate-400 font-medium">
+                {stats.countRetard} {t.status.overdue.toLowerCase()}
+              </span>
+            </div>
+            <div className="relative w-full h-1.5 rounded-full bg-slate-100 overflow-hidden mt-2.5">
+              <div className="h-full bg-rose-500 rounded-full transition-all duration-500" style={{ width: `${stats.pctRetard}%` }} />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-rose-900 tracking-tight">
-            {formatMoney(stats.retard)}
-          </div>
-          <div className="flex items-center justify-between mt-3 text-xs">
-            <span className="text-rose-700 font-bold bg-rose-50 px-2 py-0.5 rounded-md">
-              {stats.pctRetard}% Échu
-            </span>
-            <span className="text-slate-400 font-medium">
-              {stats.countRetard} {t.status.overdue.toLowerCase()}
-            </span>
-          </div>
-          <div className="relative w-full h-1.5 rounded-full bg-slate-100 overflow-hidden mt-2.5">
-            <div className="h-full bg-rose-500 rounded-full transition-all duration-500" style={{ width: `${stats.pctRetard}%` }} />
-          </div>
-        </div>
 
-        {/* KPI 4 : Total Facturé */}
-        <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-lg hover:border-sky-300 transition-all duration-300 group">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.clients.totalInvoiced}</span>
-            <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-xs shadow-2xs group-hover:scale-110 transition-transform">
-              <Layers size={16} />
+          {/* KPI 4 : Total Facturé */}
+          <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm hover:shadow-lg hover:border-sky-300 transition-all duration-300 group">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">{t.clients.totalInvoiced}</span>
+              <div className="w-8 h-8 rounded-xl bg-sky-50 text-sky-600 flex items-center justify-center font-bold text-xs shadow-2xs group-hover:scale-110 transition-transform">
+                <Layers size={16} />
+              </div>
+            </div>
+            <div className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
+              {formatMoney(stats.totalFacture)}
+            </div>
+            <div className="flex items-center justify-between mt-3 text-xs">
+              <span className="text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-md">
+                {stats.countTotal} Factures émises
+              </span>
+              <span className="text-slate-400 font-medium">
+                TVA 16% active
+              </span>
+            </div>
+            <div className="relative w-full h-1.5 rounded-full bg-slate-100 overflow-hidden mt-2.5">
+              <div className="h-full bg-sky-500 rounded-full transition-all duration-500" style={{ width: "100%" }} />
             </div>
           </div>
-          <div className="text-xl sm:text-2xl font-black text-slate-950 tracking-tight">
-            {formatMoney(stats.totalFacture)}
-          </div>
-          <div className="flex items-center justify-between mt-3 text-xs">
-            <span className="text-sky-700 font-bold bg-sky-50 px-2 py-0.5 rounded-md">
-              {stats.countTotal} Factures émises
+        </div>
+      ) : (
+        /* VUE GUICHET FACTURATION (CA GLOBAL & RAPPORTS FISCAUX PROTÉGÉS) */
+        <div className="space-y-3">
+          <div className="p-3.5 bg-sky-50 border border-sky-200/80 rounded-2xl text-xs text-sky-800 flex items-center justify-between">
+            <div className="flex items-center gap-2 font-bold">
+              <ShieldCheck size={16} className="text-sky-600" />
+              <span>Espace Guichet Facturation — Données financières globales et trésorerie protégées</span>
+            </div>
+            <span className="text-[10px] uppercase font-black px-2 py-0.5 bg-white text-sky-700 rounded-full border border-sky-200">
+              Session Opérateur Sécurisée
             </span>
-            <span className="text-slate-400 font-medium">
-              TVA 16% active
-            </span>
           </div>
-          <div className="relative w-full h-1.5 rounded-full bg-slate-100 overflow-hidden mt-2.5">
-            <div className="h-full bg-sky-500 rounded-full transition-all duration-500" style={{ width: "100%" }} />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
+              <span className="text-xs font-bold text-slate-500 uppercase">Factures Émises</span>
+              <p className="text-2xl font-black text-slate-900 mt-1">{stats.countTotal}</p>
+              <span className="text-[11px] text-slate-500">Documents enregistrés</span>
+            </div>
+
+            <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
+              <span className="text-xs font-bold text-slate-500 uppercase">En Attente de Règlement</span>
+              <p className="text-2xl font-black text-amber-600 mt-1">{stats.countAttente}</p>
+              <span className="text-[11px] text-slate-500">À relancer ou encaisser</span>
+            </div>
+
+            <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm">
+              <span className="text-xs font-bold text-slate-500 uppercase">Factures Réglées</span>
+              <p className="text-2xl font-black text-emerald-600 mt-1">{stats.countPayees}</p>
+              <span className="text-[11px] text-slate-500">Encaissements validés</span>
+            </div>
+
+            <div className="card-interactive bg-white rounded-2xl border border-slate-200/80 p-5 shadow-sm flex flex-col justify-between">
+              <div>
+                <span className="text-xs font-bold text-sky-600 uppercase">Action Immédiate</span>
+                <p className="text-xs font-semibold text-slate-700 mt-0.5">Émettre un devis ou facture</p>
+              </div>
+              <button
+                onClick={() => setIsLiveModalOpen(true)}
+                className="w-full mt-2 py-2 bg-gradient-to-r from-sky-500 to-sky-600 text-white rounded-xl text-xs font-bold shadow-sm hover:shadow transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Plus size={14} />
+                <span>+ Nouvelle Facture</span>
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
       {/* ======================================================== */}
       {/* 3. DISPOSITION PRINCIPALE EN 2 COLONNES */}
@@ -686,7 +745,7 @@ export default function DashboardPage() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-xs font-bold text-slate-900 truncate">Paiement Mobile Money</p>
-                    <p className="text-[11px] text-emerald-600 font-medium">Bankily • Seddap • Masrvi</p>
+                    <p className="text-[11px] text-emerald-600 font-medium">Bankily • Masrvi • SEDAD • Click • BIM</p>
                   </div>
                 </div>
                 <ChevronRight size={15} className="text-slate-400 group-hover:text-sky-600 group-hover:translate-x-0.5 transition-all" />

@@ -3,11 +3,18 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { User, Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
+import { UserRole } from "@/lib/types";
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  role: UserRole;
+  setRole: (role: UserRole) => void;
+  canViewGlobalRevenue: () => boolean;
+  canAccessReports: () => boolean;
+  canManageTeam: () => boolean;
+  canEditBankDetails: () => boolean;
   signIn: (email: string, password: string) => Promise<{ error: any }>;
   signUp: (
     email: string,
@@ -16,6 +23,8 @@ interface AuthContextType {
     companyName: string
   ) => Promise<{ error: any; user: User | null; session: Session | null }>;
   resendConfirmationEmail: (email: string) => Promise<{ error: any }>;
+  resetPassword: (email: string) => Promise<{ error: any }>;
+  updatePassword: (newPassword: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
 }
 
@@ -25,7 +34,6 @@ const DEFAULT_COMPANY_ID = "00000000-0000-0000-0000-000000000001";
 
 async function linkOrRegisterCompany(userId: string, email: string, companyName?: string) {
   try {
-    // 1. Vérifier si l'utilisateur a déjà une entreprise
     const { data: userComp } = await supabase
       .from("companies")
       .select("id")
@@ -34,7 +42,6 @@ async function linkOrRegisterCompany(userId: string, email: string, companyName?
 
     if (userComp) return userComp.id;
 
-    // 2. Vérifier si l'entreprise par défaut n'a pas encore de propriétaire
     const { data: defaultComp } = await supabase
       .from("companies")
       .select("id, user_id")
@@ -54,7 +61,6 @@ async function linkOrRegisterCompany(userId: string, email: string, companyName?
       return DEFAULT_COMPANY_ID;
     }
 
-    // 3. Sinon, créer une nouvelle entreprise pour cet utilisateur
     const { data: newComp } = await supabase
       .from("companies")
       .insert({
@@ -82,6 +88,41 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [role, setRoleState] = useState<UserRole>("owner");
+
+  useEffect(() => {
+    // Récupérer le rôle éventuellement persisté pour les tests / profil
+    if (typeof window !== "undefined") {
+      const savedRole = localStorage.getItem("facturim_active_role") as UserRole;
+      if (savedRole && ["owner", "admin", "accountant", "sales", "viewer"].includes(savedRole)) {
+        setRoleState(savedRole);
+      }
+    }
+  }, []);
+
+  const setRole = (newRole: UserRole) => {
+    setRoleState(newRole);
+    if (typeof window !== "undefined") {
+      localStorage.setItem("facturim_active_role", newRole);
+    }
+  };
+
+  const canViewGlobalRevenue = () => {
+    // L'opérateur guichet (sales) ne peut PAS voir le CA global de l'entreprise
+    return role === "owner" || role === "admin" || role === "accountant";
+  };
+
+  const canAccessReports = () => {
+    return role === "owner" || role === "admin" || role === "accountant";
+  };
+
+  const canManageTeam = () => {
+    return role === "owner" || role === "admin";
+  };
+
+  const canEditBankDetails = () => {
+    return role === "owner" || role === "admin";
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -198,6 +239,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const resetPassword = async (email: string) => {
+    const redirectUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/auth/callback?type=recovery`
+        : undefined;
+
+    return await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: redirectUrl,
+    });
+  };
+
+  const updatePassword = async (newPassword: string) => {
+    return await supabase.auth.updateUser({
+      password: newPassword,
+    });
+  };
+
   const signOut = async () => {
     await supabase.auth.signOut();
     setUser(null);
@@ -210,9 +268,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         session,
         loading,
+        role,
+        setRole,
+        canViewGlobalRevenue,
+        canAccessReports,
+        canManageTeam,
+        canEditBankDetails,
         signIn,
         signUp,
         resendConfirmationEmail,
+        resetPassword,
+        updatePassword,
         signOut,
       }}
     >

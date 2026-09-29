@@ -25,6 +25,7 @@ import { getCompany } from "@/lib/services/companyService";
 import { Invoice, Company } from "@/lib/types";
 import Tooltip from "@/components/ui/Tooltip";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { getLegalAmountInWords } from "@/lib/utils/numberToWords";
 
 export default function InvoiceDetailPage({
   params,
@@ -530,7 +531,7 @@ export default function InvoiceDetailPage({
                     Paiement direct
                   </p>
                   <p className="font-bold text-slate-800 text-[11px] leading-tight">
-                    Bankily • Masrvi • Sedad
+                    BANKILY • MASRVI • SEDAD • CLICK • BIM
                   </p>
                   <p className="text-slate-400 text-[9.5px] leading-tight">
                     Scannez pour régler en 1 clic
@@ -543,13 +544,13 @@ export default function InvoiceDetailPage({
                 <div className="flex justify-between text-slate-600">
                   <span className="font-medium">Sous-total HT :</span>
                   <span className="font-bold text-slate-900">
-                    {formatMoney(Math.round(invoice.total / 1.16))}
+                    {formatMoney(Math.round(invoice.total / (1 + (invoice.taxRate ?? 16) / 100)))}
                   </span>
                 </div>
                 <div className="flex justify-between text-slate-600">
-                  <span className="font-medium">TVA légale (16%) :</span>
+                  <span className="font-medium">TVA ({invoice.taxRate ?? 16}%) :</span>
                   <span className="font-bold text-slate-900">
-                    {formatMoney(Math.round(invoice.total - invoice.total / 1.16))}
+                    {formatMoney(Math.round(invoice.total - invoice.total / (1 + (invoice.taxRate ?? 16) / 100)))}
                   </span>
                 </div>
 
@@ -579,6 +580,12 @@ export default function InvoiceDetailPage({
               </div>
             </div>
 
+            {/* Formule légale obligatoire en lettres */}
+            <div className="relative z-10 p-2.5 bg-slate-50 border border-slate-200/80 rounded-lg text-slate-800 italic text-[10px] leading-relaxed">
+              <span className="font-semibold text-slate-900 not-italic">Montant légal certifié : </span>
+              {getLegalAmountInWords(invoice.total, "fr")}
+            </div>
+
             {/* 5. Coordonnées de Paiement & Mentions */}
             <div className="relative z-10 border-t border-slate-200 pt-3 grid grid-cols-1 sm:grid-cols-12 gap-3 text-[10.5px]">
               <div className="sm:col-span-8 space-y-0.5">
@@ -586,14 +593,14 @@ export default function InvoiceDetailPage({
                   Paiement à l'ordre de {company?.name || "Facturim Mauritanie SARL"}
                 </p>
                 <p className="text-slate-600">
-                  N° Bankily / Masrvi / Compte : <span className="font-bold text-slate-900 font-mono">{company?.phone || "+222 45 25 00 00"}</span>
+                  N° BANKILY / MASRVI / SEDAD : <span className="font-bold text-slate-900 font-mono">{company?.phone || "+222 45 25 00 00"}</span>
                 </p>
-                <p className="text-slate-400 text-[9.5px]">Paiement par Bankily, Masrvi ou virement bancaire.</p>
+                <p className="text-slate-400 text-[9.5px]">Règlements acceptés par BANKILY, MASRVI, SEDAD, CLICK, BIM BANK ou virement bancaire.</p>
               </div>
 
               <div className="sm:col-span-4 text-left sm:text-right space-y-0.5">
                 <p className="font-bold text-slate-900">Conditions de paiement</p>
-                <p className="text-slate-600">Paiement sous 30 jours</p>
+                <p className="text-slate-600">{invoice.paymentTerms || "Paiement à 30 jours nets"}</p>
               </div>
             </div>
 

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Menu, X, ArrowRight } from "lucide-react";
 import LanguageSelector from "@/components/ui/LanguageSelector";
 import { useLanguage } from "@/contexts/LanguageContext";
+import FacturimLogo from "@/components/ui/FacturimLogo";
 
 interface LandingHeaderProps {
   onContactClick?: () => void;
@@ -13,6 +14,7 @@ interface LandingHeaderProps {
 export default function LandingHeader({ onContactClick }: LandingHeaderProps) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { currentLanguage } = useLanguage();
+
   const isAr = currentLanguage === "ar";
 
   const navLinks = isAr
@@ -32,35 +34,10 @@ export default function LandingHeader({ onContactClick }: LandingHeaderProps) {
   return (
     <header className="sticky top-0 z-50 bg-white/90 backdrop-blur-xl border-b border-slate-100 transition-colors duration-300">
       <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 2xl:px-20 h-20 flex items-center justify-between">
-        {/* Brand Logo officiel FI Facturim */}
+        {/* Brand Logo officiel Facturim */}
         <div className="flex items-center space-x-3 shrink-0">
-          <Link href="/" className="flex items-center space-x-2.5 group">
-            <div className="w-10 h-10 rounded-xl bg-slate-900 flex items-center justify-center shadow-md shadow-slate-900/15 group-hover:scale-105 transition-transform shrink-0">
-              <svg
-                className="w-full h-full p-1.5"
-                viewBox="0 0 40 40"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <rect width="40" height="40" rx="8" fill="#0f172a" />
-                <text
-                  x="20"
-                  y="20"
-                  dominantBaseline="central"
-                  textAnchor="middle"
-                  fill="#ffffff"
-                  fontSize="18"
-                  fontWeight="900"
-                  fontFamily="system-ui, -apple-system, sans-serif"
-                  letterSpacing="-0.5px"
-                >
-                  FI
-                </text>
-              </svg>
-            </div>
-            <span className="font-extrabold text-xl tracking-tight text-slate-900">
-              FACTU<span className="text-sky-600">RIM</span>
-            </span>
+          <Link href="/" className="flex items-center group">
+            <FacturimLogo variant="full" size="md" />
           </Link>
         </div>
 

@@ -11,13 +11,16 @@ import "@/styles/landing.css";
 export const metadata: Metadata = {
   title: "Facturim — La solution de facturation électronique de référence en Mauritanie",
   description:
-    "Facturation électronique conforme DGI Mauritanie (TVA 16%, NIF), devis en 1 clic, encaissements Bankily & Seddap direct, devises MRU et multilingue Arabe, Anglais, Chinois et Français.",
+    "Facturation électronique conforme DGI Mauritanie (TVA 16%, NIF optionnel), devis en 1 clic, encaissements BANKILY, MASRVI, SEDAD, CLICK & BIM BANK direct, devises MRU et multilingue Arabe, Anglais, Chinois et Français.",
   keywords: [
     "Facturim",
     "facturation Mauritanie",
     "facture électronique Nouakchott",
     "Bankily facturation",
-    "Seddap paiement",
+    "SEDAD paiement",
+    "Masrvi paiement",
+    "Click BNM",
+    "BIM Bank Mobile",
     "NIF Mauritanie",
     "TVA 16% Mauritanie",
     "MRU Ouguiya",
@@ -27,15 +30,58 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Facturim — Solution de facturation de référence en Mauritanie",
     description:
-      "Générez des factures certifiées, encaissez par Bankily & Seddap et pilotez votre trésorerie en MRU en temps réel.",
+      "Générez des factures certifiées, encaissez par BANKILY, MASRVI, SEDAD, CLICK & BIM BANK et pilotez votre trésorerie en MRU en temps réel.",
     type: "website",
     locale: "fr_MR",
   },
 };
 
 export default function LandingPage() {
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "SoftwareApplication",
+        "name": "Facturim",
+        "operatingSystem": "Web, iOS, Android (PWA)",
+        "applicationCategory": "BusinessApplication",
+        "offers": {
+          "@type": "Offer",
+          "price": "590",
+          "priceCurrency": "MRU",
+        },
+        "description":
+          "Plateforme SaaS de facturation électronique conforme DGI Mauritanie (TVA 16%, NIF optionnel) avec encaissement Mobile Banking (Bankily, Masrvi, Sedad, Click, BIM Bank).",
+        "publisher": {
+          "@type": "Organization",
+          "name": "Facturim Mauritanie SARL",
+          "url": "https://facturim.net",
+          "logo": "https://facturim.net/images/logo.png",
+          "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "Avenue du Roi Fayçal, Tevragh-Zeina",
+            "addressLocality": "Nouakchott",
+            "addressCountry": "MR",
+          },
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "telephone": "+222-45-00-00-00",
+            "contactType": "customer service",
+            "availableLanguage": ["French", "Arabic", "English", "Chinese"],
+          },
+        },
+      },
+    ],
+  };
+
   return (
     <div className="min-h-screen bg-[#fafbfd] text-slate-800 font-sans antialiased selection:bg-sky-500 selection:text-white overflow-x-hidden flex flex-col justify-between">
+      {/* Données structurées Schema.org */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+
       {/* 1. Header / Navbar de Navigation Fixe & Responsive */}
       <LandingHeader />
 

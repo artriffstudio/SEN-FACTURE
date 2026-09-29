@@ -101,11 +101,18 @@ export async function getInvoices(
 }
 
 export async function getInvoiceById(id: string): Promise<Invoice | null> {
-  const { data: inv, error } = await supabase
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  let query = supabase
     .from("invoices")
-    .select("*, clients(*), invoice_items(*)")
-    .eq("id", id)
-    .single();
+    .select("*, clients(*), invoice_items(*)");
+
+  if (isUuid) {
+    query = query.eq("id", id);
+  } else {
+    query = query.eq("invoice_number", id);
+  }
+
+  const { data: inv, error } = await query.maybeSingle();
 
   if (error || !inv) {
     return null;
@@ -168,19 +175,19 @@ export async function getInvoiceById(id: string): Promise<Invoice | null> {
 export async function createInvoice(data: InvoiceFormData): Promise<Invoice> {
   const companyId = await getEffectiveCompanyId();
 
-  // 1. Calculer les montants
+  // 1. Calculer les montants avec le taux de TVA sélectionné
   const subtotal = data.items.reduce(
     (sum, item) => sum + item.quantity * item.unitPrice,
     0
   );
-  const taxRate = 16.0; // TVA Standard Mauritanie DGI 16%
+  const taxRate = data.taxRate !== undefined ? Number(data.taxRate) : 16.0; // 16% standard DGI, 18% télécom, 0% exonéré
   const taxAmount = Math.round((subtotal * taxRate) / 100);
   const total = subtotal + taxAmount;
 
   // 2. Récupérer le prochain numéro de facture depuis l'entreprise
   const { data: comp } = await supabase
     .from("companies")
-    .select("invoice_prefix, next_invoice_number")
+    .select("invoice_prefix, next_invoice_number, default_payment_terms")
     .eq("id", companyId)
     .single();
 
@@ -207,6 +214,7 @@ export async function createInvoice(data: InvoiceFormData): Promise<Invoice> {
     tax_amount: taxAmount,
     total,
     notes: data.notes || null,
+    payment_terms: data.paymentTerms || comp?.default_payment_terms || "Paiement à réception",
     paid_at: data.status === "paid" ? new Date().toISOString() : null,
   };
 
@@ -264,15 +272,49 @@ export async function updateInvoiceStatus(
     paid_at: status === "paid" ? new Date().toISOString() : null,
   };
 
-  const { error } = await supabase.from("invoices").update(payload).eq("id", id);
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const query = supabase.from("invoices").update(payload);
+  const { error } = isUuid ? await query.eq("id", id) : await query.eq("invoice_number", id);
+
   if (error) {
     throw new Error(`Échec mise à jour statut: ${error.message}`);
   }
   return true;
 }
 
+/**
+ * Annulation officielle conforme DGI d'une facture déjà émise (Immuabilité)
+ */
+export async function cancelInvoice(id: string, reason: string): Promise<boolean> {
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const payload = {
+    status: "cancelled",
+    notes: `Facture annulée le ${new Date().toLocaleDateString("fr-FR")}. Motif : ${reason}`,
+    updated_at: new Date().toISOString(),
+  };
+
+  const query = supabase.from("invoices").update(payload);
+  const { error } = isUuid ? await query.eq("id", id) : await query.eq("invoice_number", id);
+
+  if (error) {
+    throw new Error(`Échec de l'annulation de la facture: ${error.message}`);
+  }
+  return true;
+}
+
 export async function deleteInvoice(id: string): Promise<boolean> {
-  const { error } = await supabase.from("invoices").delete().eq("id", id);
+  const inv = await getInvoiceById(id);
+  
+  // Règle fiscale DGI : Une facture émise ou payée ne peut pas être supprimée physiquement
+  if (inv && inv.status !== "draft") {
+    // Transformer en annulation formelle pour préserver la séquence
+    return cancelInvoice(id, "Annulation demandée par l'utilisateur (Immuabilité fiscale préservée)");
+  }
+
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+  const query = supabase.from("invoices").delete();
+  const { error } = isUuid ? await query.eq("id", id) : await query.eq("invoice_number", id);
+
   if (error) {
     throw new Error(`Échec suppression facture: ${error.message}`);
   }

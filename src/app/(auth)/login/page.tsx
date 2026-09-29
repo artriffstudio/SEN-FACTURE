@@ -222,19 +222,12 @@ export default function LoginPage() {
                 </div>
 
                 <div className="text-right mt-1.5 pr-1">
-                  <a
-                    href="#forgot"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      toast(
-                        `Pour réinitialiser votre mot de passe, contactez l'administrateur ou le support ${t.brandName}.`,
-                        { icon: "ℹ️" }
-                      );
-                    }}
+                  <Link
+                    href="/forgot-password"
                     className="text-[11px] text-slate-500 hover:text-sky-600 transition-colors underline cursor-pointer"
                   >
                     {t.auth.forgotPassword}
-                  </a>
+                  </Link>
                 </div>
               </div>
 

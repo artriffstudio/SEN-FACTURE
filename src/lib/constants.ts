@@ -159,12 +159,16 @@ export const DEFAULT_COMPANY = {
   country: "Mauritanie",
   currency: "MRU" as CurrencyCode,
   taxRate: 16, // TVA Mauritanie 16%
-  taxId: "00987654-MR", // NIF
+  taxId: "00987654-MR", // NIF (Optionnel si TPE)
   rcNumber: "MR.NKTT.2025.B.1234",
   invoicePrefix: "FAC-2025-",
+  defaultPaymentTerms: "Paiement à réception",
   bankRib: "MR12 00010 01001 12345678901 23 (BPM Mauritanie)",
   bankilyPhone: "+222 45 12 34 56",
-  seddapPhone: "+222 36 78 90 12",
+  masrviPhone: "+222 22 12 34 56",
+  sedadPhone: "+222 36 78 90 12",
+  clickPhone: "+222 49 12 34 56",
+  bimBankPhone: "+222 33 12 34 56",
   termsAndConditions:
-    "Paiement à réception par virement bancaire BPM ou Mobile Money (Bankily / Seddap). Conformément aux règles fiscales de la Direction Générale des Impôts de Mauritanie.",
+    "Paiement à réception par virement bancaire ou Mobile Money (BANKILY / MASRVI / SEDAD / CLICK / BIM BANK). Conformément aux règles de facturation en Mauritanie.",
 };
